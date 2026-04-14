@@ -8,6 +8,18 @@ services:
     volumes:
       - ../../:/workspace
     working_dir: /workspace
+    environment:
+      - WIREMOCK_URL=http://wiremock:8080
+    networks:
+      - container-link
+
+  wiremock:
+    image: wiremock/wiremock:latest
+    container_name: wiremock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../mocks/wiremock:/home/wiremock
     networks:
       - container-link
 

@@ -30,3 +30,16 @@ Phase1では以下の機能を持つKotlin CLIアプリを作成します：
 ```bash
 docker compose -f docker/compose/local.yml up --build
 ```
+
+## WireMock の動作確認
+
+devcontainer 環境では、GMOコインのAPIをモックするWireMockコンテナが起動します。
+ローカルのターミナルから以下の `curl` コマンドでモックレスポンスを確認できます。
+
+```bash
+# Ticker の確認
+curl -s http://localhost:8080/public/v1/ticker?symbol=BTC
+
+# Klines の確認
+curl -s "http://localhost:8080/public/v1/klines?symbol=BTC&interval=5min&date=20231001"
+```
