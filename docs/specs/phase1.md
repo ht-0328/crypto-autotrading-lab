@@ -34,31 +34,80 @@
 
 ## ディレクトリ構成
 
-最低限、以下の方針。
+将来的にアプリ以外のプロジェクト（分析用Pythonスクリプトや別バッチなど）を追加しやすくするため、アプリ本体のソースコードは `projects/crypto-autotrading-app/` 配下に隔離します。また、インフラや開発環境の設定はリポジトリのルートで管理し、責務を明確に分離する方針です。
 
 ```text
 .
 ├─ .devcontainer/
-├─ docker/
-│  └─ app/
-│     └─ Dockerfile
+├─ .vscode/
 ├─ config/
 │  └─ application.yaml
 ├─ data/
+├─ docker/
+│  ├─ app/
+│  │  └─ Dockerfile
+│  └─ compose/
+│     └─ local.yml
 ├─ docs/
-├─ src/
-├─ build.gradle.kts
-├─ docker-compose.yml
-└─ README.md
+├─ projects/
+│  └─ crypto-autotrading-app/
+│     ├─ build.gradle.kts
+│     ├─ settings.gradle.kts
+│     ├─ gradlew
+│     ├─ gradlew.bat
+│     ├─ gradle/
+│     └─ src/
+├─ README.md
+└─ .gitignore
 ```
+
+### 主要ディレクトリの役割
+
+| ディレクトリ | 役割 |
+|---|---|
+| `.devcontainer/` | VS Code Dev Containers の設定ファイル群 |
+| `.vscode/` | VS Code ワークスペース設定（拡張機能の推奨など） |
+| `config/` | アプリケーションの設定ファイル配置ディレクトリ |
+| `data/` | 実行結果のCSVや状態ファイルの保存ディレクトリ |
+| `docker/` | Dockerfile や docker compose の設定ファイル群 |
+| `docs/` | 仕様書や開発手順などのドキュメント群 |
+| `projects/` | `crypto-autotrading-app` などの Kotlin CLI アプリケーションのプロジェクト群を配置するディレクトリ |
 
 ## パッケージ構成
 
-* `config`
-* `client`
-* `service`
-* `model`
-* `output`
+アプリ本体のパッケージ構成は以下のようにします。
+
+```text
+projects/crypto-autotrading-app/
+└─ src/
+   └─ main/
+      └─ kotlin/
+         └─ cryptoautotrading/
+            ├─ presentation/
+            ├─ application/
+            ├─ domain/
+            │  ├─ strategy/
+            │  ├─ simulation/
+            │  └─ model/
+            ├─ infrastructure/
+            │  ├─ exchange/
+            │  │  └─ gmo/
+            │  ├─ config/
+            │  └─ output/
+            └─ shared/
+```
+
+| パッケージ                         | 役割                                |
+| ----------------------------- | --------------------------------- |
+| `presentation`                | `main` 関数、CLI起動処理                 |
+| `application`                 | 5分ごとの実行制御、1回分の処理フローの組み立て          |
+| `domain.strategy`             | 買い候補、売り候補、見送り、保有中などの判定ルール         |
+| `domain.simulation`           | 仮想資金、保有状態、損益計算、シミュレーション状態の更新      |
+| `domain.model`                | 売買判定結果、価格情報、保有状態などの中心データ型         |
+| `infrastructure.exchange.gmo` | GMOコイン Public API との通信、APIレスポンス変換 |
+| `infrastructure.config`       | `application.yaml` の読み込み、設定値の変換   |
+| `infrastructure.output`       | コンソール出力、CSV出力、`state.json` 保存     |
+| `shared`                      | 共通例外、共通ユーティリティ、共通定数               |
 
 ## 処理分割
 
@@ -105,7 +154,9 @@
 
 ## CSV仕様
 
-* 保存先: `./data`
+* 保存先: リポジトリルート直下の `data/` ディレクトリ
+  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
+  * Docker実行時も同じパスで扱えるようにする
 * 1日1ファイル
 * 列:
   * 日時
@@ -118,7 +169,9 @@
 
 ## 状態ファイル仕様
 
-* 保存先: `./data/state.json`
+* 保存先: リポジトリルート直下の `data/state.json`
+  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
+  * Docker実行時も同じパスで扱えるようにする
 * 形式: JSON
 * 内容:
   * 保有中かどうか
@@ -128,7 +181,9 @@
 
 ## 設定ファイル仕様
 
-* 保存先: `./config/application.yaml`
+* 保存先: リポジトリルート直下の `config/application.yaml`
+  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
+  * Docker実行時も同じパスで扱えるようにする
 * 形式: YAML
 * セクション:
   * `app`
@@ -150,10 +205,10 @@
 ## 受け入れ条件
 
 * devcontainer で開発できる
-* `./gradlew build` が通る
-* `./gradlew run` が通る
+* `cd projects/crypto-autotrading-app && ./gradlew build` が通る
+* `cd projects/crypto-autotrading-app && ./gradlew run` が通る
 * GMO Public API から ticker / klines を取得できる
 * 判定処理が動く
 * CSV出力される
 * 状態ファイルが出力される
-* `docker compose up --build` で起動確認できる
+* `docker compose -f docker/compose/local.yml up --build` で起動確認できる
