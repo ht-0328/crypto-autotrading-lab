@@ -109,12 +109,25 @@ projects/crypto-autotrading-app/
 | `infrastructure.output`       | コンソール出力、CSV出力、`state.json` 保存     |
 | `shared`                      | 共通例外、共通ユーティリティ、共通定数               |
 
-## 処理分割
+### 依存ルール
 
-* データ取得
-* 判定
-* 出力
-* 保存
+* `domain` は HTTP通信、YAML読み込み、CSV保存、JSON保存を直接行わない
+* `infrastructure` は GMO API通信、設定読み込み、ファイル出力など外部入出力を担当する
+* `application` は処理順序を組み立てる
+* `presentation` は起動処理だけに寄せる
+* 売買判定ルールは `domain.strategy` に置く
+* シミュレーション状態更新や損益計算は `domain.simulation` に置く
+
+## 実行フロー
+
+Phase1 では、5分ごとに以下の流れを1回分の処理として実行する。
+
+1. 設定ファイルを読み込む
+2. GMOコイン Public API から価格データを取得する
+3. 取得した価格データをもとに売買判定を行う
+4. 判定結果をもとにシミュレーション状態を更新する
+5. コンソールへ結果を出力する
+6. CSVと状態ファイルへ保存する
 
 ## 実行仕様
 
@@ -154,9 +167,9 @@ projects/crypto-autotrading-app/
 
 ## CSV仕様
 
-* 保存先: リポジトリルート直下の `data/` ディレクトリ
-  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
-  * Docker実行時も同じパスで扱えるようにする
+* 保存先: リポジトリルート直下の `data/`
+  * パスは設定値または環境変数で指定可能にする
+  * Docker実行時はホスト側の `config/` と `data/` をコンテナへマウントして扱う
 * 1日1ファイル
 * 列:
   * 日時
@@ -170,8 +183,8 @@ projects/crypto-autotrading-app/
 ## 状態ファイル仕様
 
 * 保存先: リポジトリルート直下の `data/state.json`
-  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
-  * Docker実行時も同じパスで扱えるようにする
+  * パスは設定値または環境変数で指定可能にする
+  * Docker実行時はホスト側の `config/` と `data/` をコンテナへマウントして扱う
 * 形式: JSON
 * 内容:
   * 保有中かどうか
@@ -182,8 +195,8 @@ projects/crypto-autotrading-app/
 ## 設定ファイル仕様
 
 * 保存先: リポジトリルート直下の `config/application.yaml`
-  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
-  * Docker実行時も同じパスで扱えるようにする
+  * パスは設定値または環境変数で指定可能にする
+  * Docker実行時はホスト側の `config/` と `data/` をコンテナへマウントして扱う
 * 形式: YAML
 * セクション:
   * `app`
