@@ -43,5 +43,5 @@ kotlin {
 }
 
 application {
-    mainClass.set("com.crypto.autotrading.MainKt")
+    mainClass.set("cryptoautotrading.presentation.MainKt")
 }

@@ -8,6 +8,9 @@
       },
       "interval": {
         "equalTo": "5min"
+      },
+      "date": {
+        "matches": ".*"
       }
     }
   },

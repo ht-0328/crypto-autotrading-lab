@@ -1,4 +1,4 @@
-package com.crypto.autotrading
+package cryptoautotrading.presentation
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.URI
