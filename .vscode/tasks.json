@@ -1,0 +1,60 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Gradle: build",
+            "type": "shell",
+            "command": "./gradlew build",
+            "options": {
+                "cwd": "${workspaceFolder}/projects/crypto-autotrading-app"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gradle"
+            ]
+        },
+        {
+            "label": "Gradle: run",
+            "type": "shell",
+            "command": "./gradlew run",
+            "options": {
+                "cwd": "${workspaceFolder}/projects/crypto-autotrading-app"
+            },
+            "problemMatcher": [
+                "$gradle"
+            ]
+        },
+        {
+            "label": "Gradle: clean",
+            "type": "shell",
+            "command": "./gradlew clean",
+            "options": {
+                "cwd": "${workspaceFolder}/projects/crypto-autotrading-app"
+            },
+            "problemMatcher": [
+                "$gradle"
+            ]
+        },
+        {
+            "label": "Docker: compose up local",
+            "type": "shell",
+            "command": "docker compose -f docker/compose/local.yml up --build",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: compose down local",
+            "type": "shell",
+            "command": "docker compose -f docker/compose/local.yml down",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

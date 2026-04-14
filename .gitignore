@@ -13,7 +13,8 @@ build/
 *.iws
 
 # VS Code
-.vscode/
+.vscode/*
+!.vscode/tasks.json
 
 # Environment / Secrets
 .env
