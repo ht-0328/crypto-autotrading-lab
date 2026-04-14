@@ -34,7 +34,7 @@
 
 ## ディレクトリ構成
 
-最低限、以下の方針。
+将来的にアプリ以外のプロジェクト（分析用Pythonスクリプトや別バッチなど）を追加しやすくするため、アプリ本体のソースコードは `projects/crypto-autotrading-app/` 配下に隔離します。また、インフラや開発環境の設定はリポジトリのルートで管理し、責務を明確に分離する方針です。
 
 ```text
 .
@@ -62,21 +62,38 @@
 ```
 
 ### 主要ディレクトリの役割
-* `.devcontainer/`: VS Code Dev Containers の設定ファイル群
-* `.vscode/`: VS Code ワークスペース設定（拡張機能の推奨など）
-* `config/`: アプリケーションの設定ファイル配置ディレクトリ
-* `data/`: 実行結果のCSVや状態ファイルの保存ディレクトリ
-* `docker/`: Dockerfile や docker compose の設定ファイル群
-* `docs/`: 仕様書や開発手順などのドキュメント群
-* `projects/`: `crypto-autotrading-app` などの Kotlin CLI アプリケーションのプロジェクト群を配置するディレクトリ
+
+| ディレクトリ | 役割 |
+|---|---|
+| `.devcontainer/` | VS Code Dev Containers の設定ファイル群 |
+| `.vscode/` | VS Code ワークスペース設定（拡張機能の推奨など） |
+| `config/` | アプリケーションの設定ファイル配置ディレクトリ |
+| `data/` | 実行結果のCSVや状態ファイルの保存ディレクトリ |
+| `docker/` | Dockerfile や docker compose の設定ファイル群 |
+| `docs/` | 仕様書や開発手順などのドキュメント群 |
+| `projects/` | `crypto-autotrading-app` などの Kotlin CLI アプリケーションのプロジェクト群を配置するディレクトリ |
 
 ## パッケージ構成
 
-* `config`
-* `client`
-* `service`
-* `model`
-* `output`
+アプリ本体のパッケージ構成は以下のようにします。
+
+```text
+src/main/kotlin/
+└─ app/
+   ├─ config/
+   ├─ client/
+   ├─ service/
+   ├─ model/
+   └─ output/
+```
+
+| パッケージ | 役割 |
+|---|---|
+| `config` | 設定ファイル読み込み・設定保持クラス群 |
+| `client` | GMO API 等の外部通信クライアント群 |
+| `service` | 自動売買の判定ロジックなどビジネスロジック群 |
+| `model` | ドメインモデル・データクラス群 |
+| `output` | コンソール出力・CSV保存・JSON保存の処理群 |
 
 ## 処理分割
 
