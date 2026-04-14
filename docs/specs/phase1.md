@@ -61,10 +61,14 @@
 └─ .gitignore
 ```
 
-### config と data の配置
-* ルート直下に `config/` と `data/` を置く
-* Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
-* Docker実行時も同じパスで扱えるようにする
+### 主要ディレクトリの役割
+* `.devcontainer/`: VS Code Dev Containers の設定ファイル群
+* `.vscode/`: VS Code ワークスペース設定（拡張機能の推奨など）
+* `config/`: アプリケーションの設定ファイル配置ディレクトリ
+* `data/`: 実行結果のCSVや状態ファイルの保存ディレクトリ
+* `docker/`: Dockerfile や docker compose の設定ファイル群
+* `docs/`: 仕様書や開発手順などのドキュメント群
+* `projects/`: `crypto-autotrading-app` などの Kotlin CLI アプリケーションのプロジェクト群を配置するディレクトリ
 
 ## パッケージ構成
 
@@ -119,7 +123,9 @@
 
 ## CSV仕様
 
-* 保存先: `./data`
+* 保存先: リポジトリルート直下の `data/` ディレクトリ
+  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
+  * Docker実行時も同じパスで扱えるようにする
 * 1日1ファイル
 * 列:
   * 日時
@@ -132,7 +138,9 @@
 
 ## 状態ファイル仕様
 
-* 保存先: `./data/state.json`
+* 保存先: リポジトリルート直下の `data/state.json`
+  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
+  * Docker実行時も同じパスで扱えるようにする
 * 形式: JSON
 * 内容:
   * 保有中かどうか
@@ -142,7 +150,9 @@
 
 ## 設定ファイル仕様
 
-* 保存先: `./config/application.yaml`
+* 保存先: リポジトリルート直下の `config/application.yaml`
+  * Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
+  * Docker実行時も同じパスで扱えるようにする
 * 形式: YAML
 * セクション:
   * `app`
