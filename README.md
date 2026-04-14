@@ -22,3 +22,11 @@ Phase1では以下の機能を持つKotlin CLIアプリを作成します：
 
 ### 開発環境
 * [開発環境セットアップ手順](docs/setup/development.md)
+
+## 起動方法 (ローカル実行)
+
+本番デプロイ用ではなく、ローカルでの実行確認用として以下のコマンドで起動できます。
+
+```bash
+docker compose -f docker/compose/local.yml up --build
+```

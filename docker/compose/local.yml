@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ../../
+      dockerfile: docker/app/Dockerfile
+    container_name: crypto-autotrading
+    restart: unless-stopped
+    volumes:
+      - ../../config:/app/config
+      - ../../data:/app/data

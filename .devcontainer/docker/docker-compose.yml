@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ./dev
+    container_name: kotlin-app
+    volumes:
+      - ../../:/workspace
+    working_dir: /workspace
+    networks:
+      - container-link
+
+networks:
+  container-link:
+    name: dev.internal
+    driver: bridge

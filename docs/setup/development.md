@@ -6,6 +6,7 @@
 * devcontainer で開発する
 * Kotlin 開発支援には **必ず `Kotlin/kotlin-lsp` を使う**
   * https://github.com/Kotlin/kotlin-lsp
+  * ※ 本拡張機能は VS Code Marketplace に登録されていない場合があるため、その際は公式の Releases ページから VSIX をダウンロードし、手動でインストールしてください。
 
 ## 開発環境の参考
 
