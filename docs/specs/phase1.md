@@ -78,22 +78,36 @@
 アプリ本体のパッケージ構成は以下のようにします。
 
 ```text
-src/main/kotlin/
-└─ app/
-   ├─ config/
-   ├─ client/
-   ├─ service/
-   ├─ model/
-   └─ output/
+projects/crypto-autotrading-app/
+└─ src/
+   └─ main/
+      └─ kotlin/
+         └─ cryptoautotrading/
+            ├─ presentation/
+            ├─ application/
+            ├─ domain/
+            │  ├─ strategy/
+            │  ├─ simulation/
+            │  └─ model/
+            ├─ infrastructure/
+            │  ├─ exchange/
+            │  │  └─ gmo/
+            │  ├─ config/
+            │  └─ output/
+            └─ shared/
 ```
 
-| パッケージ | 役割 |
-|---|---|
-| `config` | 設定ファイル読み込み・設定保持クラス群 |
-| `client` | GMO API 等の外部通信クライアント群 |
-| `service` | 自動売買の判定ロジックなどビジネスロジック群 |
-| `model` | ドメインモデル・データクラス群 |
-| `output` | コンソール出力・CSV保存・JSON保存の処理群 |
+| パッケージ                         | 役割                                |
+| ----------------------------- | --------------------------------- |
+| `presentation`                | `main` 関数、CLI起動処理                 |
+| `application`                 | 5分ごとの実行制御、1回分の処理フローの組み立て          |
+| `domain.strategy`             | 買い候補、売り候補、見送り、保有中などの判定ルール         |
+| `domain.simulation`           | 仮想資金、保有状態、損益計算、シミュレーション状態の更新      |
+| `domain.model`                | 売買判定結果、価格情報、保有状態などの中心データ型         |
+| `infrastructure.exchange.gmo` | GMOコイン Public API との通信、APIレスポンス変換 |
+| `infrastructure.config`       | `application.yaml` の読み込み、設定値の変換   |
+| `infrastructure.output`       | コンソール出力、CSV出力、`state.json` 保存     |
+| `shared`                      | 共通例外、共通ユーティリティ、共通定数               |
 
 ## 処理分割
 
