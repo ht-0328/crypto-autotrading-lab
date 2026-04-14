@@ -39,18 +39,32 @@
 ```text
 .
 ├─ .devcontainer/
-├─ docker/
-│  └─ app/
-│     └─ Dockerfile
+├─ .vscode/
 ├─ config/
 │  └─ application.yaml
 ├─ data/
+├─ docker/
+│  ├─ app/
+│  │  └─ Dockerfile
+│  └─ compose/
+│     └─ local.yml
 ├─ docs/
-├─ src/
-├─ build.gradle.kts
-├─ docker-compose.yml
-└─ README.md
+├─ projects/
+│  └─ crypto-autotrading-app/
+│     ├─ build.gradle.kts
+│     ├─ settings.gradle.kts
+│     ├─ gradlew
+│     ├─ gradlew.bat
+│     ├─ gradle/
+│     └─ src/
+├─ README.md
+└─ .gitignore
 ```
+
+### config と data の配置
+* ルート直下に `config/` と `data/` を置く
+* Kotlinアプリからは実行時のカレントディレクトリ基準で参照する
+* Docker実行時も同じパスで扱えるようにする
 
 ## パッケージ構成
 
@@ -150,10 +164,10 @@
 ## 受け入れ条件
 
 * devcontainer で開発できる
-* `./gradlew build` が通る
-* `./gradlew run` が通る
+* `cd projects/crypto-autotrading-app && ./gradlew build` が通る
+* `cd projects/crypto-autotrading-app && ./gradlew run` が通る
 * GMO Public API から ticker / klines を取得できる
 * 判定処理が動く
 * CSV出力される
 * 状態ファイルが出力される
-* `docker compose up --build` で起動確認できる
+* `docker compose -f docker/compose/local.yml up --build` で起動確認できる

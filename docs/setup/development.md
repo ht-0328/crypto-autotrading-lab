@@ -2,11 +2,13 @@
 
 ## 開発前提
 
-* VS Code を使う
-* devcontainer で開発する
+* 開発は VS Code devcontainer 前提
 * Kotlin 開発支援には **必ず `Kotlin/kotlin-lsp` を使う**
   * https://github.com/Kotlin/kotlin-lsp
   * ※ 本拡張機能は VS Code Marketplace に登録されていない場合があるため、その際は公式の Releases ページから VSIX をダウンロードし、手動でインストールしてください。
+* アプリ本体は `projects/crypto-autotrading-app/` にある
+* 参考リポジトリは開発環境構成の参考であり、アプリ本体は Kotlin CLI とする
+* Spring Boot 構成にはしない
 
 ## 開発環境の参考
 
@@ -16,9 +18,15 @@
 
 ## 開発時の確認コマンド
 
-* `./gradlew build`
-* `./gradlew run`
-* `docker compose up --build`
+```bash
+cd projects/crypto-autotrading-app
+./gradlew build
+./gradlew run
+```
+
+```bash
+docker compose -f docker/compose/local.yml up --build
+```
 
 ## 実行環境方針
 
