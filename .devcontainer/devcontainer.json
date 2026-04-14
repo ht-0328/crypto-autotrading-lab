@@ -1,0 +1,20 @@
+{
+    "name": "kotlin",
+    "dockerComposeFile": [
+        "./docker/docker-compose.yml"
+    ],
+    "service": "app",
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "JetBrains.kotlin",
+                "vscjava.vscode-gradle"
+            ],
+            "settings": {
+                "kotlin.java.home": "/opt/java/openjdk",
+                "kotlin.compiler.jvmTarget": "17"
+            }
+        }
+    }
+}
