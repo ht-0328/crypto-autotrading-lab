@@ -1,6 +1,7 @@
 package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
+import cryptoautotrading.infrastructure.config.ConfigLoader
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
@@ -11,11 +12,15 @@ fun main() = runBlocking {
     logger.info { "Hello, Crypto Auto-Trading Lab!" }
 
     try {
+        // Load configuration
+        val config = ConfigLoader.load()
+        logger.info { "Configuration loaded successfully." }
+
         // Use wiremock hostname when running in docker compose, or localhost when running on host.
         val wiremockUrl = System.getenv("WIREMOCK_URL") ?: "http://localhost:8080"
 
         GmoPublicApiClient(wiremockUrl).use { apiClient ->
-            val app = TradingApplication(apiClient)
+            val app = TradingApplication(config, apiClient)
 
             app.run()
         }

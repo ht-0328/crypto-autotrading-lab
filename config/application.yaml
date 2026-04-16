@@ -1,0 +1,13 @@
+app:
+  interval: "5min"
+trading:
+  symbol: "BTC"
+  initial_capital: 10000
+  trade_amount: 1000
+  buy_threshold: 0.005
+  sell_threshold: 0.005
+api:
+  retry_count: 3
+output:
+  output_path: "data/trades.csv"
+  state_path: "data/state.json"
