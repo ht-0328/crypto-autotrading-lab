@@ -8,15 +8,18 @@ import kotlinx.coroutines.runBlocking
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * アプリケーションのエントリーポイント
+ */
 fun main() = runBlocking {
     logger.info { "Hello, Crypto Auto-Trading Lab!" }
 
     try {
-        // Load configuration
+        // 設定を読み込む
         val config = ConfigLoader.load()
-        logger.info { "Configuration loaded successfully." }
+        logger.info { "設定の読み込みが完了しました。" }
 
-        // Use wiremock hostname when running in docker compose, or localhost when running on host.
+        // Docker Composeで実行する場合はwiremockのホスト名を、ホストで実行する場合はlocalhostを使用する
         val wiremockUrl = System.getenv("WIREMOCK_URL") ?: "http://localhost:8080"
 
         GmoPublicApiClient(wiremockUrl).use { apiClient ->
