@@ -4,6 +4,12 @@ import cryptoautotrading.domain.model.AppConfig
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 
+/**
+ * トレーディングアプリケーションのメインロジックを実行するクラス
+ *
+ * @property config アプリケーション設定
+ * @property apiClient GMOパブリックAPIクライアント
+ */
 class TradingApplication(
     private val config: AppConfig,
     private val apiClient: GmoPublicApiClient
@@ -11,6 +17,9 @@ class TradingApplication(
 
     private val logger = KotlinLogging.logger {}
 
+    /**
+     * アプリケーションの実行を開始する
+     */
     suspend fun run() {
         try {
             logger.info { "Running trading application with config: $config" }

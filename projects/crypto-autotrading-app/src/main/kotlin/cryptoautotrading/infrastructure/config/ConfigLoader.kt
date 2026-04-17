@@ -7,21 +7,30 @@ import cryptoautotrading.domain.model.AppConfig
 import java.io.File
 import java.nio.file.Paths
 
+/**
+ * 設定ファイルを読み込むためのオブジェクト
+ */
 object ConfigLoader {
 
     private val mapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
 
+    /**
+     * アプリケーション設定を読み込む
+     *
+     * @return 読み込んだAppConfig
+     * @throws IllegalArgumentException 設定ファイルが見つからない場合
+     */
     fun load(): AppConfig {
         val configPathEnv = System.getenv("APP_CONFIG_PATH")
         val configPath = if (!configPathEnv.isNullOrBlank()) {
             configPathEnv
         } else {
-            // Find config file starting from current dir or project root
+            // カレントディレクトリまたはプロジェクトルートから設定ファイルを探す
             val defaultPath = "config/application.yaml"
             if (File(defaultPath).exists()) {
                 defaultPath
             } else {
-                // If running from projects/crypto-autotrading-app, fallback to repo root config
+                // projects/crypto-autotrading-appから実行している場合、リポジトリルートの設定にフォールバックする
                 "../../config/application.yaml"
             }
         }
