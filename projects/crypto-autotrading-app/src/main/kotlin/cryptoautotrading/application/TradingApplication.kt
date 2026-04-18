@@ -24,9 +24,24 @@ class TradingApplication(
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val stateRepository = StateRepository(config.output.statePath)
-    private val csvRepository = CsvRepository(config.output.outputPath)
+    private val stateRepository: StateRepository
+    private val csvRepository: CsvRepository
     private val simulationService = SimulationService()
+
+    init {
+        val dataDirEnv = System.getenv("APP_DATA_DIR")
+        val dataDirPath = if (!dataDirEnv.isNullOrBlank()) {
+            dataDirEnv
+        } else {
+            java.io.File(config.output.dataDir).absolutePath
+        }
+
+        val statePath = java.nio.file.Paths.get(dataDirPath, config.output.statePath).toString()
+        val csvPath = java.nio.file.Paths.get(dataDirPath, config.output.outputPath).toString()
+
+        stateRepository = StateRepository(statePath)
+        csvRepository = CsvRepository(csvPath)
+    }
 
     /**
      * アプリケーションの実行を開始する

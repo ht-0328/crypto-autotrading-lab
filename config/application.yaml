@@ -23,7 +23,9 @@ api:
 
 # データ出力関連の設定
 output:
-  # 取引履歴を出力するCSVファイルのパス
-  output_path: "data/trades.csv"
-  # アプリケーションの状態を保存するJSONファイルのパス
-  state_path: "data/state.json"
+  # データの出力先ディレクトリ（環境変数APP_DATA_DIRがない場合のフォールバック）
+  data_dir: "../../data"
+  # 取引履歴を出力するCSVファイル名
+  output_path: "trades.csv"
+  # アプリケーションの状態を保存するJSONファイル名
+  state_path: "state.json"
