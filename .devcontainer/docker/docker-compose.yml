@@ -5,6 +5,7 @@ services:
     build:
       context: ./dev
     container_name: kotlin-app
+    command: sleep infinity
     volumes:
       - ../../:/workspace
     working_dir: /workspace
