@@ -1,11 +1,16 @@
 package cryptoautotrading.application
 
 import cryptoautotrading.domain.model.AppConfig
+import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.simulation.SimulationService
 import cryptoautotrading.domain.strategy.TradingStrategy
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
+import cryptoautotrading.infrastructure.output.ConsoleOutput
+import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 /**
  * トレーディングアプリケーションのメインロジックを実行するクラス
@@ -20,6 +25,7 @@ class TradingApplication(
 
     private val logger = KotlinLogging.logger {}
     private val stateRepository = StateRepository(config.output.statePath)
+    private val csvRepository = CsvRepository(config.output.outputPath)
     private val simulationService = SimulationService()
 
     /**
@@ -48,6 +54,22 @@ class TradingApplication(
             // 4. 状態の更新
             // 最新のK線の終値を現在価格とする
             val currentPrice = klineResponse.data.sortedBy { it.openTime }.last().close.toDouble()
+
+            // 損益と想定損益の計算
+            var profitAndLoss = 0.0
+            var estimatedProfitAndLoss = 0.0
+            val fee = 0.0 // Phase1 では手数料ゼロとする
+
+            if (currentState.isHolding) {
+                // 保有中の場合は現在価格との差分で想定損益を計算
+                estimatedProfitAndLoss = (currentPrice - currentState.buyPrice) * currentState.holdingAmount
+
+                // 売却する場合は実際の損益となる
+                if (decision.action == TradeAction.SELL_CANDIDATE) {
+                    profitAndLoss = estimatedProfitAndLoss
+                }
+            }
+
             val nextState = simulationService.updateState(
                 currentState = currentState,
                 decision = decision,
@@ -56,7 +78,29 @@ class TradingApplication(
             )
             logger.info { "Next Simulation State: $nextState" }
 
-            // 5. 状態の保存
+            // 5. 出力
+            // コンソール出力
+            ConsoleOutput.printResult(
+                price = currentPrice,
+                action = decision.action,
+                reason = decision.reason,
+                profitAndLoss = profitAndLoss,
+                estimatedProfitAndLoss = estimatedProfitAndLoss
+            )
+
+            // CSV出力
+            val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            csvRepository.append(
+                datetime = nowStr,
+                price = currentPrice,
+                sign = decision.action.description,
+                reason = decision.reason,
+                profitAndLoss = profitAndLoss,
+                isHolding = nextState.isHolding,
+                fee = fee
+            )
+
+            // 6. 状態の保存
             stateRepository.save(nextState)
 
         } catch (e: Exception) {
