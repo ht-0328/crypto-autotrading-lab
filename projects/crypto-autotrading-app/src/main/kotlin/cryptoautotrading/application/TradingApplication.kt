@@ -1,6 +1,7 @@
 package cryptoautotrading.application
 
 import cryptoautotrading.domain.model.AppConfig
+import cryptoautotrading.domain.strategy.TradingStrategy
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 
@@ -29,6 +30,10 @@ class TradingApplication(
 
             val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, "20231001")
             logger.info { "Klines Response: $klineResponse" }
+
+            val strategy = TradingStrategy()
+            val decision = strategy.judge(klineResponse.data, false)
+            logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
         } catch (e: Exception) {
             logger.error(e) { "Failed to get data from API" }
         }
