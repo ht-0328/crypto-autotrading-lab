@@ -30,14 +30,12 @@ class TradingApplication(
 
     init {
         val dataDirEnv = System.getenv("APP_DATA_DIR")
-        val dataDirPath = if (!dataDirEnv.isNullOrBlank()) {
-            dataDirEnv
-        } else {
-            java.io.File(config.output.dataDir).absolutePath
+        if (dataDirEnv.isNullOrBlank()) {
+            throw IllegalStateException("APP_DATA_DIR is not set")
         }
 
-        val statePath = java.nio.file.Paths.get(dataDirPath, config.output.statePath).toString()
-        val csvPath = java.nio.file.Paths.get(dataDirPath, config.output.outputPath).toString()
+        val statePath = java.nio.file.Paths.get(dataDirEnv, config.output.statePath).toString()
+        val csvPath = java.nio.file.Paths.get(dataDirEnv, config.output.outputPath).toString()
 
         stateRepository = StateRepository(statePath)
         csvRepository = CsvRepository(csvPath)
