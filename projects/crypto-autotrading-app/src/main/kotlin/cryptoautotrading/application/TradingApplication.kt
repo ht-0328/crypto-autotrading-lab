@@ -24,9 +24,22 @@ class TradingApplication(
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val stateRepository = StateRepository(config.output.statePath)
-    private val csvRepository = CsvRepository(config.output.outputPath)
+    private val stateRepository: StateRepository
+    private val csvRepository: CsvRepository
     private val simulationService = SimulationService()
+
+    init {
+        val dataDirEnv = System.getenv("APP_DATA_DIR")
+        if (dataDirEnv.isNullOrBlank()) {
+            throw IllegalStateException("APP_DATA_DIR is not set")
+        }
+
+        val statePath = java.nio.file.Paths.get(dataDirEnv, config.output.statePath).toString()
+        val csvPath = java.nio.file.Paths.get(dataDirEnv, config.output.outputPath).toString()
+
+        stateRepository = StateRepository(statePath)
+        csvRepository = CsvRepository(csvPath)
+    }
 
     /**
      * アプリケーションの実行を開始する

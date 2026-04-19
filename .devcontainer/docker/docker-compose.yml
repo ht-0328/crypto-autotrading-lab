@@ -11,6 +11,8 @@ services:
     working_dir: /workspace
     environment:
       - WIREMOCK_URL=http://wiremock:8080
+      - APP_DATA_DIR=/workspace/data
+      - APP_CONFIG_PATH=/workspace/config/application.yaml
     networks:
       - container-link
 
