@@ -15,11 +15,5 @@
                 "kotlin.compiler.jvmTarget": "17"
             }
         }
-    },
-    "mounts": [
-        "source=${localEnv:SSH_AUTH_SOCK},target=/ssh-agent,type=bind"
-    ],
-    "remoteEnv": {
-        "SSH_AUTH_SOCK": "/ssh-agent"
     }
 }
