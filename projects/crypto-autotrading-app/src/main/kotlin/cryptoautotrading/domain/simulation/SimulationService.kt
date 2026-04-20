@@ -3,6 +3,7 @@ package cryptoautotrading.domain.simulation
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -10,6 +11,8 @@ import java.time.format.DateTimeFormatter
  * シミュレーションの状態を更新するサービス
  */
 class SimulationService {
+
+    private val logger = KotlinLogging.logger {}
 
     /**
      * 売買判定結果に基づいてシミュレーション状態を更新する
@@ -26,9 +29,12 @@ class SimulationService {
         currentPrice: Double,
         tradeAmount: Int
     ): SimulationState {
+        logger.info { "シミュレーション状態の更新処理を開始します" }
+        logger.debug { "更新前状態: $currentState, 判定結果: ${decision.action}, 現在価格: $currentPrice, 取引額: $tradeAmount" }
+
         val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
-        return when (decision.action) {
+        val nextState = when (decision.action) {
             TradeAction.BUY_CANDIDATE -> {
                 if (!currentState.isHolding) {
                     // 購入する
@@ -63,5 +69,10 @@ class SimulationService {
                 currentState.copy(lastUpdatedAt = nowStr)
             }
         }
+
+        logger.info { "シミュレーション状態の更新が完了しました" }
+        logger.debug { "更新後状態: $nextState" }
+
+        return nextState
     }
 }

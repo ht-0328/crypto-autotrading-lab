@@ -47,17 +47,21 @@ class StateRepository(private val stateFilePath: String) {
      * @param state 保存するシミュレーション状態
      */
     fun save(state: SimulationState) {
+        logger.info { "状態ファイル (state.json) の保存処理を開始します" }
         try {
             val file = File(stateFilePath)
+
+            logger.debug { "状態ファイル保存先: ${file.absolutePath}" }
+
             val parentDir = file.parentFile
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs()
             }
             val content = json.encodeToString(state)
             file.writeText(content)
-            logger.info { "Successfully saved state to $stateFilePath" }
+            logger.info { "状態ファイルを保存しました: $stateFilePath" }
         } catch (e: Exception) {
-            logger.error(e) { "Failed to save state to $stateFilePath" }
+            logger.error(e) { "状態ファイルの保存に失敗しました。パス: $stateFilePath, 保存しようとした状態: $state" }
         }
     }
 }

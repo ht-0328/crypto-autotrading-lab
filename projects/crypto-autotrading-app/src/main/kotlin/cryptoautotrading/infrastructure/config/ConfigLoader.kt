@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import cryptoautotrading.domain.model.AppConfig
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 import java.nio.file.Paths
 
@@ -12,6 +13,7 @@ import java.nio.file.Paths
  */
 object ConfigLoader {
 
+    private val logger = KotlinLogging.logger {}
     private val mapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
 
     /**
@@ -21,6 +23,8 @@ object ConfigLoader {
      * @throws IllegalArgumentException 設定ファイルが見つからない場合
      */
     fun load(): AppConfig {
+        logger.info { "ConfigLoader: 設定ファイルの読み込みを開始します" }
+
         val configPathEnv = System.getenv("APP_CONFIG_PATH")
         val configPath = if (!configPathEnv.isNullOrBlank()) {
             configPathEnv
@@ -36,10 +40,17 @@ object ConfigLoader {
         }
 
         val file = File(configPath)
+
+        logger.debug { "ConfigLoader: 実際に読み込むファイルの絶対パス = ${file.absolutePath}" }
+
         if (!file.exists()) {
-            throw IllegalArgumentException("Configuration file not found at: ${file.absolutePath}")
+            val errorMsg = "設定ファイルが見つかりません: ${file.absolutePath}"
+            logger.error { errorMsg }
+            throw IllegalArgumentException(errorMsg)
         }
 
-        return mapper.readValue(file, AppConfig::class.java)
+        val config = mapper.readValue(file, AppConfig::class.java)
+        logger.info { "ConfigLoader: 設定ファイルの読み込みが完了しました" }
+        return config
     }
 }

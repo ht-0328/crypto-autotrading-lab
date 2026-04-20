@@ -3,6 +3,7 @@ package cryptoautotrading.domain.strategy
 import cryptoautotrading.domain.model.Kline
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.math.max
 import kotlin.math.min
 
@@ -10,6 +11,8 @@ import kotlin.math.min
  * 売買判定を行う戦略クラス
  */
 class TradingStrategy {
+
+    private val logger = KotlinLogging.logger {}
 
     /**
      * K線データと保有状態から売買判定を行う
@@ -19,11 +22,16 @@ class TradingStrategy {
      * @return 判定結果
      */
     fun judge(klines: List<Kline>, isHolding: Boolean): TradeDecision {
+        logger.info { "売買判定を開始します" }
+        logger.debug { "入力値: K線データ件数=${klines.size}, 保有状態=$isHolding" }
+
         // 直近12本のデータのみを使用（1時間が対象）
         val recentKlines = klines.sortedBy { it.openTime }.takeLast(12)
 
         if (recentKlines.size < 12) {
-            return TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "データ不足（12本未満）")
+            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "データ不足（12本未満）")
+            logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+            return decision
         }
 
         // K線の各価格はStringなのでDoubleに変換する
@@ -41,7 +49,9 @@ class TradingStrategy {
         val hourFluctuation = (maxHigh - minLow) / minLow
 
         if (hourFluctuation < 0.003) {
-            return TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近1時間の変動が 0.3%未満")
+            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近1時間の変動が 0.3%未満")
+            logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+            return decision
         }
 
         // 2. 直近15分の変動チェック
@@ -51,24 +61,34 @@ class TradingStrategy {
         val change15Min = (latestClose - startOf15MinOpen) / startOf15MinOpen
 
         if (change15Min <= -0.01) {
-            return TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で 1.0%以上下落")
+            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で 1.0%以上下落")
+            logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+            return decision
         }
 
         if (change15Min >= 0.01) {
-            return TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で 1.0%以上上昇")
+            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で 1.0%以上上昇")
+            logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+            return decision
         }
 
         // 3. 1時間の変動による売買サインの判定
         val hourChange = (latestClose - oldestOpen) / oldestOpen
 
         if (!isHolding && hourChange <= -0.005) {
-            return TradeDecision(TradeAction.BUY_CANDIDATE, "0.5%下落")
+            val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "0.5%下落")
+            logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+            return decision
         }
 
         if (isHolding && hourChange >= 0.005) {
-            return TradeDecision(TradeAction.SELL_CANDIDATE, "0.5%上昇")
+            val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "0.5%上昇")
+            logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+            return decision
         }
 
-        return TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "条件に合致せず")
+        val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "条件に合致せず")
+        logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+        return decision
     }
 }
