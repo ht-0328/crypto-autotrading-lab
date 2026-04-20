@@ -19,10 +19,10 @@ fun main() = runBlocking {
         val config = ConfigLoader.load()
         logger.info { "設定の読み込みが完了しました。" }
 
-        // Docker Composeで実行する場合はwiremockのホスト名を、ホストで実行する場合はlocalhostを使用する
-        val wiremockUrl = System.getenv("WIREMOCK_URL") ?: "http://localhost:8080"
+        // APIのベースURLを取得する。環境変数(API_BASE_URL)、設定ファイル、デフォルト値の順に優先する
+        val baseUrl = System.getenv("API_BASE_URL") ?: config.api.baseUrl ?: "https://api.coin.z.com"
 
-        GmoPublicApiClient(wiremockUrl).use { apiClient ->
+        GmoPublicApiClient(baseUrl).use { apiClient ->
             val app = TradingApplication(config, apiClient)
 
             app.run()
