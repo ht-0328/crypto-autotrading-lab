@@ -2,13 +2,12 @@ package cryptoautotrading.infrastructure.exchange.gmo
 
 import cryptoautotrading.domain.model.KlineResponse
 import cryptoautotrading.domain.model.TickerResponse
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
-import io.ktor.serialization.kotlinx.json.json
+import io.ktor.client.statement.bodyAsText
 import kotlinx.serialization.json.Json
 
 /**
@@ -18,13 +17,9 @@ import kotlinx.serialization.json.Json
  */
 class GmoPublicApiClient(private val baseUrl: String) : AutoCloseable {
 
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                ignoreUnknownKeys = true
-            })
-        }
-    }
+    private val logger = KotlinLogging.logger {}
+    private val client = HttpClient(CIO)
+    private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * 最新のティッカー情報を取得する
@@ -33,9 +28,26 @@ class GmoPublicApiClient(private val baseUrl: String) : AutoCloseable {
      * @return ティッカーレスポンス
      */
     suspend fun getTicker(symbol: String): TickerResponse {
-        return client.get("$baseUrl/public/v1/ticker") {
-            parameter("symbol", symbol)
-        }.body()
+        val url = "$baseUrl/public/v1/ticker"
+        logger.info { "ティッカー情報の取得を開始します" }
+        logger.debug { "APIリクエスト: GET $url?symbol=$symbol" }
+
+        return try {
+            val response = client.get(url) {
+                parameter("symbol", symbol)
+            }
+            val statusCode = response.status.value
+            val rawBody = response.bodyAsText()
+
+            logger.debug { "APIレスポンス (HTTP $statusCode): $rawBody" }
+
+            val decoded = json.decodeFromString<TickerResponse>(rawBody)
+            logger.info { "ティッカー情報の取得が完了しました" }
+            decoded
+        } catch (e: Exception) {
+            logger.error(e) { "ティッカー情報の取得に失敗しました。URL: $url, symbol: $symbol" }
+            throw e
+        }
     }
 
     /**
@@ -47,11 +59,28 @@ class GmoPublicApiClient(private val baseUrl: String) : AutoCloseable {
      * @return K線レスポンス
      */
     suspend fun getKlines(symbol: String, interval: String, date: String): KlineResponse {
-        return client.get("$baseUrl/public/v1/klines") {
-            parameter("symbol", symbol)
-            parameter("interval", interval)
-            parameter("date", date)
-        }.body()
+        val url = "$baseUrl/public/v1/klines"
+        logger.info { "K線データ取得APIを呼び出します: $date" }
+        logger.debug { "APIリクエスト: GET $url?symbol=$symbol&interval=$interval&date=$date" }
+
+        return try {
+            val response = client.get(url) {
+                parameter("symbol", symbol)
+                parameter("interval", interval)
+                parameter("date", date)
+            }
+            val statusCode = response.status.value
+            val rawBody = response.bodyAsText()
+
+            logger.debug { "APIレスポンス本文 (HTTP $statusCode): $rawBody" }
+
+            val decoded = json.decodeFromString<KlineResponse>(rawBody)
+            logger.info { "K線データの取得が完了しました" }
+            decoded
+        } catch (e: Exception) {
+            logger.error(e) { "K線データの取得に失敗しました。URL: $url, symbol: $symbol, interval: $interval, date: $date" }
+            throw e
+        }
     }
 
     /**

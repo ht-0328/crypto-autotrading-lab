@@ -48,19 +48,22 @@ class TradingApplication(
      */
     suspend fun run() {
         try {
-            logger.info { "Running trading application with config: $config" }
+            logger.info { "TradingApplication のメイン処理を開始します" }
+            logger.debug { "実行設定: $config" }
 
             // 1. 状態の読み込み
             val currentState = stateRepository.load()
-            logger.info { "Current Simulation State: $currentState" }
+            logger.info { "現在のシミュレーション状態を読み込みました" }
+            logger.debug { "読み込んだ状態: $currentState" }
 
             // 2. APIからデータの取得
             val tickerResponse = apiClient.getTicker(config.trading.symbol)
-            logger.info { "Ticker Response: $tickerResponse" }
+            val ticker = tickerResponse.data.firstOrNull()
+            logger.debug { "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, bid=${ticker?.bid}, ask=${ticker?.ask}" }
 
             val today = ZonedDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ofPattern("yyyyMMdd"))
             val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, today)
-            logger.info { "Klines Response: $klineResponse" }
+            logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
 
             // 3. 売買判定
             val strategy = TradingStrategy()
@@ -123,8 +126,10 @@ class TradingApplication(
             // 6. 状態の保存
             stateRepository.save(nextState)
 
+            logger.info { "TradingApplication のメイン処理が正常に完了しました" }
+
         } catch (e: Exception) {
-            logger.error(e) { "Failed to run trading application" }
+            logger.error(e) { "TradingApplication の実行中にエラーが発生しました: ${e.message}" }
         }
     }
 }
