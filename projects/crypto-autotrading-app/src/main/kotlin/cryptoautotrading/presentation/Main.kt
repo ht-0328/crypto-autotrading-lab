@@ -19,8 +19,8 @@ fun main() = runBlocking {
         val config = ConfigLoader.load()
         logger.info { "設定の読み込みが完了しました。" }
 
-        // APIのベースURLを取得する。環境変数(API_BASE_URL)、設定ファイル、デフォルト値の順に優先する
-        val baseUrl = System.getenv("API_BASE_URL") ?: config.api.baseUrl ?: "https://api.coin.z.com"
+        // APIのベースURLを設定ファイルから取得する
+        val baseUrl = config.api.baseUrl ?: "https://api.coin.z.com"
 
         GmoPublicApiClient(baseUrl).use { apiClient ->
             val app = TradingApplication(config, apiClient)

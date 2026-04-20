@@ -27,6 +27,24 @@ Phase1では以下の機能を持つKotlin CLIアプリを作成します：
 
 本番デプロイ用ではなく、ローカルでの実行確認用として以下のコマンドで起動できます。
 
+GMO Public API で実行する場合:
+
+```bash
+cd /workspace/projects/crypto-autotrading-app
+./gradlew run
+# または明示的に指定する場合
+# APP_CONFIG_PATH=/workspace/config/application-gmo.yaml ./gradlew run
+```
+
+WireMock で実行する場合:
+
+```bash
+cd /workspace/projects/crypto-autotrading-app
+APP_CONFIG_PATH=/workspace/config/application-wiremock.yaml ./gradlew run
+```
+
+Docker Compose を使用する場合:
+
 ```bash
 docker compose -f docker/compose/local.yml up --build
 ```

@@ -11,9 +11,8 @@ services:
       - ${HOME}/.ssh:/root/.ssh:ro
     working_dir: /workspace
     environment:
-      - API_BASE_URL=http://wiremock:8080
       - APP_DATA_DIR=/workspace/data
-      - APP_CONFIG_PATH=/workspace/config/application.yaml
+      - APP_CONFIG_PATH=/workspace/config/application-wiremock.yaml
     networks:
       - container-link
 
