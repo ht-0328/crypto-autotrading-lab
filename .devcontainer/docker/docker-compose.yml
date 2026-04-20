@@ -8,6 +8,7 @@ services:
     command: sleep infinity
     volumes:
       - ../../:/workspace
+      - ${HOME}/.ssh:/root/.ssh:ro
     working_dir: /workspace
     environment:
       - API_BASE_URL=http://wiremock:8080
