@@ -10,6 +10,8 @@ import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 /**
@@ -56,7 +58,8 @@ class TradingApplication(
             val tickerResponse = apiClient.getTicker(config.trading.symbol)
             logger.info { "Ticker Response: $tickerResponse" }
 
-            val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, "20231001")
+            val today = ZonedDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+            val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, today)
             logger.info { "Klines Response: $klineResponse" }
 
             // 3. 売買判定
@@ -65,7 +68,11 @@ class TradingApplication(
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
 
             // 4. 状態の更新
-            // 最新のK線の終値を現在価格とする
+            // 最新のK線の終値を現在価格とする。データが空の場合は終了する
+            if (klineResponse.data.isEmpty()) {
+                logger.warn { "Klines data is empty. Skipping this run." }
+                return
+            }
             val currentPrice = klineResponse.data.sortedBy { it.openTime }.last().close.toDouble()
 
             // 損益と想定損益の計算
