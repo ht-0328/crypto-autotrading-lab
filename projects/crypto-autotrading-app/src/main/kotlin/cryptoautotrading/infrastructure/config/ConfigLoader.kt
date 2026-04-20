@@ -26,12 +26,12 @@ object ConfigLoader {
             configPathEnv
         } else {
             // カレントディレクトリまたはプロジェクトルートから設定ファイルを探す
-            val defaultPath = "config/application.yaml"
+            val defaultPath = "config/application-gmo.yaml"
             if (File(defaultPath).exists()) {
                 defaultPath
             } else {
-                // projects/crypto-autotrading-appから実行している場合、リポジトリルートの設定にフォールバックする
-                "../../config/application.yaml"
+                // projects/crypto-autotrading-appから実行している場合、絶対パスの/workspace/config/application-gmo.yamlにフォールバックする
+                "/workspace/config/application-gmo.yaml"
             }
         }
 
