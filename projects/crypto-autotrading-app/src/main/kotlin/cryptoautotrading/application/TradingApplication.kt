@@ -71,7 +71,7 @@ class TradingApplication(
             logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
 
             // 3. 売買判定
-            val strategy = TradingStrategy()
+            val strategy = TradingStrategy(config.trading)
             val decision = strategy.judge(klineResponse.data, currentState.isHolding)
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
 

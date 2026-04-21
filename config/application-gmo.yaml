@@ -15,6 +15,10 @@ trading:
   buy_threshold: 0.005
   # 売り注文を出す閾値（例: 0.005 は 0.5%）
   sell_threshold: 0.005
+  # ボラティリティの閾値（例: 0.003 は 0.3%）
+  volatility_threshold: 0.003
+  # 急変動の閾値（例: 0.01 は 1.0%）
+  sharp_change_threshold: 0.01
 
 # 外部API関連の設定
 api:

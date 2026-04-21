@@ -15,10 +15,12 @@ import kotlinx.serialization.json.Json
  *
  * @property baseUrl APIのベースURL
  */
-class GmoPublicApiClient(private val baseUrl: String) : AutoCloseable {
+class GmoPublicApiClient(
+    private val baseUrl: String,
+    private val client: HttpClient = HttpClient(CIO)
+) : AutoCloseable {
 
     private val logger = KotlinLogging.logger {}
-    private val client = HttpClient(CIO)
     private val json = Json { ignoreUnknownKeys = true }
 
     /**
