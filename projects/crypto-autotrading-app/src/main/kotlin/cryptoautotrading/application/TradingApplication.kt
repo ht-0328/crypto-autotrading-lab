@@ -61,8 +61,13 @@ class TradingApplication(
             val ticker = tickerResponse.data.firstOrNull()
             logger.debug { "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, bid=${ticker?.bid}, ask=${ticker?.ask}" }
 
-            val today = ZonedDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-            val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, today)
+            val nowJst = ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
+            val targetDate = if (nowJst.hour < 6) {
+                nowJst.minusDays(1)
+            } else {
+                nowJst
+            }.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+            val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
             logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
 
             // 3. 売買判定
