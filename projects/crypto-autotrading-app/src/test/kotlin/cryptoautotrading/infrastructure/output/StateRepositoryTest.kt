@@ -9,7 +9,7 @@ import java.nio.file.Path
 class StateRepositoryTest {
 
     @Test
-    fun `save and load should persist and retrieve state correctly`(@TempDir tempDir: Path) {
+    fun `状態の保存と読み込みが正しく行われること`(@TempDir tempDir: Path) {
         // Arrange
         val stateFilePath = tempDir.resolve("state.json").toAbsolutePath().toString()
         val repository = StateRepository(stateFilePath)
@@ -32,7 +32,7 @@ class StateRepositoryTest {
     }
 
     @Test
-    fun `load should return default state when file does not exist`(@TempDir tempDir: Path) {
+    fun `ファイルが存在しない場合は初期状態を返すこと`(@TempDir tempDir: Path) {
         // Arrange
         val stateFilePath = tempDir.resolve("non_existent_state.json").toAbsolutePath().toString()
         val repository = StateRepository(stateFilePath)

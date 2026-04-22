@@ -32,7 +32,7 @@ class GmoPublicApiClientTest {
     }
 
     @Test
-    fun `getTicker should parse response correctly on success`() = runTest {
+    fun `getTickerが成功時に正しくレスポンスをパースできること`() = runTest {
         // Arrange
         val jsonResponse = """
             {
@@ -80,7 +80,7 @@ class GmoPublicApiClientTest {
     }
 
     @Test
-    fun `getKlines should parse response correctly on success`() = runTest {
+    fun `getKlinesが成功時に正しくレスポンスをパースできること`() = runTest {
         // Arrange
         val jsonResponse = """
             {
@@ -126,7 +126,7 @@ class GmoPublicApiClientTest {
     }
 
     @Test
-    fun `getTicker should throw exception on non-200 response`() = runTest {
+    fun `getTickerが200以外のレスポンス時に例外をスローすること`() = runTest {
         // Arrange
         val mockEngine = MockEngine { request ->
             respond(

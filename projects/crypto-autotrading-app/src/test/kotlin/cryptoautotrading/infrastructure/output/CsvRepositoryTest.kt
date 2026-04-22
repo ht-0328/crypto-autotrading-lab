@@ -9,7 +9,7 @@ import java.nio.file.Path
 class CsvRepositoryTest {
 
     @Test
-    fun `append should write header if file does not exist and append a row`(@TempDir tempDir: Path) {
+    fun `ファイルが存在しない場合はヘッダーを書き込み、行を追記できること`(@TempDir tempDir: Path) {
         // Arrange
         val csvFile = tempDir.resolve("trades.csv").toFile()
         val repository = CsvRepository(csvFile.absolutePath)
@@ -37,7 +37,7 @@ class CsvRepositoryTest {
     }
 
     @Test
-    fun `append should append to existing file without writing header again`(@TempDir tempDir: Path) {
+    fun `ファイルが存在する場合はヘッダーを書き込まずに行を追記できること`(@TempDir tempDir: Path) {
         // Arrange
         val dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
         val actualCsvFile = tempDir.resolve("trades_$dateStr.csv").toFile()

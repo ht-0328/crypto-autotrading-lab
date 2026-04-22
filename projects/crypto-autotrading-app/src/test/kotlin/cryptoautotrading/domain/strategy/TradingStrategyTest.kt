@@ -30,7 +30,7 @@ class TradingStrategyTest {
     }
 
     @Test
-    fun `judge should return SKIP or HOLDING due to insufficient data`() {
+    fun `データ不足の場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
         val strategy = TradingStrategy(defaultConfig)
         val klines = listOf(createKline("1", "100", "110", "90", "100"))
@@ -46,7 +46,7 @@ class TradingStrategyTest {
     }
 
     @Test
-    fun `judge should return SKIP or HOLDING due to low volatility`() {
+    fun `低ボラティリティの場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
         val strategy = TradingStrategy(defaultConfig)
         // 12 klines with very low volatility (high-low variation < 0.3%)
@@ -65,7 +65,7 @@ class TradingStrategyTest {
     }
 
     @Test
-    fun `judge should return SKIP or HOLDING due to sharp drop in last 15 mins`() {
+    fun `直近15分で急落した場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
         val strategy = TradingStrategy(defaultConfig)
         val klines = (1..12).map { i ->
@@ -89,7 +89,7 @@ class TradingStrategyTest {
     }
 
     @Test
-    fun `judge should return SKIP or HOLDING due to sharp rise in last 15 mins`() {
+    fun `直近15分で急騰した場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
         val strategy = TradingStrategy(defaultConfig)
         val klines = (1..12).map { i ->
@@ -113,7 +113,7 @@ class TradingStrategyTest {
     }
 
     @Test
-    fun `judge should return BUY_CANDIDATE when not holding and dropped more than 0_5 percent`() {
+    fun `未保有かつ条件を満たす下落が発生した場合はBUY_CANDIDATEを返すこと`() {
         // Arrange
         val strategy = TradingStrategy(defaultConfig)
         val klines = (1..12).map { i ->
@@ -132,7 +132,7 @@ class TradingStrategyTest {
     }
 
     @Test
-    fun `judge should return SELL_CANDIDATE when holding and rose more than 0_5 percent`() {
+    fun `保有中かつ条件を満たす上昇が発生した場合はSELL_CANDIDATEを返すこと`() {
         // Arrange
         val strategy = TradingStrategy(defaultConfig)
         val klines = (1..12).map { i ->

@@ -12,7 +12,7 @@ class SimulationServiceTest {
     private val simulationService = SimulationService()
 
     @Test
-    fun `updateState should buy when decision is BUY_CANDIDATE and not holding`() {
+    fun `判定がBUY_CANDIDATEかつ未保有の場合、購入状態に更新されること`() {
         // Arrange
         val currentState = SimulationState(
             isHolding = false,
@@ -35,7 +35,7 @@ class SimulationServiceTest {
     }
 
     @Test
-    fun `updateState should maintain state when decision is BUY_CANDIDATE but already holding`() {
+    fun `判定がBUY_CANDIDATEかつ既に保有中の場合、状態が維持されること`() {
         // Arrange
         val currentState = SimulationState(
             isHolding = true,
@@ -58,7 +58,7 @@ class SimulationServiceTest {
     }
 
     @Test
-    fun `updateState should sell when decision is SELL_CANDIDATE and holding`() {
+    fun `判定がSELL_CANDIDATEかつ保有中の場合、売却されて未保有状態に更新されること`() {
         // Arrange
         val currentState = SimulationState(
             isHolding = true,
@@ -81,7 +81,7 @@ class SimulationServiceTest {
     }
 
     @Test
-    fun `updateState should maintain state when decision is SELL_CANDIDATE but not holding`() {
+    fun `判定がSELL_CANDIDATEかつ未保有の場合、状態が維持されること`() {
         // Arrange
         val currentState = SimulationState(
             isHolding = false,
@@ -104,7 +104,7 @@ class SimulationServiceTest {
     }
 
     @Test
-    fun `updateState should maintain state when decision is SKIP`() {
+    fun `判定がSKIPの場合、状態が維持されること`() {
         // Arrange
         val currentState = SimulationState(
             isHolding = false,
@@ -127,7 +127,7 @@ class SimulationServiceTest {
     }
 
     @Test
-    fun `updateState should maintain state when decision is HOLDING`() {
+    fun `判定がHOLDINGの場合、状態が維持されること`() {
         // Arrange
         val currentState = SimulationState(
             isHolding = true,

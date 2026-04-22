@@ -17,7 +17,7 @@ class ConfigLoaderTest {
     }
 
     @Test
-    fun `load should map yaml to AppConfig correctly`(@TempDir tempDir: Path) {
+    fun `設定ファイルの内容がAppConfigに正しくマッピングされること`(@TempDir tempDir: Path) {
         // Arrange
         val yamlContent = """
             app:
