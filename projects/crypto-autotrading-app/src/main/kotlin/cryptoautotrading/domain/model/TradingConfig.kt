@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * @property tradeAmount 1回の取引額
  * @property buyThreshold 買い注文を出す閾値
  * @property sellThreshold 売り注文を出す閾値
+ * @property volatilityThreshold ボラティリティの閾値
+ * @property sharpChangeThreshold 急変動の閾値
  */
 data class TradingConfig(
     val symbol: String,
@@ -20,5 +22,9 @@ data class TradingConfig(
     @JsonProperty("buy_threshold")
     val buyThreshold: Double,
     @JsonProperty("sell_threshold")
-    val sellThreshold: Double
+    val sellThreshold: Double,
+    @JsonProperty("volatility_threshold")
+    val volatilityThreshold: Double,
+    @JsonProperty("sharp_change_threshold")
+    val sharpChangeThreshold: Double
 )

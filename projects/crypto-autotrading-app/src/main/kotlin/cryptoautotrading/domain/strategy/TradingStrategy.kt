@@ -7,10 +7,16 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.math.max
 import kotlin.math.min
 
+import cryptoautotrading.domain.model.TradingConfig
+
 /**
  * 売買判定を行う戦略クラス
+ *
+ * @property config 取引設定
  */
-class TradingStrategy {
+class TradingStrategy(
+    private val config: TradingConfig
+) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -48,8 +54,8 @@ class TradingStrategy {
         val minLow = lows.minOrNull() ?: 1.0
         val hourFluctuation = (maxHigh - minLow) / minLow
 
-        if (hourFluctuation < 0.003) {
-            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近1時間の変動が 0.3%未満")
+        if (hourFluctuation < config.volatilityThreshold) {
+            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近1時間の変動が ${config.volatilityThreshold * 100}%未満")
             logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
             return decision
         }
@@ -60,14 +66,14 @@ class TradingStrategy {
         val startOf15MinOpen = recent15MinOpens.first()
         val change15Min = (latestClose - startOf15MinOpen) / startOf15MinOpen
 
-        if (change15Min <= -0.01) {
-            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で 1.0%以上下落")
+        if (change15Min <= -config.sharpChangeThreshold) {
+            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で ${config.sharpChangeThreshold * 100}%以上下落")
             logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
             return decision
         }
 
-        if (change15Min >= 0.01) {
-            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で 1.0%以上上昇")
+        if (change15Min >= config.sharpChangeThreshold) {
+            val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "直近15分で ${config.sharpChangeThreshold * 100}%以上上昇")
             logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
             return decision
         }
@@ -75,14 +81,14 @@ class TradingStrategy {
         // 3. 1時間の変動による売買サインの判定
         val hourChange = (latestClose - oldestOpen) / oldestOpen
 
-        if (!isHolding && hourChange <= -0.005) {
-            val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "0.5%下落")
+        if (!isHolding && hourChange <= -config.buyThreshold) {
+            val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "${config.buyThreshold * 100}%下落")
             logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
             return decision
         }
 
-        if (isHolding && hourChange >= 0.005) {
-            val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "0.5%上昇")
+        if (isHolding && hourChange >= config.sellThreshold) {
+            val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "${config.sellThreshold * 100}%上昇")
             logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
             return decision
         }
