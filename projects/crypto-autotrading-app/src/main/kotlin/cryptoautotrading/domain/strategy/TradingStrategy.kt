@@ -4,8 +4,6 @@ import cryptoautotrading.domain.model.Kline
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlin.math.max
-import kotlin.math.min
 
 import cryptoautotrading.domain.model.TradingConfig
 
