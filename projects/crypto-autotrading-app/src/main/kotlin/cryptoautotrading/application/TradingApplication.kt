@@ -9,6 +9,7 @@ import cryptoautotrading.infrastructure.output.ConsoleOutput
 import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -31,13 +32,9 @@ class TradingApplication(
     private val simulationService = SimulationService()
 
     init {
-        val dataDirEnv = System.getenv("APP_DATA_DIR")
-        if (dataDirEnv.isNullOrBlank()) {
-            throw IllegalStateException("APP_DATA_DIR is not set")
-        }
-
-        val statePath = java.nio.file.Paths.get(dataDirEnv, config.output.statePath).toString()
-        val csvPath = java.nio.file.Paths.get(dataDirEnv, config.output.outputPath).toString()
+        val dataDirEnv = requireDataDir()
+        val statePath = Paths.get(dataDirEnv, config.output.statePath).toString()
+        val csvPath = Paths.get(dataDirEnv, config.output.outputPath).toString()
 
         stateRepository = StateRepository(statePath)
         csvRepository = CsvRepository(csvPath)
@@ -57,46 +54,30 @@ class TradingApplication(
             logger.debug { "読み込んだ状態: $currentState" }
 
             // 2. APIからデータの取得
-            val tickerResponse = apiClient.getTicker(config.trading.symbol)
-            val ticker = tickerResponse.data.firstOrNull()
-            logger.debug { "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, bid=${ticker?.bid}, ask=${ticker?.ask}" }
-
-            val nowJst = ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
-            val targetDate = if (nowJst.hour < 6) {
-                nowJst.minusDays(1)
-            } else {
-                nowJst
-            }.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
-            val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
-            logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
+            val klineData = fetchKlineData()
 
             // 3. 売買判定
             val strategy = TradingStrategy(config.trading)
-            val decision = strategy.judge(klineResponse.data, currentState.isHolding)
+            val decision = strategy.judge(klineData, currentState.isHolding)
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
 
             // 4. 状態の更新
             // 最新のK線の終値を現在価格とする。データが空の場合は終了する
-            if (klineResponse.data.isEmpty()) {
+            if (klineData.isEmpty()) {
                 logger.warn { "Klines data is empty. Skipping this run." }
                 return
             }
-            val currentPrice = klineResponse.data.sortedBy { it.openTime }.last().close.toDouble()
+            val currentPrice = klineData.sortedBy { it.openTime }.last().close.toDouble()
 
             // 損益と想定損益の計算
-            var profitAndLoss = 0.0
-            var estimatedProfitAndLoss = 0.0
+            val pnl = calculateProfitAndLoss(
+                isHolding = currentState.isHolding,
+                currentPrice = currentPrice,
+                buyPrice = currentState.buyPrice,
+                holdingAmount = currentState.holdingAmount,
+                shouldSell = decision.action == TradeAction.SELL_CANDIDATE
+            )
             val fee = 0.0 // Phase1 では手数料ゼロとする
-
-            if (currentState.isHolding) {
-                // 保有中の場合は現在価格との差分で想定損益を計算
-                estimatedProfitAndLoss = (currentPrice - currentState.buyPrice) * currentState.holdingAmount
-
-                // 売却する場合は実際の損益となる
-                if (decision.action == TradeAction.SELL_CANDIDATE) {
-                    profitAndLoss = estimatedProfitAndLoss
-                }
-            }
 
             val nextState = simulationService.updateState(
                 currentState = currentState,
@@ -112,8 +93,8 @@ class TradingApplication(
                 price = currentPrice,
                 action = decision.action,
                 reason = decision.reason,
-                profitAndLoss = profitAndLoss,
-                estimatedProfitAndLoss = estimatedProfitAndLoss
+                profitAndLoss = pnl.profitAndLoss,
+                estimatedProfitAndLoss = pnl.estimatedProfitAndLoss
             )
 
             // CSV出力
@@ -123,7 +104,7 @@ class TradingApplication(
                 price = currentPrice,
                 sign = decision.action.description,
                 reason = decision.reason,
-                profitAndLoss = profitAndLoss,
+                profitAndLoss = pnl.profitAndLoss,
                 isHolding = nextState.isHolding,
                 fee = fee
             )
@@ -137,4 +118,57 @@ class TradingApplication(
             logger.error(e) { "TradingApplication の実行中にエラーが発生しました: ${e.message}" }
         }
     }
+
+    private fun requireDataDir(): String {
+        val dataDirEnv = System.getenv("APP_DATA_DIR")
+        if (dataDirEnv.isNullOrBlank()) {
+            throw IllegalStateException("APP_DATA_DIR is not set")
+        }
+        return dataDirEnv
+    }
+
+    private suspend fun fetchKlineData() = run {
+        val tickerResponse = apiClient.getTicker(config.trading.symbol)
+        val ticker = tickerResponse.data.firstOrNull()
+        logger.debug { "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, bid=${ticker?.bid}, ask=${ticker?.ask}" }
+
+        val targetDate = resolveKlineTargetDate()
+        val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
+        logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
+        klineResponse.data
+    }
+
+    private fun resolveKlineTargetDate(): String {
+        val nowJst = ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
+        val date = if (nowJst.hour < 6) {
+            nowJst.minusDays(1)
+        } else {
+            nowJst
+        }
+        return date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+    }
+
+    private fun calculateProfitAndLoss(
+        isHolding: Boolean,
+        currentPrice: Double,
+        buyPrice: Double,
+        holdingAmount: Double,
+        shouldSell: Boolean
+    ): ProfitAndLossResult {
+        if (!isHolding) {
+            return ProfitAndLossResult()
+        }
+
+        val estimated = (currentPrice - buyPrice) * holdingAmount
+        val actual = if (shouldSell) estimated else 0.0
+        return ProfitAndLossResult(
+            profitAndLoss = actual,
+            estimatedProfitAndLoss = estimated
+        )
+    }
+
+    private data class ProfitAndLossResult(
+        val profitAndLoss: Double = 0.0,
+        val estimatedProfitAndLoss: Double = 0.0
+    )
 }

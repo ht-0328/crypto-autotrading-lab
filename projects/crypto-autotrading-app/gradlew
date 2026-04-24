@@ -114,6 +114,29 @@ esac
 
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
+# Codex/CI の実行環境で Java 25 がデフォルトの場合、
+# Kotlin DSL の評価時に失敗するため Java 17 を優先利用する。
+# 明示的に別バージョンを使いたい場合は KEEP_ORIGINAL_JAVA_HOME=1 を指定する。
+if [ "${KEEP_ORIGINAL_JAVA_HOME:-0}" != "1" ] ; then
+    for candidate in "$HOME"/.local/share/mise/installs/java/17*/bin/java ; do
+        if [ -x "$candidate" ] ; then
+            if [ -n "$JAVA_HOME" ] ; then
+                CURRENT_JAVA_VERSION=$("$JAVA_HOME/bin/java" -version 2>&1 | head -n 1)
+                case "$CURRENT_JAVA_VERSION" in
+                  *\"25*|*\"26*|*\"27*|*\"28*|*\"29*)
+                    JAVA_HOME=${candidate%/bin/java}
+                    export JAVA_HOME
+                    ;;
+                esac
+            else
+                JAVA_HOME=${candidate%/bin/java}
+                export JAVA_HOME
+            fi
+            break
+        fi
+    done
+fi
+
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then

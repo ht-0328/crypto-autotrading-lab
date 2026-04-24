@@ -18,6 +18,15 @@
 
 ## 開発時の確認コマンド
 
+Java 17 を明示したい場合（推奨）:
+
+```bash
+cd projects/crypto-autotrading-app
+JAVA_HOME=/root/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew test
+```
+
+通常の実行:
+
 ```bash
 cd projects/crypto-autotrading-app
 ./gradlew build
@@ -27,6 +36,8 @@ cd projects/crypto-autotrading-app
 ```bash
 docker compose -f docker/compose/local.yml up --build
 ```
+
+※ `docker/compose/local.yml` はアプリ実行用の定義です。WireMock を利用する場合は devcontainer の WireMock を使うか、別途 WireMock コンテナを起動してください。
 
 ## 実行環境方針
 
