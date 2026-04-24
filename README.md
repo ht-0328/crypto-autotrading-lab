@@ -26,6 +26,10 @@ Phase1では以下の機能を持つKotlin CLIアプリを作成します：
 * [Phase1 仕様書](docs/specs/phase1.md)
 * [ロードマップ (Phase2以降)](docs/specs/roadmap.md)
 
+### AI依頼前チェック
+* [AI依頼テンプレート](docs/ai/prompt-template.md)
+* [PRレビュー チェックリスト](docs/ai/review-checklist.md)
+
 ### 開発環境
 * [開発環境セットアップ手順](docs/setup/development.md)
 
