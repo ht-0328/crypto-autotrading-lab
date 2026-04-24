@@ -16,7 +16,13 @@ Phase1では以下の機能を持つKotlin CLIアプリを作成します：
 
 各仕様や開発手順については以下のドキュメントを参照してください。
 
+### AIが最初に読む順序
+1. [README](./README.md)
+2. [プロダクト要求仕様（共通）](docs/specs/product-requirements.md)
+3. [Phase1 仕様書](docs/specs/phase1.md)
+
 ### 仕様書
+* [プロダクト要求仕様（共通）](docs/specs/product-requirements.md)
 * [Phase1 仕様書](docs/specs/phase1.md)
 * [ロードマップ (Phase2以降)](docs/specs/roadmap.md)
 
