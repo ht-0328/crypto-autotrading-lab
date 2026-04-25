@@ -54,17 +54,17 @@ Phase1では以下の機能を持つKotlin CLIアプリを作成します：
 GMO Public API で実行する場合:
 
 ```bash
-cd /workspace/projects/crypto-autotrading-app
+cd projects/crypto-autotrading-app
 ./gradlew run
 # または明示的に指定する場合
-# APP_CONFIG_PATH=/workspace/config/application-gmo.yaml ./gradlew run
+# APP_CONFIG_PATH=../../config/application-gmo.yaml ./gradlew run
 ```
 
 WireMock で実行する場合:
 
 ```bash
-cd /workspace/projects/crypto-autotrading-app
-APP_CONFIG_PATH=/workspace/config/application-wiremock.yaml ./gradlew run
+cd projects/crypto-autotrading-app
+APP_CONFIG_PATH=../../config/application-wiremock.yaml ./gradlew run
 ```
 
 Docker Compose を使用する場合:

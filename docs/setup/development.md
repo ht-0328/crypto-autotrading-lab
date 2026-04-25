@@ -18,11 +18,11 @@
 
 ## 開発時の確認コマンド
 
-Java 17 を明示したい場合（推奨）:
+テストの実行（Gradle Toolchainsにより自動でJava 17が解決されます）:
 
 ```bash
 cd projects/crypto-autotrading-app
-JAVA_HOME=/root/.local/share/mise/installs/java/17.0.2 PATH=$JAVA_HOME/bin:$PATH ./gradlew test
+./gradlew test
 ```
 
 通常の実行:
