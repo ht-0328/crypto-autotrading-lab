@@ -57,17 +57,18 @@ jobs:
       - name: Start WireMock
         if: ${{ inputs.use_public_api != true }}
         run: |
-          docker run -d --name wiremock --network crypto-ci-net -p 8080:8080 -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
-          # Wait for WireMock to be healthy
+          docker run -d --name wiremock --network crypto-ci-net -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
+          # Wait for WireMock to be healthy within the Docker network
           for i in {1..10}; do
-            curl -s http://localhost:8080/__admin/ || true
-            if curl -s http://localhost:8080/__admin/ > /dev/null; then
+            if docker run --rm --network crypto-ci-net curlimages/curl:latest -s http://wiremock:8080/__admin/ > /dev/null; then
               echo "WireMock is up"
-              break
+              exit 0
             fi
             echo "Waiting for WireMock..."
             sleep 2
           done
+          echo "Failed to start WireMock"
+          exit 1
 
       - name: Prepare CI Config
         run: |
@@ -112,6 +113,8 @@ jobs:
           cat ${{ github.workspace }}/data/state.json 2>/dev/null || echo "data/state.json not found"
           echo "=== data/trades_*.csv ==="
           cat ${{ github.workspace }}/data/trades_*.csv 2>/dev/null || echo "No CSV files found"
+          echo "=== ls -la data ==="
+          ls -la ${{ github.workspace }}/data 2>/dev/null || echo "data directory not found"
 
           # Cleanup network and containers
           docker stop wiremock || true
