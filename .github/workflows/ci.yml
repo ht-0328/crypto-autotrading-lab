@@ -62,13 +62,15 @@ jobs:
           for i in {1..10}; do
             if docker run --rm --network crypto-ci-net curlimages/curl:latest -s http://wiremock:8080/__admin/ > /dev/null; then
               echo "WireMock is up"
-              exit 0
+              break
             fi
             echo "Waiting for WireMock..."
             sleep 2
+            if [ $i -eq 10 ]; then
+              echo "Failed to start WireMock"
+              exit 1
+            fi
           done
-          echo "Failed to start WireMock"
-          exit 1
 
       - name: Prepare CI Config
         run: |
