@@ -54,3 +54,15 @@ kotlin {
 application {
     mainClass.set("cryptoautotrading.presentation.MainKt")
 }
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType<Test> {
+    systemProperty("file.encoding", "UTF-8")
+}
+
+tasks.withType<JavaExec> {
+    systemProperty("file.encoding", "UTF-8")
+}
