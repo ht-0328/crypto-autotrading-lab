@@ -32,17 +32,12 @@ jobs:
           cd projects/crypto-autotrading-app
           ./gradlew test
 
-  run:
+  docker-run:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Start WireMock
-        if: ${{ inputs.use_public_api != true }}
-        run: |
-          docker run -d -p 8080:8080 -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
-          sleep 5
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -51,30 +46,79 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Build shadowJar
+        run: |
+          cd projects/crypto-autotrading-app
+          ./gradlew clean shadowJar
+
+      - name: Setup Network
+        run: docker network create crypto-ci-net
+
+      - name: Start WireMock
+        if: ${{ inputs.use_public_api != true }}
+        run: |
+          docker run -d --name wiremock --network crypto-ci-net -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
+          # Wait for WireMock to be healthy within the Docker network
+          for i in {1..10}; do
+            if docker run --rm --network crypto-ci-net curlimages/curl:latest -s http://wiremock:8080/__admin/ > /dev/null; then
+              echo "WireMock is up"
+              break
+            fi
+            echo "Waiting for WireMock..."
+            sleep 2
+            if [ $i -eq 10 ]; then
+              echo "Failed to start WireMock"
+              exit 1
+            fi
+          done
+
+      - name: Prepare CI Config
+        run: |
+          mkdir -p build/ci-config
+          if [ "${{ inputs.use_public_api }}" == "true" ]; then
+            echo "APP_CONFIG_PATH=/app/config/application-gmo.yaml" >> $GITHUB_ENV
+          else
+            # Create a temporary config that points to the WireMock container
+            sed 's|http://localhost:8080|http://wiremock:8080|g' config/application-ci.yaml > build/ci-config/application-ci-docker.yaml
+            echo "APP_CONFIG_PATH=/app/build/ci-config/application-ci-docker.yaml" >> $GITHUB_ENV
+          fi
+
+      - name: Build Docker Image
+        run: docker build -t crypto-app:ci -f docker/app/Dockerfile .
+
       - name: Setup Data Directory
         run: mkdir -p data
 
-      - name: Determine Config Path
-        run: |
-          if [ "${{ inputs.use_public_api }}" == "true" ]; then
-            echo "APP_CONFIG_PATH=${{ github.workspace }}/config/application-gmo.yaml" >> $GITHUB_ENV
-          else
-            echo "APP_CONFIG_PATH=${{ github.workspace }}/config/application-ci.yaml" >> $GITHUB_ENV
-          fi
-
       - name: Run Application
-        env:
-          APP_DATA_DIR: ${{ github.workspace }}/data
         run: |
-          cd projects/crypto-autotrading-app
-          ./gradlew run
+          docker run --rm --network crypto-ci-net \
+            -e APP_CONFIG_PATH=$APP_CONFIG_PATH \
+            -e APP_DATA_DIR=/app/data \
+            -v ${{ github.workspace }}/config:/app/config:ro \
+            -v ${{ github.workspace }}/build/ci-config:/app/build/ci-config:ro \
+            -v ${{ github.workspace }}/data:/app/data \
+            crypto-app:ci
 
-      - name: Show Logs and Outputs
+      - name: Verify Outputs
+        run: |
+          echo "Verifying output files..."
+          test -f ${{ github.workspace }}/data/state.json || (echo "state.json not found!" && exit 1)
+          ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv not found!" && exit 1)
+          echo "Output files verified successfully."
+
+      - name: Show Logs and Cleanup
         if: always()
         run: |
           echo "=== data/app.log ==="
           cat ${{ github.workspace }}/data/app.log 2>/dev/null || echo "data/app.log not found"
           echo "=== data/state.json ==="
           cat ${{ github.workspace }}/data/state.json 2>/dev/null || echo "data/state.json not found"
-          echo "=== data/*.csv ==="
-          cat ${{ github.workspace }}/data/*.csv 2>/dev/null || echo "No CSV files found"
+          echo "=== data/trades_*.csv ==="
+          cat ${{ github.workspace }}/data/trades_*.csv 2>/dev/null || echo "No CSV files found"
+          echo "=== ls -la data ==="
+          ls -la ${{ github.workspace }}/data 2>/dev/null || echo "data directory not found"
+
+          # Cleanup network and containers
+          docker stop wiremock || true
+          docker rm wiremock || true
+          docker network rm crypto-ci-net || true
