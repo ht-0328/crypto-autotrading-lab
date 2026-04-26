@@ -1,0 +1,35 @@
+# アプリケーションの基本設定
+app:
+  # データを取得する間隔（例: 5min, 1hour）
+  interval: "5min"
+
+# 取引関連の設定
+trading:
+  # 取引する通貨ペア（例: BTC, ETH）
+  symbol: "BTC"
+  # 初期資金
+  initial_capital: 10000
+  # 1回の取引額
+  trade_amount: 1000
+  # 買い注文を出す閾値（例: 0.005 は 0.5%）
+  buy_threshold: 0.005
+  # 売り注文を出す閾値（例: 0.005 は 0.5%）
+  sell_threshold: 0.005
+  # ボラティリティの閾値（例: 0.003 は 0.3%）
+  volatility_threshold: 0.003
+  # 急変動の閾値（例: 0.01 は 1.0%）
+  sharp_change_threshold: 0.01
+
+# 外部API関連の設定
+api:
+  # APIリクエスト失敗時の再試行回数
+  retry_count: 3
+  # APIのベースURL（デフォルトはGMOコインのPublic API）
+  base_url: "http://localhost:8080"
+
+# データ出力関連の設定
+output:
+  # 取引履歴を出力するCSVファイル名
+  output_path: "trades.csv"
+  # アプリケーションの状態を保存するJSONファイル名
+  state_path: "state.json"
