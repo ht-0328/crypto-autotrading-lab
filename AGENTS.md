@@ -53,10 +53,13 @@ APP_CONFIG_PATH=../../config/application-wiremock.yaml ./gradlew run
 
 ## PR作成ルール
 PRを作成する場合は以下のルールを守ること。
-- PRタイトルとPR本文は日本語で書くこと。
-- PR本文は `.github/pull_request_template.md` の形式に従うこと。
+- PRタイトル、PR本文、コミットメッセージは日本語で書くこと。
+- PRを作成する場合は、必ず `.github/pull_request_template.md` の見出し構成に従ってPR本文を書くこと。
+- PR本文の見出しを省略しないこと。
+- PR本文に英語の定型説明文を残さないこと。
+- `docs:`、`fix:`、`feat:`、`refactor:`、`test:`、`chore:` などの Conventional Commits の種別プレフィックスは使用してよいが、プレフィックスの後ろの説明文は日本語で書くこと。
 - テストを実行できなかった場合は、その理由を書くこと。
-- 実行確認なしに「動作確認済み」と書かないこと。
+- 実行確認していない内容を「確認済み」と書かないこと。
 - 変更の影響範囲と未確認事項を明記すること。
 
 ## 変更範囲のルール
