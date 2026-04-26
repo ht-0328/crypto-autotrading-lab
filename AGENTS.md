@@ -1,97 +1,37 @@
 # AGENTS.md
 
 このリポジトリで作業するJulesやCodexを含む、すべてのAIコーディングエージェント向けの共通ルールです。
-AIコーディングエージェントが作業を行う場合、この内容を前提として進めてください。
 
-## 基本方針
+## 1. 実行ワークフローの強制（※最重要）
+作業内容に応じて、**必ず最初に以下のドキュメントを読み込み（cat等）、そのフォーマットや指示をコンテキストにロードしてから**実行してください。推測での実行は禁止します。
+
+* **Pull Requestを作成する場合**
+  * 読込対象1: `.github/pull_request_template.md` (この見出し構成を一切省略・変更せずにそのまま使用すること)
+  * 読込対象2: `docs/ai/review-checklist.md` (この基準を満たしているか確認すること)
+* **仕様策定・タスク整理を行う場合**
+  * 読込対象: `docs/ai/skills/spec-writer.SKILL.md`
+* **コードの依存関係やレイヤー構造をレビューする場合**
+  * 読込対象: `docs/ai/skills/kotlin-layer-guard.SKILL.md`
+* **自動売買ロジックの安全性レビューを行う場合**
+  * 読込対象: `docs/ai/skills/trading-safety-review.SKILL.md`
+
+## 2. 基本方針
 - 回答、説明、コミットメッセージ、PRタイトル、PR本文、README、docs、コメントは日本語で書く。
-- `docs/ai` ディレクトリはAI依頼・レビュー補助資料として参照すること。
-- `docs/process` ディレクトリは開発プロセス・責務分担ルールとして参照すること。
+- APIキー、シークレット、トークン、個人情報、および `.env` ファイルを絶対にコミットしない。
 
-## プロジェクト構成
-- 主なアプリケーションコードは `projects/crypto-autotrading-app` に配置されている。
-- 設定ファイルは `config/application-gmo.yaml`、`config/application-wiremock.yaml` に配置されている。
+## 3. プロジェクト構成
+- 主なアプリケーションコード: `projects/crypto-autotrading-app`
+- 設定ファイル: `config/application-gmo.yaml`、`config/application-wiremock.yaml`
 
-## Kotlin / Gradle 方針
-- Kotlin、Gradle、Java、および主要ライブラリのバージョンを勝手に変更しないこと。
-- 新たに依存ライブラリを追加する場合は、その理由と影響範囲をPR本文に明記すること。
+## 4. Kotlin / Gradle 方針
+- Kotlin、Gradle、Java、および主要ライブラリのバージョンを勝手に変更しない。
+- 依存レイヤー（`domain`, `application`, `infrastructure`）の責務を混ぜない。
+- 既存機能の動作を変えない整理を優先し、勝手に大規模なリファクタリングを行わない。
 
-## 自動売買アプリとしての安全ルール
-- 売買条件、注文処理、本番API呼び出しに関わる変更は特に慎重に行うこと。
-- APIキーやシークレットなどの機密情報をログに出力しないこと。
-
-## リファクタリング方針
-- 既存機能の動作を変えない整理を優先し、勝手に大規模なリファクタリングを行わないこと。
-- 責務分離・重複削減・可読性向上は小さな差分で行うこと。
-
-## 実行・テスト
+## 5. 実行・テスト
 変更後は必ず以下のコマンドで実行およびテストの確認を行うこと。
 
-テストを実行する場合：
-```bash
-cd projects/crypto-autotrading-app
-./gradlew test
-```
-
-ビルドの確認が必要な場合：
-```bash
-cd projects/crypto-autotrading-app
-./gradlew build
-```
-
-アプリ起動に関わる変更の確認が必要な場合：
-```bash
-cd projects/crypto-autotrading-app
-./gradlew run
-```
-
-設定ファイルを明示してアプリを起動する場合：
-```bash
-cd projects/crypto-autotrading-app
-APP_CONFIG_PATH=../../config/application-wiremock.yaml ./gradlew run
-```
-
-## PR作成ルール
-PRを作成する場合は以下のルールを守ること。
-- PRタイトル、PR本文、コミットメッセージは日本語で書くこと。
-- PR本文は**必ず以下のテンプレートをそのままコピーして使用すること**。見出しの省略や、英語の定型文の混入は一切禁止する。
-
----ここから下のフォーマットをPR本文に使用すること---
-## 概要
-## 変更種類（必須）
-- [ ] feature
-- [ ] fix
-- [ ] refactor
-- [ ] docs
-- [ ] chore
-
-## スコープ宣言（必須）
-- 対象:
-- 非対象:
-
-## 変更内容
--
-
-## 影響範囲
--
-
-## 確認手順
-1.
-2.
-
-## 分割方針チェック
-- [ ] リファクタと機能追加を同一PRに混在させていない
-- [ ] `domain` 変更時に `infrastructure` を同時変更していない（必要時は別PR）
-- [ ] `application` にオーケストレーション以外のロジックを追加していない
----ここまで---
-
-- テストを実行できなかった場合は、その理由を書くこと。
-- 実行確認していない内容を「確認済み」と書かないこと。
-- 変更の影響範囲と未確認事項を明記すること。
-
-## 変更範囲のルール
-- `domain`、`application`、`infrastructure` の各レイヤーの責務を混ぜないこと。
-- 無関係な整形、リファクタリング、依存関係の追加を同じPRに混ぜないこと。
-
-## 禁止事項
-- APIキー、シークレット、トークン、個人情報、および `.env` ファイルを絶対にコミットしないこと。
+* テスト実行: `cd projects/crypto-autotrading-app && ./gradlew test`
+* ビルド確認: `cd projects/crypto-autotrading-app && ./gradlew build`
+* アプリ起動: `cd projects/crypto-autotrading-app && ./gradlew run`
+* モック指定起動: `cd projects/crypto-autotrading-app && APP_CONFIG_PATH=../../config/application-wiremock.yaml ./gradlew run`
