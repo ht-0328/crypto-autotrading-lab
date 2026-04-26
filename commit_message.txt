@@ -1,9 +1,0 @@
-fix: ログ出力の文字化けを解消するため実行環境をUTF-8に固定
-
-CIやDocker環境でのログ出力時（特に「実」の文字など）に発生していた文字化けを修正するため、以下の実行環境側の文字コード設定をUTF-8に固定しました。
-
-- `logback.xml` のエンコーダーに `<charset>UTF-8</charset>` を追加
-- `build.gradle.kts` で `JavaCompile` タスクの `options.encoding` を `UTF-8` に指定
-- `Test` および `JavaExec` タスク実行時の JVM オプションとして `file.encoding=UTF-8` を追加
-
-※ ソースコード (`Main.kt`, `TradingApplication.kt`) は既に正しい UTF-8 で保存されていたため、ファイル自体の修正は不要でした。
