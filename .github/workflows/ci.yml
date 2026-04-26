@@ -53,3 +53,13 @@ jobs:
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew run
+
+      - name: Show Logs and Outputs
+        if: always()
+        run: |
+          echo "=== data/app.log ==="
+          cat ${{ github.workspace }}/data/app.log 2>/dev/null || echo "data/app.log not found"
+          echo "=== data/state.json ==="
+          cat ${{ github.workspace }}/data/state.json 2>/dev/null || echo "data/state.json not found"
+          echo "=== data/*.csv ==="
+          cat ${{ github.workspace }}/data/*.csv 2>/dev/null || echo "No CSV files found"
