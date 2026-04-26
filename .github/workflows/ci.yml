@@ -5,6 +5,13 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+    inputs:
+      use_public_api:
+        description: 'Use Public API (GMO)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   test:
@@ -32,6 +39,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start WireMock
+        if: ${{ inputs.use_public_api != true }}
         run: |
           docker run -d -p 8080:8080 -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
           sleep 5
@@ -46,10 +54,17 @@ jobs:
       - name: Setup Data Directory
         run: mkdir -p data
 
+      - name: Determine Config Path
+        run: |
+          if [ "${{ inputs.use_public_api }}" == "true" ]; then
+            echo "APP_CONFIG_PATH=${{ github.workspace }}/config/application-gmo.yaml" >> $GITHUB_ENV
+          else
+            echo "APP_CONFIG_PATH=${{ github.workspace }}/config/application-ci.yaml" >> $GITHUB_ENV
+          fi
+
       - name: Run Application
         env:
           APP_DATA_DIR: ${{ github.workspace }}/data
-          APP_CONFIG_PATH: ${{ github.workspace }}/config/application-ci.yaml
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew run
