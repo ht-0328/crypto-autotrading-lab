@@ -1,5 +1,5 @@
 steps:
-  - name: 'eclipse-temurin:17-jdk'
+  - name: 'gradle:8.13-jdk17'
     entrypoint: 'bash'
     args:
       - '-c'
