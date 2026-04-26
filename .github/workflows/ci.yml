@@ -49,7 +49,7 @@ jobs:
       - name: Run Application
         env:
           APP_DATA_DIR: ${{ github.workspace }}/data
-          APP_CONFIG_PATH: ${{ github.workspace }}/config/application-wiremock.yaml
+          APP_CONFIG_PATH: ${{ github.workspace }}/config/application-ci.yaml
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew run
