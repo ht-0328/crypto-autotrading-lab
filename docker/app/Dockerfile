@@ -5,6 +5,6 @@ ENV LANG=C.UTF-8
 
 WORKDIR /app
 
-COPY build/libs/*-all.jar app.jar
+COPY projects/crypto-autotrading-app/build/libs/*-all.jar app.jar
 
 CMD ["java", "-jar", "app.jar"]
