@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Run Tests
+        run: |
+          cd projects/crypto-autotrading-app
+          ./gradlew test
+
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start WireMock
+        run: |
+          docker run -d -p 8080:8080 -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
+          sleep 5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Data Directory
+        run: mkdir -p data
+
+      - name: Run Application
+        env:
+          APP_DATA_DIR: ${{ github.workspace }}/data
+          APP_CONFIG_PATH: ${{ github.workspace }}/config/application-wiremock.yaml
+        run: |
+          cd projects/crypto-autotrading-app
+          ./gradlew run
