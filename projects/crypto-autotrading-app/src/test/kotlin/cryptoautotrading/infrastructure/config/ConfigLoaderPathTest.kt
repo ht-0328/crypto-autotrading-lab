@@ -18,7 +18,7 @@ class ConfigLoaderPathTest {
         val expected = if (java.io.File("config/application-gmo.yaml").exists()) {
             "config/application-gmo.yaml"
         } else {
-            "/workspace/config/application-gmo.yaml"
+            "../../config/application-gmo.yaml"
         }
         assertEquals(expected, resolved)
     }

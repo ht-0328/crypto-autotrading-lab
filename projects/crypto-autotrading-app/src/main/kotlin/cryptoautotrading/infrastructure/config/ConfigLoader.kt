@@ -15,7 +15,7 @@ object ConfigLoader {
     private val logger = KotlinLogging.logger {}
     private val mapper = ObjectMapper(YAMLFactory()).registerModule(KotlinModule.Builder().build())
     private const val DEFAULT_CONFIG_PATH = "config/application-gmo.yaml"
-    private const val FALLBACK_CONFIG_PATH = "/workspace/config/application-gmo.yaml"
+    private const val FALLBACK_CONFIG_PATH = "../../config/application-gmo.yaml"
 
     /**
      * アプリケーション設定を読み込む
