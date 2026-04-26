@@ -1,0 +1,61 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate Short SHA
+        id: vars
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          # 以下はGitHub Secrets/Variablesで設定すること
+          # GCP_WORKLOAD_IDENTITY_PROVIDER: 例 "projects/1234567890/locations/global/workloadIdentityPools/my-pool/providers/my-provider"
+          # GCP_DEPLOY_SERVICE_ACCOUNT: 例 "my-deploy-sa@crypto-autotrading-lab.iam.gserviceaccount.com"
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          # GCP_PROJECT_ID: 例 "crypto-autotrading-lab"
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Build and Push Docker Image with Cloud Build
+        run: |
+          gcloud builds submit \
+            --config cloudbuild.yaml \
+            --substitutions=_SHORT_SHA=${{ env.SHORT_SHA }} \
+            .
+
+      - name: Deploy to Cloud Run Job
+        run: |
+          gcloud run jobs deploy crypto-autotrading-lab \
+            --image asia-northeast1-docker.pkg.dev/crypto-autotrading-lab/crypto-autotrading-lab/crypto-autotrading-lab:${{ env.SHORT_SHA }} \
+            --region asia-northeast1 \
+            --service-account crypto-autotrading-lab-runner@crypto-autotrading-lab.iam.gserviceaccount.com \
+            --set-env-vars "APP_CONFIG_PATH=/mnt/gcs/config/application-gmo.yaml,APP_DATA_DIR=/mnt/gcs/data" \
+            --add-volume=name=gcs,type=cloud-storage,bucket=crypto-autotrading-lab,readonly=false \
+            --add-volume-mount=volume=gcs,mount-path=/mnt/gcs \
+            --tasks 1 \
+            --max-retries 0
+
+      - name: Verify Deployment
+        run: |
+          gcloud run jobs describe crypto-autotrading-lab \
+            --region asia-northeast1
