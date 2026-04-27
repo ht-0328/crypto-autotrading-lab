@@ -1,37 +1,27 @@
-# AGENTS.md
+# AI Agents Core Instructions
 
-このリポジトリで作業するJulesやCodexを含む、すべてのAIコーディングエージェント向けの共通ルールです。
+このリポジトリで作業するすべてのAIコーディングエージェント（Jules, Codex等）向けの最重要ルールです。
 
-## 1. 実行ワークフローの強制（※最重要）
-作業内容に応じて、**必ず最初に以下のドキュメントを読み込み（cat等）、そのフォーマットや指示をコンテキストにロードしてから**実行してください。推測での実行は禁止します。
+## 1. ワークフローの強制ルール（必ず最初に行うこと）
+作業を開始する前に、自身のタスク内容に応じて **必ず以下のドキュメントを読み込み（cat等）、制約とフォーマットをコンテキストにロード** してください。
 
-* **Pull Requestを作成する場合**
-  * 読込対象1: `.github/pull_request_template.md` (この見出し構成を一切省略・変更せずにそのまま使用すること)
-  * 読込対象2: `docs/ai/review-checklist.md` (この基準を満たしているか確認すること)
-* **仕様策定・タスク整理を行う場合**
-  * 読込対象: `docs/ai/skills/spec-writer.SKILL.md`
-* **コードの依存関係やレイヤー構造をレビューする場合**
-  * 読込対象: `docs/ai/skills/kotlin-layer-guard.SKILL.md`
-* **自動売買ロジックの安全性レビューを行う場合**
-  * 読込対象: `docs/ai/skills/trading-safety-review.SKILL.md`
+* **基本の制約と期待動作**
+  * 読込対象: `docs/ai/agents-guidelines.md` （絶対禁止事項とチェック項目）
+  * 読込対象: `docs/ai/prompt-template.md` （出力フォーマット）
 
-## 2. 基本方針
-- 回答、説明、コミットメッセージ、PRタイトル、PR本文、README、docs、コメントは日本語で書く。
-- APIキー、シークレット、トークン、個人情報、および `.env` ファイルを絶対にコミットしない。
+* **Pull Requestを作成・レビューする場合**
+  * 読込対象: `.github/pull_request_template.md`
+  * 読込対象: `docs/ai/review-checklist.md`
 
-## 3. プロジェクト構成
-- 主なアプリケーションコード: `projects/crypto-autotrading-app`
-- 設定ファイル: `config/application-gmo.yaml`、`config/application-wiremock.yaml`
+* **コード変更の粒度やレイヤー境界を扱う場合**
+  * 読込対象: `docs/ai/change-granularity.md`
+  * 読込対象: `docs/ai/kotlin-boundary-rules.md`
 
-## 4. Kotlin / Gradle 方針
-- Kotlin、Gradle、Java、および主要ライブラリのバージョンを勝手に変更しない。
-- 依存レイヤー（`domain`, `application`, `infrastructure`）の責務を混ぜない。
-- 既存機能の動作を変えない整理を優先し、勝手に大規模なリファクタリングを行わない。
+* **AIスキルの適用が必要な場合**
+  * 読込対象: `docs/ai/skills-catalog.md`
+  * さらに、必要なスキルの詳細定義（例: `docs/ai/skills/spec-writer.SKILL.md`）を読み込むこと。
 
-## 5. 実行・テスト
-変更後は必ず以下のコマンドで実行およびテストの確認を行うこと。
-
-* テスト実行: `cd projects/crypto-autotrading-app && ./gradlew test`
-* ビルド確認: `cd projects/crypto-autotrading-app && ./gradlew build`
-* アプリ起動: `cd projects/crypto-autotrading-app && ./gradlew run`
-* モック指定起動: `cd projects/crypto-autotrading-app && APP_CONFIG_PATH=../../config/application-wiremock.yaml ./gradlew run`
+## 2. 絶対厳守事項
+- **言語**: 回答、説明、コミットメッセージ、PRタイトル・本文、コードコメントはすべて**日本語**で記述すること（技術用語は英語のまま）。
+- **機密保持**: APIキー、シークレット、トークン、個人情報、`.env` ファイルは絶対に生成・出力・コミットしないこと。
+- **検証責任**: コード変更後は必ずローカルでテスト（`./gradlew test`）およびビルド（`./gradlew build`）を実行し、成功を確認してから報告すること。
