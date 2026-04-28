@@ -9,6 +9,7 @@ import cryptoautotrading.infrastructure.output.ConsoleOutput
 import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.io.File
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -121,10 +122,19 @@ class TradingApplication(
 
     private fun requireDataDir(): String {
         val dataDirEnv = System.getenv("APP_DATA_DIR")
-        if (dataDirEnv.isNullOrBlank()) {
-            throw IllegalStateException("APP_DATA_DIR is not set")
+        val finalDir = if (dataDirEnv.isNullOrBlank()) {
+            logger.warn { "APP_DATA_DIR が未設定です。デフォルトの './data' を使用します。" }
+            "./data"
+        } else {
+            dataDirEnv
         }
-        return dataDirEnv
+
+        val dirFile = File(finalDir)
+        if (!dirFile.exists()) {
+            dirFile.mkdirs()
+        }
+
+        return finalDir
     }
 
     private suspend fun fetchKlineData() = run {

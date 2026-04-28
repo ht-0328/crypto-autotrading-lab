@@ -47,7 +47,7 @@ jobs:
             --image asia-northeast1-docker.pkg.dev/crypto-autotrading-lab/crypto-autotrading-lab/crypto-autotrading-lab:${{ env.SHORT_SHA }} \
             --region asia-northeast1 \
             --service-account crypto-autotrading-lab-runner@crypto-autotrading-lab.iam.gserviceaccount.com \
-            --set-env-vars "APP_CONFIG_PATH=/mnt/gcs/config/application-gmo.yaml,APP_DATA_DIR=/mnt/gcs/data" \
+            --set-env-vars "APP_DATA_DIR=/mnt/gcs/data" \
             --add-volume=name=gcs,type=cloud-storage,bucket=crypto-autotrading-lab,readonly=false \
             --add-volume-mount=volume=gcs,mount-path=/mnt/gcs \
             --tasks 1 \

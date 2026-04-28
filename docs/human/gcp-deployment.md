@@ -91,3 +91,19 @@ GitHub のリポジトリ設定 (`Settings` > `Secrets and variables` > `Actions
 | `GCP_DEPLOY_SERVICE_ACCOUNT` | 3.1 で作成したデプロイ用サービスアカウントのメールアドレス | `<YOUR_DEPLOY_SA_NAME>@<YOUR_PROJECT_ID>.iam.gserviceaccount.com` |
 
 ※ これらは機密情報（Secret）として登録する必要はありませんが、必要に応じて Secrets を使用することも可能です。
+
+## 6. 設定ファイルと環境変数の優先順位について
+
+アプリケーションの設定値は、以下の優先順位で決定されます：
+
+1. **環境変数** (例: `APP_INTERVAL`, `TRADING_SYMBOL`)
+2. **YAML設定ファイル** (例: `application-gmo.yaml`)
+3. **アプリケーション側のデフォルト値**
+
+この仕組みにより、以下の柔軟な運用が可能です：
+
+* ローカル開発では従来どおり YAML 設定ファイルを使用できます。
+* Cloud Run Job では設定ファイルがなくても起動でき、本当に必要な設定値だけを環境変数で上書きできます。
+* Cloud Run Job に渡す環境変数は、原則として `APP_DATA_DIR=/mnt/gcs/data` のみで動作します。
+
+> **Note:** APIキーやAPIシークレットなどの秘密情報はこの優先順位の対象外です。将来的には Secret Manager などを使用して安全に管理する予定です。
