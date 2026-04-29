@@ -5,10 +5,17 @@ import com.lemonappdev.konsist.api.architecture.KoArchitectureCreator.assertArch
 import com.lemonappdev.konsist.api.architecture.Layer
 import org.junit.jupiter.api.Test
 
+/**
+ * アーキテクチャの境界ルールを検証するテストクラス
+ */
 class ArchitectureTest {
 
+    /**
+     * プロジェクトの各レイヤ（domain, application, infrastructure, presentation）間の
+     * 依存関係がルール通りに厳格に守られていることを検証する。
+     */
     @Test
-    fun `layer dependencies are strictly respected`() {
+    fun `各レイヤ間の依存関係がルール通りに厳格に守られていること`() {
         // Arrange
         val domain = Layer("domain", "cryptoautotrading.domain..")
         val application = Layer("application", "cryptoautotrading.application..")
