@@ -2,15 +2,13 @@ package cryptoautotrading.application
 
 import cryptoautotrading.domain.model.AppConfig
 import cryptoautotrading.domain.model.TradeAction
+import cryptoautotrading.domain.repository.MarketDataClient
+import cryptoautotrading.domain.repository.ResultOutputPort
+import cryptoautotrading.domain.repository.SimulationStateRepository
+import cryptoautotrading.domain.repository.TradeHistoryRepository
 import cryptoautotrading.domain.simulation.SimulationService
 import cryptoautotrading.domain.strategy.TradingStrategy
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
-import cryptoautotrading.infrastructure.output.ConsoleOutput
-import cryptoautotrading.infrastructure.output.CsvRepository
-import cryptoautotrading.infrastructure.output.StateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.io.File
-import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -20,26 +18,21 @@ import java.time.format.DateTimeFormatter
  * トレーディングアプリケーションのメインロジックを実行するクラス
  *
  * @property config アプリケーション設定
- * @property apiClient GMOパブリックAPIクライアント
+ * @property marketDataClient 市場データクライアント
+ * @property stateRepository 状態リポジトリ
+ * @property tradeHistoryRepository 取引履歴リポジトリ
+ * @property resultOutputPort 結果出力ポート
  */
 class TradingApplication(
     private val config: AppConfig,
-    private val apiClient: GmoPublicApiClient
+    private val marketDataClient: MarketDataClient,
+    private val stateRepository: SimulationStateRepository,
+    private val tradeHistoryRepository: TradeHistoryRepository,
+    private val resultOutputPort: ResultOutputPort
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val stateRepository: StateRepository
-    private val csvRepository: CsvRepository
     private val simulationService = SimulationService()
-
-    init {
-        val dataDirEnv = requireDataDir()
-        val statePath = Paths.get(dataDirEnv, config.output.statePath).toString()
-        val csvPath = Paths.get(dataDirEnv, config.output.outputPath).toString()
-
-        stateRepository = StateRepository(statePath)
-        csvRepository = CsvRepository(csvPath)
-    }
 
     /**
      * アプリケーションの実行を開始する
@@ -90,7 +83,7 @@ class TradingApplication(
 
             // 5. 出力
             // コンソール出力
-            ConsoleOutput.printResult(
+            resultOutputPort.printResult(
                 price = currentPrice,
                 action = decision.action,
                 reason = decision.reason,
@@ -100,7 +93,7 @@ class TradingApplication(
 
             // CSV出力
             val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            csvRepository.append(
+            tradeHistoryRepository.append(
                 datetime = nowStr,
                 price = currentPrice,
                 sign = decision.action.description,
@@ -120,30 +113,13 @@ class TradingApplication(
         }
     }
 
-    private fun requireDataDir(): String {
-        val dataDirEnv = System.getenv("APP_DATA_DIR")
-        val finalDir = if (dataDirEnv.isNullOrBlank()) {
-            logger.warn { "APP_DATA_DIR が未設定です。デフォルトの './data' を使用します。" }
-            "./data"
-        } else {
-            dataDirEnv
-        }
-
-        val dirFile = File(finalDir)
-        if (!dirFile.exists()) {
-            dirFile.mkdirs()
-        }
-
-        return finalDir
-    }
-
     private suspend fun fetchKlineData() = run {
-        val tickerResponse = apiClient.getTicker(config.trading.symbol)
+        val tickerResponse = marketDataClient.getTicker(config.trading.symbol)
         val ticker = tickerResponse.data.firstOrNull()
         logger.debug { "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, bid=${ticker?.bid}, ask=${ticker?.ask}" }
 
         val targetDate = resolveKlineTargetDate()
-        val klineResponse = apiClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
+        val klineResponse = marketDataClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
         logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
         klineResponse.data
     }

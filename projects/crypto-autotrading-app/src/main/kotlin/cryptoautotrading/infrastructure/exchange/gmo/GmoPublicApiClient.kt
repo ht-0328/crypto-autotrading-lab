@@ -8,6 +8,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.bodyAsText
+import cryptoautotrading.domain.repository.MarketDataClient
 import kotlinx.serialization.json.Json
 
 /**
@@ -18,7 +19,7 @@ import kotlinx.serialization.json.Json
 class GmoPublicApiClient(
     private val baseUrl: String,
     private val client: HttpClient = HttpClient(CIO)
-) : AutoCloseable {
+) : MarketDataClient, AutoCloseable {
 
     private val logger = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
@@ -29,7 +30,7 @@ class GmoPublicApiClient(
      * @param symbol 取得する通貨ペアのシンボル
      * @return ティッカーレスポンス
      */
-    suspend fun getTicker(symbol: String): TickerResponse {
+    override suspend fun getTicker(symbol: String): TickerResponse {
         val url = "$baseUrl/public/v1/ticker"
         logger.info { "ティッカー情報の取得を開始します" }
         logger.debug { "APIリクエスト: GET $url?symbol=$symbol" }
@@ -60,7 +61,7 @@ class GmoPublicApiClient(
      * @param date 取得する日付 (yyyyMMdd形式)
      * @return K線レスポンス
      */
-    suspend fun getKlines(symbol: String, interval: String, date: String): KlineResponse {
+    override suspend fun getKlines(symbol: String, interval: String, date: String): KlineResponse {
         val url = "$baseUrl/public/v1/klines"
         logger.info { "K線データ取得APIを呼び出します: $date" }
         logger.debug { "APIリクエスト: GET $url?symbol=$symbol&interval=$interval&date=$date" }
