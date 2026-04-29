@@ -35,6 +35,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.10")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation("com.lemonappdev:konsist:0.15.1")
 }
 
 tasks.test {
