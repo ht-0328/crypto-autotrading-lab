@@ -1,13 +1,14 @@
 package cryptoautotrading.infrastructure.output
 
 import cryptoautotrading.domain.model.TradeAction
+import cryptoautotrading.domain.repository.ResultOutputPort
 
-object ConsoleOutput {
+object ConsoleOutput : ResultOutputPort {
 
     /**
      * コンソールに出力する
      */
-    fun printResult(
+    override fun printResult(
         price: Double,
         action: TradeAction,
         reason: String,

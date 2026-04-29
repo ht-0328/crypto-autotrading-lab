@@ -1,5 +1,6 @@
 package cryptoautotrading.infrastructure.output
 
+import cryptoautotrading.domain.repository.TradeHistoryRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 import java.time.LocalDate
@@ -10,14 +11,14 @@ import java.time.format.DateTimeFormatter
  *
  * @property baseCsvFilePath 設定されたベースのCSVファイルパス
  */
-class CsvRepository(private val baseCsvFilePath: String) {
+class CsvRepository(private val baseCsvFilePath: String) : TradeHistoryRepository {
 
     private val logger = KotlinLogging.logger {}
 
     /**
      * CSVファイルに実行結果を追記する。1日1ファイルになるようにファイル名を調整する。
      */
-    fun append(
+    override fun append(
         datetime: String,
         price: Double,
         sign: String,

@@ -1,6 +1,7 @@
 package cryptoautotrading.infrastructure.output
 
 import cryptoautotrading.domain.model.SimulationState
+import cryptoautotrading.domain.repository.SimulationStateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -11,7 +12,7 @@ import java.io.File
  *
  * @property stateFilePath 状態を保存するファイルのパス
  */
-class StateRepository(private val stateFilePath: String) {
+class StateRepository(private val stateFilePath: String) : SimulationStateRepository {
 
     private val logger = KotlinLogging.logger {}
     private val json = Json {
@@ -25,7 +26,7 @@ class StateRepository(private val stateFilePath: String) {
      *
      * @return 読み込んだシミュレーション状態、または初期状態
      */
-    fun load(): SimulationState {
+    override fun load(): SimulationState {
         val file = File(stateFilePath)
         return if (file.exists()) {
             try {
@@ -46,7 +47,7 @@ class StateRepository(private val stateFilePath: String) {
      *
      * @param state 保存するシミュレーション状態
      */
-    fun save(state: SimulationState) {
+    override fun save(state: SimulationState) {
         logger.info { "状態ファイル (state.json) の保存処理を開始します" }
         try {
             val file = File(stateFilePath)
