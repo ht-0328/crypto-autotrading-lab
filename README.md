@@ -39,7 +39,7 @@ cd projects/crypto-autotrading-app
 ./gradlew test
 ```
 
-Docker Compose を使用する場合:
+Docker Compose を使用する場合 (初回clone直後でもそのままビルド・起動できます):
 
 ```bash
 docker compose -f docker/compose/local.yml up --build
