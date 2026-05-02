@@ -116,7 +116,7 @@ jobs:
             --region ${{ vars.GCP_REGION }}
 
       - name: Execute Cloud Run Job (Optional)
-        if: ${{ inputs.execute_after_deploy == 'true' }}
+        if: ${{ inputs.execute_after_deploy }}
         run: |
           gcloud run jobs execute ${{ vars.CLOUD_RUN_JOB_NAME }} \
             --region ${{ vars.GCP_REGION }} \
