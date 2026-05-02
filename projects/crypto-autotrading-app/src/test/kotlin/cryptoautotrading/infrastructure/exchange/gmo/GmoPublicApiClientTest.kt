@@ -66,7 +66,7 @@ class GmoPublicApiClientTest {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
-        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
 
         // Act
         val response = apiClient.getTicker("BTC")
@@ -112,7 +112,7 @@ class GmoPublicApiClientTest {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
-        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
 
         // Act
         val response = apiClient.getKlines("BTC", "5min", "20230101")
@@ -141,11 +141,98 @@ class GmoPublicApiClientTest {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
-        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
 
         // Act & Assert
         assertThrows<Exception> {
             apiClient.getTicker("BTC")
         }
+    }
+
+    @Test
+    fun `getTickerが一時的に失敗しても指定回数内で成功すれば結果を返すこと`() = runTest {
+        // Arrange
+        val jsonResponse = """
+            {
+                "status": 0,
+                "data": [
+                    {
+                        "ask": "1000000",
+                        "bid": "990000",
+                        "high": "1050000",
+                        "last": "995000",
+                        "low": "980000",
+                        "symbol": "BTC",
+                        "timestamp": "2023-01-01T00:00:00.000Z",
+                        "volume": "100.0"
+                    }
+                ],
+                "responsetime": "2023-01-01T00:00:00.000Z"
+            }
+        """.trimIndent()
+
+        var callCount = 0
+        val mockEngine = MockEngine { request ->
+            callCount++
+            if (callCount == 1) {
+                respond(
+                    content = "Internal Server Error",
+                    status = HttpStatusCode.InternalServerError,
+                    headers = headersOf(HttpHeaders.ContentType, "text/plain")
+                )
+            } else {
+                respond(
+                    content = jsonResponse,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
+        }
+
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+        // retryCount = 1
+        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
+
+        // Act
+        val response = apiClient.getTicker("BTC")
+
+        // Assert
+        assertEquals(2, callCount)
+        assertEquals(0, response.status)
+        assertEquals(1, response.data.size)
+        assertEquals("BTC", response.data[0].symbol)
+    }
+
+    @Test
+    fun `getTickerが指定されたリトライ回数を超えて失敗した場合は例外をスローすること`() = runTest {
+        // Arrange
+        var callCount = 0
+        val mockEngine = MockEngine { request ->
+            callCount++
+            respond(
+                content = "Internal Server Error",
+                status = HttpStatusCode.InternalServerError,
+                headers = headersOf(HttpHeaders.ContentType, "text/plain")
+            )
+        }
+
+        val httpClient = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+        // retryCount = 1
+        val apiClient = GmoPublicApiClient(apiConfig.baseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
+
+        // Act & Assert
+        assertThrows<Exception> {
+            apiClient.getTicker("BTC")
+        }
+        // 最初の呼び出し1回 + リトライ1回 = 2回
+        assertEquals(2, callCount)
     }
 }

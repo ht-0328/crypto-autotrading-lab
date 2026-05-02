@@ -18,11 +18,37 @@ import kotlinx.serialization.json.Json
  */
 class GmoPublicApiClient(
     private val baseUrl: String,
+    private val retryCount: Int = 0,
     private val client: HttpClient = HttpClient(CIO)
 ) : MarketDataClient, AutoCloseable {
 
     private val logger = KotlinLogging.logger {}
     private val json = Json { ignoreUnknownKeys = true }
+
+    /**
+     * リトライ処理を行う共通関数
+     *
+     * @param operation 実行する処理
+     * @return 処理結果
+     */
+    private suspend fun <T> withRetry(operation: suspend () -> T): T {
+        var currentAttempt = 0
+        while (true) {
+            try {
+                return operation()
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) {
+                    throw e
+                }
+                currentAttempt++
+                if (currentAttempt > retryCount) {
+                    throw e
+                }
+                logger.warn(e) { "API呼び出しに失敗しました。リトライします ($currentAttempt/$retryCount)" }
+                kotlinx.coroutines.delay(1000L)
+            }
+        }
+    }
 
     /**
      * 最新のティッカー情報を取得する
@@ -36,17 +62,19 @@ class GmoPublicApiClient(
         logger.debug { "APIリクエスト: GET $url?symbol=$symbol" }
 
         return try {
-            val response = client.get(url) {
-                parameter("symbol", symbol)
+            withRetry {
+                val response = client.get(url) {
+                    parameter("symbol", symbol)
+                }
+                val statusCode = response.status.value
+                val rawBody = response.bodyAsText()
+
+                logger.debug { "APIレスポンス (HTTP $statusCode): $rawBody" }
+
+                val decoded = json.decodeFromString<TickerResponse>(rawBody)
+                logger.info { "ティッカー情報の取得が完了しました" }
+                decoded
             }
-            val statusCode = response.status.value
-            val rawBody = response.bodyAsText()
-
-            logger.debug { "APIレスポンス (HTTP $statusCode): $rawBody" }
-
-            val decoded = json.decodeFromString<TickerResponse>(rawBody)
-            logger.info { "ティッカー情報の取得が完了しました" }
-            decoded
         } catch (e: Exception) {
             logger.error(e) { "ティッカー情報の取得に失敗しました。URL: $url, symbol: $symbol" }
             throw e
@@ -67,19 +95,21 @@ class GmoPublicApiClient(
         logger.debug { "APIリクエスト: GET $url?symbol=$symbol&interval=$interval&date=$date" }
 
         return try {
-            val response = client.get(url) {
-                parameter("symbol", symbol)
-                parameter("interval", interval)
-                parameter("date", date)
+            withRetry {
+                val response = client.get(url) {
+                    parameter("symbol", symbol)
+                    parameter("interval", interval)
+                    parameter("date", date)
+                }
+                val statusCode = response.status.value
+                val rawBody = response.bodyAsText()
+
+                logger.debug { "APIレスポンス本文 (HTTP $statusCode): $rawBody" }
+
+                val decoded = json.decodeFromString<KlineResponse>(rawBody)
+                logger.info { "K線データの取得が完了しました" }
+                decoded
             }
-            val statusCode = response.status.value
-            val rawBody = response.bodyAsText()
-
-            logger.debug { "APIレスポンス本文 (HTTP $statusCode): $rawBody" }
-
-            val decoded = json.decodeFromString<KlineResponse>(rawBody)
-            logger.info { "K線データの取得が完了しました" }
-            decoded
         } catch (e: Exception) {
             logger.error(e) { "K線データの取得に失敗しました。URL: $url, symbol: $symbol, interval: $interval, date: $date" }
             throw e

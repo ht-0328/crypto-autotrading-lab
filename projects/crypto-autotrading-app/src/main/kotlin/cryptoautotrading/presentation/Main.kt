@@ -49,9 +49,10 @@ fun main() = runBlocking {
 
         // APIのベースURLを設定ファイルから取得する
         val baseUrl = config.api.baseUrl ?: "https://api.coin.z.com"
-        logger.info { "最終的に採用したAPIベースURL: $baseUrl" }
+        val retryCount = config.api.retryCount
+        logger.info { "最終的に採用したAPIベースURL: $baseUrl, リトライ回数: $retryCount" }
 
-        GmoPublicApiClient(baseUrl).use { apiClient ->
+        GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
             val app = TradingApplication(
                 config = config,
                 marketDataClient = apiClient,
