@@ -279,6 +279,10 @@ GitHub 側に、GCP に接続するための設定値を登録します。
 | `CLOUD_RUN_JOB_NAME` | `<YOUR_CLOUD_RUN_JOB_NAME>` |
 | `BUILD_SERVICE_ACCOUNT_NAME` | `<YOUR_BUILD_SERVICE_ACCOUNT_NAME>` |
 | `RUNTIME_SERVICE_ACCOUNT_NAME` | `<YOUR_RUNTIME_SERVICE_ACCOUNT_NAME>` |
+| `CLOUD_SCHEDULER_JOB_NAME` | `<YOUR_CLOUD_SCHEDULER_JOB_NAME>` (例: `crypto-autotrading-lab-scheduler`) |
+| `SCHEDULER_SERVICE_ACCOUNT_NAME` | `<YOUR_SCHEDULER_SERVICE_ACCOUNT_NAME>` (例: `crypto-autotrading-lab-scheduler`) |
+| `SCHEDULER_CRON` | `<YOUR_SCHEDULER_CRON>` (例: `*/5 * * * *`) |
+| `SCHEDULER_TIME_ZONE` | `<YOUR_SCHEDULER_TIME_ZONE>` (例: `Asia/Tokyo`) |
 
 > **`GCP_WORKLOAD_IDENTITY_PROVIDER` の値の確認方法**:
 > 以下のコマンドを実行して表示される `name` の値（`projects/123456789/locations/global/...` のような長い文字列）をコピーして設定してください。

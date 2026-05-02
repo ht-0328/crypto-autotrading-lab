@@ -1,0 +1,169 @@
+name: Cloud Scheduler Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Cloud Scheduler の操作を選択してください'
+        required: true
+        type: choice
+        options:
+          - 'create - 作成または更新'
+          - 'pause - 一時停止'
+          - 'resume - 再開'
+          - 'delete - 削除'
+          - 'run - 手動実行'
+      confirm_delete:
+        description: '削除する場合のみ DELETE と入力してください'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  manage-scheduler:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Parse Action Input
+        id: parse_action
+        run: |
+          SELECTED_ACTION="${{ github.event.inputs.action }}"
+
+          case "${SELECTED_ACTION}" in
+            "create - 作成または更新")
+              ACTION="create"
+              ;;
+            "pause - 一時停止")
+              ACTION="pause"
+              ;;
+            "resume - 再開")
+              ACTION="resume"
+              ;;
+            "delete - 削除")
+              ACTION="delete"
+              ;;
+            "run - 手動実行")
+              ACTION="run"
+              ;;
+            *)
+              echo "Unknown action: ${SELECTED_ACTION}"
+              exit 1
+              ;;
+          esac
+
+          echo "ACTION=${ACTION}" >> "$GITHUB_ENV"
+          echo "選択された操作: ${SELECTED_ACTION}"
+          echo "内部処理用ACTION: ${ACTION}"
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Create or Update Scheduler Job
+        if: ${{ env.ACTION == 'create' }}
+        run: |
+          echo "Enabling necessary GCP APIs..."
+          gcloud services enable serviceusage.googleapis.com \
+            cloudresourcemanager.googleapis.com \
+            cloudscheduler.googleapis.com \
+            run.googleapis.com \
+            iam.googleapis.com
+
+          echo "Setting up Scheduler Service Account..."
+          SA_EMAIL="${{ vars.SCHEDULER_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
+
+          if gcloud iam service-accounts describe "${SA_EMAIL}" > /dev/null 2>&1; then
+            echo "Service Account ${SA_EMAIL} already exists, skipping creation."
+          else
+            echo "Creating Service Account ${SA_EMAIL}..."
+            gcloud iam service-accounts create "${{ vars.SCHEDULER_SERVICE_ACCOUNT_NAME }}" \
+              --description="Service Account for Cloud Scheduler Job"
+          fi
+
+          echo "Granting Cloud Run Invoker role to Service Account..."
+          # 将来的には最小権限へ寄せるため、プロジェクト単位ではなくCloud Run Job単位などに絞るのが望ましい
+          gcloud projects add-iam-policy-binding "${{ vars.GCP_PROJECT_ID }}" \
+            --member="serviceAccount:${SA_EMAIL}" \
+            --role="roles/run.invoker"
+
+          echo "Building Scheduler URI..."
+          SCHEDULER_URI="https://run.googleapis.com/v2/projects/${{ vars.GCP_PROJECT_ID }}/locations/${{ vars.GCP_REGION }}/jobs/${{ vars.CLOUD_RUN_JOB_NAME }}:run"
+
+          echo "Checking if Scheduler Job exists..."
+          if gcloud scheduler jobs describe "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" --location="${{ vars.GCP_REGION }}" > /dev/null 2>&1; then
+            echo "Updating existing Scheduler Job..."
+            gcloud scheduler jobs update http "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" \
+              --location="${{ vars.GCP_REGION }}" \
+              --schedule="${{ vars.SCHEDULER_CRON }}" \
+              --time-zone="${{ vars.SCHEDULER_TIME_ZONE }}" \
+              --uri="${SCHEDULER_URI}" \
+              --http-method=POST \
+              --oauth-service-account-email="${SA_EMAIL}"
+          else
+            echo "Creating new Scheduler Job..."
+            gcloud scheduler jobs create http "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" \
+              --location="${{ vars.GCP_REGION }}" \
+              --schedule="${{ vars.SCHEDULER_CRON }}" \
+              --time-zone="${{ vars.SCHEDULER_TIME_ZONE }}" \
+              --uri="${SCHEDULER_URI}" \
+              --http-method=POST \
+              --oauth-service-account-email="${SA_EMAIL}"
+          fi
+
+          echo "Scheduler Job details:"
+          gcloud scheduler jobs describe "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" --location="${{ vars.GCP_REGION }}"
+
+      - name: Pause Scheduler Job
+        if: ${{ env.ACTION == 'pause' }}
+        run: |
+          echo "Pausing Scheduler Job..."
+          gcloud scheduler jobs pause "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" \
+            --location="${{ vars.GCP_REGION }}"
+
+      - name: Resume Scheduler Job
+        if: ${{ env.ACTION == 'resume' }}
+        run: |
+          echo "Resuming Scheduler Job..."
+          gcloud scheduler jobs resume "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" \
+            --location="${{ vars.GCP_REGION }}"
+
+      - name: Delete Scheduler Job
+        if: ${{ env.ACTION == 'delete' }}
+        run: |
+          CONFIRM_DELETE="$(echo '${{ github.event.inputs.confirm_delete }}' | xargs)"
+          if [ "${CONFIRM_DELETE}" != "DELETE" ]; then
+            echo "Error: confirm_delete must be exactly 'DELETE'."
+            echo "You entered: '${{ github.event.inputs.confirm_delete }}'"
+            exit 1
+          fi
+
+          echo "Deleting Scheduler Job..."
+          gcloud scheduler jobs delete "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" \
+            --location="${{ vars.GCP_REGION }}" \
+            --quiet
+
+      - name: Run Scheduler Job
+        if: ${{ env.ACTION == 'run' }}
+        run: |
+          echo "Running Scheduler Job manually..."
+          gcloud scheduler jobs run "${{ vars.CLOUD_SCHEDULER_JOB_NAME }}" \
+            --location="${{ vars.GCP_REGION }}"
+
+      - name: List Scheduler Jobs
+        if: always()
+        run: |
+          echo "=== Cloud Scheduler Jobs in ${{ vars.GCP_REGION }} ==="
+          gcloud scheduler jobs list --location="${{ vars.GCP_REGION }}"
