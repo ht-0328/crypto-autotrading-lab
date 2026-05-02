@@ -5,6 +5,8 @@ import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 class SimulationServiceTest {
@@ -16,12 +18,12 @@ class SimulationServiceTest {
         // Arrange
         val currentState = SimulationState(
             isHolding = false,
-            buyPrice = 0.0,
-            holdingAmount = 0.0,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val currentPrice = 50000.0
+        val currentPrice = BigDecimal("50000.0")
         val tradeAmount = 10000
 
         // Act
@@ -30,7 +32,8 @@ class SimulationServiceTest {
         // Assert
         assertTrue(nextState.isHolding)
         assertEquals(currentPrice, nextState.buyPrice)
-        assertEquals(tradeAmount.toDouble() / currentPrice, nextState.holdingAmount)
+        val expectedAmount = BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
+        assertEquals(expectedAmount, nextState.holdingAmount)
         assertNotEquals(currentState.lastUpdatedAt, nextState.lastUpdatedAt)
     }
 
@@ -39,12 +42,12 @@ class SimulationServiceTest {
         // Arrange
         val currentState = SimulationState(
             isHolding = true,
-            buyPrice = 40000.0,
-            holdingAmount = 0.25,
+            buyPrice = BigDecimal("40000.0"),
+            holdingAmount = BigDecimal("0.25"),
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val currentPrice = 50000.0
+        val currentPrice = BigDecimal("50000.0")
         val tradeAmount = 10000
 
         // Act
@@ -62,12 +65,12 @@ class SimulationServiceTest {
         // Arrange
         val currentState = SimulationState(
             isHolding = true,
-            buyPrice = 40000.0,
-            holdingAmount = 0.25,
+            buyPrice = BigDecimal("40000.0"),
+            holdingAmount = BigDecimal("0.25"),
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val currentPrice = 50000.0
+        val currentPrice = BigDecimal("50000.0")
         val tradeAmount = 10000
 
         // Act
@@ -75,8 +78,8 @@ class SimulationServiceTest {
 
         // Assert
         assertFalse(nextState.isHolding)
-        assertEquals(0.0, nextState.buyPrice)
-        assertEquals(0.0, nextState.holdingAmount)
+        assertEquals(BigDecimal.ZERO, nextState.buyPrice)
+        assertEquals(BigDecimal.ZERO, nextState.holdingAmount)
         assertNotEquals(currentState.lastUpdatedAt, nextState.lastUpdatedAt)
     }
 
@@ -85,12 +88,12 @@ class SimulationServiceTest {
         // Arrange
         val currentState = SimulationState(
             isHolding = false,
-            buyPrice = 0.0,
-            holdingAmount = 0.0,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val currentPrice = 50000.0
+        val currentPrice = BigDecimal("50000.0")
         val tradeAmount = 10000
 
         // Act
@@ -98,8 +101,8 @@ class SimulationServiceTest {
 
         // Assert
         assertFalse(nextState.isHolding)
-        assertEquals(0.0, nextState.buyPrice)
-        assertEquals(0.0, nextState.holdingAmount)
+        assertEquals(BigDecimal.ZERO, nextState.buyPrice)
+        assertEquals(BigDecimal.ZERO, nextState.holdingAmount)
         assertNotEquals(currentState.lastUpdatedAt, nextState.lastUpdatedAt)
     }
 
@@ -108,12 +111,12 @@ class SimulationServiceTest {
         // Arrange
         val currentState = SimulationState(
             isHolding = false,
-            buyPrice = 0.0,
-            holdingAmount = 0.0,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
         val decision = TradeDecision(TradeAction.SKIP, "skip signal")
-        val currentPrice = 50000.0
+        val currentPrice = BigDecimal("50000.0")
         val tradeAmount = 10000
 
         // Act
@@ -131,12 +134,12 @@ class SimulationServiceTest {
         // Arrange
         val currentState = SimulationState(
             isHolding = true,
-            buyPrice = 40000.0,
-            holdingAmount = 0.25,
+            buyPrice = BigDecimal("40000.0"),
+            holdingAmount = BigDecimal("0.25"),
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
         val decision = TradeDecision(TradeAction.HOLDING, "holding signal")
-        val currentPrice = 50000.0
+        val currentPrice = BigDecimal("50000.0")
         val tradeAmount = 10000
 
         // Act

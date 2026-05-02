@@ -2,6 +2,7 @@ package cryptoautotrading.infrastructure.output
 
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.repository.ResultOutputPort
+import java.math.BigDecimal
 
 object ConsoleOutput : ResultOutputPort {
 
@@ -9,11 +10,11 @@ object ConsoleOutput : ResultOutputPort {
      * コンソールに出力する
      */
     override fun printResult(
-        price: Double,
+        price: BigDecimal,
         action: TradeAction,
         reason: String,
-        profitAndLoss: Double,
-        estimatedProfitAndLoss: Double
+        profitAndLoss: BigDecimal,
+        estimatedProfitAndLoss: BigDecimal
     ) {
         println("--- 判定結果 ---")
         println("現在価格: $price")

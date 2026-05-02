@@ -3,6 +3,7 @@ package cryptoautotrading.infrastructure.output
 import cryptoautotrading.domain.repository.TradeHistoryRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
+import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -20,12 +21,12 @@ class CsvRepository(private val baseCsvFilePath: String) : TradeHistoryRepositor
      */
     override fun append(
         datetime: String,
-        price: Double,
+        price: BigDecimal,
         sign: String,
         reason: String,
-        profitAndLoss: Double,
+        profitAndLoss: BigDecimal,
         isHolding: Boolean,
-        fee: Double
+        fee: BigDecimal
     ) {
         logger.info { "CSV保存処理を開始します" }
         try {
