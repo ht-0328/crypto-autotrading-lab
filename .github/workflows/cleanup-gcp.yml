@@ -12,6 +12,11 @@ on:
         required: false
         default: false
         description: "GCS バケットと中身も削除する"
+      delete_cloudbuild_bucket:
+        type: boolean
+        required: false
+        default: true
+        description: "Cloud Build 用の GCS バケットも削除する"
       delete_artifact_registry:
         type: boolean
         required: false
@@ -46,7 +51,8 @@ jobs:
 
       - name: Check confirm_delete input
         run: |
-          if [ "${{ github.event.inputs.confirm_delete }}" != "DELETE" ]; then
+          CONFIRM_DELETE="$(echo '${{ github.event.inputs.confirm_delete }}' | xargs)"
+          if [ "${CONFIRM_DELETE}" != "DELETE" ]; then
             echo "Error: confirm_delete must be exactly 'DELETE'."
             echo "You entered: ${{ github.event.inputs.confirm_delete }}"
             exit 1
@@ -71,6 +77,7 @@ jobs:
           echo "Delete Cloud Run Job: ${{ github.event.inputs.delete_cloud_run_job }}"
           echo "Delete Artifact Registry: ${{ github.event.inputs.delete_artifact_registry }}"
           echo "Delete GCS Bucket: ${{ github.event.inputs.delete_gcs_bucket }}"
+          echo "Delete Cloud Build Bucket: ${{ github.event.inputs.delete_cloudbuild_bucket }}"
           echo "Delete Service Accounts: ${{ github.event.inputs.delete_service_accounts }}"
           echo "==========================="
 
@@ -122,6 +129,22 @@ jobs:
             fi
           fi
 
+      - name: Cleanup Cloud Build GCS Bucket
+        if: ${{ github.event.inputs.delete_cloudbuild_bucket == 'true' }}
+        run: |
+          echo "Target: Cloud Build GCS Bucket"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would delete Cloud Build GCS Bucket and its contents"
+          else
+            echo "Checking if Cloud Build GCS Bucket exists..."
+            if gcloud storage buckets describe gs://${{ vars.GCP_PROJECT_ID }}_cloudbuild > /dev/null 2>&1; then
+              echo "Deleting Cloud Build GCS Bucket and contents..."
+              gcloud storage rm --recursive gs://${{ vars.GCP_PROJECT_ID }}_cloudbuild
+            else
+              echo "Cloud Build GCS Bucket not found, skipping."
+            fi
+          fi
+
       - name: Cleanup Cloud Build Service Account
         if: ${{ github.event.inputs.delete_service_accounts == 'true' }}
         run: |
@@ -155,3 +178,27 @@ jobs:
               echo "Runtime Service Account not found, skipping."
             fi
           fi
+
+      - name: Verify remaining GCP resources
+        run: |
+          echo "=== Remaining GCP Resources ==="
+
+          echo "--- Cloud Run Jobs ---"
+          gcloud run jobs list --region=${{ vars.GCP_REGION }} || true
+
+          echo "--- Artifact Registry Repositories ---"
+          gcloud artifacts repositories list --location=${{ vars.GCP_REGION }} || true
+
+          echo "--- GCS Buckets ---"
+          gcloud storage buckets list --project=${{ vars.GCP_PROJECT_ID }} || true
+
+          echo "--- Cloud Build Triggers ---"
+          gcloud builds triggers list || true
+
+          echo "--- Cloud Scheduler Jobs ---"
+          gcloud scheduler jobs list --location=${{ vars.GCP_REGION }} || true
+
+          echo "--- Service Accounts ---"
+          gcloud iam service-accounts list --project=${{ vars.GCP_PROJECT_ID }} || true
+
+          echo "==============================="
