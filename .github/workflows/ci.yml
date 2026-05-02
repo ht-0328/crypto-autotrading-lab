@@ -27,7 +27,7 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Run Tests
+      - name: Build and Test
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew build
