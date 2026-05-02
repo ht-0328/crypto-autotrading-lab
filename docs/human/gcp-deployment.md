@@ -13,7 +13,8 @@ Google アカウントの準備から、GCP プロジェクトの作成、課金
 ## 2. GitHub Actions から GCP にデプロイするための準備
 
 GCP の準備が整った後、GitHub Actions から GCP リソースへ安全にアクセスし、デプロイを行うための設定手順です。
-Workload Identity Federation の構築や、サービスアカウントの作成、GitHub Repository Variables の設定について説明しています。
+現在の `deploy-gcp.yml` では、GCP側の一部リソース（Artifact Registry、GCS、サービスアカウントなど）を GitHub Actions で自動作成する構成になっています。
+ただし、GCPプロジェクト、課金設定、Workload Identity Federation、デプロイ用サービスアカウント、および GitHub Variables は事前準備として必要です。
 
 👉 **[GitHub Actions から GCP にデプロイするための準備 (github-actions-gcp-deploy-setup.md)](./github-actions-gcp-deploy-setup.md)**
 

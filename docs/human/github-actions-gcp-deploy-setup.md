@@ -3,9 +3,30 @@
 ## このドキュメントの目的
 このドキュメントは、GitHub Actions を使って GCP (Google Cloud Platform) へアプリケーションをデプロイするための準備手順を説明します。
 
-- まだ GCP アカウントの作成、GCP プロジェクトの作成、課金設定が終わっていない場合は、先に `docs/human/gcp-account-and-project-setup.md` を読んで完了させてください。
-- このドキュメントの準備を完了すると、最終的には GitHub Actions の workflow を実行するだけで、Cloud Build でのビルドと Cloud Run Job へのデプロイが自動でできるようになります。
-- ただし、GitHub Actions が GCP に安全にアクセスするための「認証の入り口」は、最初に手動で作成する必要があります。
+現在のデプロイワークフロー (`deploy-gcp.yml`) は、GCP 上で動作に必要なリソースの多くを自動でセットアップする仕組みを備えています。しかし、GitHub Actions が GCP に安全にアクセスするための「認証の入り口」などは、事前に手動で作成しておく必要があります。
+
+**事前に必要なもの (手動で準備するもの):**
+- GCPアカウント
+- GCPプロジェクト
+- 課金設定
+- `gcloud` CLI (認証済みであること)
+- GitHubリポジトリ
+- Workload Identity Federation
+- GitHub Actions用デプロイサービスアカウント
+- デプロイ用サービスアカウントへの初期権限付与
+- GitHub Repository Variables
+
+**GitHub Actions が自動作成・更新するもの:**
+- 必要 API の有効化 (Run, Build, Artifact Registry など)
+- Artifact Registry リポジトリの作成
+- GCS バケットの作成
+- Cloud Build 用サービスアカウントの作成
+- Cloud Run 実行用サービスアカウントの作成
+- Cloud Build 用サービスアカウントへの IAM 付与
+- Cloud Run 実行用サービスアカウントへの GCS バケット権限付与
+- Cloud Run Job へのデプロイ
+
+※ まだ GCP アカウントの作成、GCP プロジェクトの作成、課金設定が終わっていない場合は、先に `docs/human/gcp-account-and-project-setup.md` を読んで完了させてください。
 
 ## 全体像
 GitHub Actions から GCP にデプロイする流れは以下のようになります。
@@ -126,30 +147,17 @@ gcloud billing projects describe "$PROJECT_ID" \
 - `lifecycleState` が `ACTIVE`
 - `billingEnabled` が `True`
 
-## 3. 必要 API の有効化手順
-デプロイやリソース作成に必要な GCP の API を有効化します。
+## 3. 自動作成・更新されるリソースについて
+先述の通り、以下の GCP リソースや設定は GitHub Actions ワークフロー (`deploy-gcp.yml`) が実行される際に自動的に作成または有効化されます。したがって、これらを手動で行う必要はありません。
 
-```bash
-gcloud services enable \
-  serviceusage.googleapis.com \
-  iam.googleapis.com \
-  iamcredentials.googleapis.com \
-  cloudbuild.googleapis.com \
-  artifactregistry.googleapis.com \
-  run.googleapis.com \
-  storage.googleapis.com \
-  --project "$PROJECT_ID"
-```
+- 必要 API の有効化
+- Artifact Registry の作成
+- GCS バケットの作成
+- Cloud Build 用サービスアカウントの作成
+- Cloud Run 実行用サービスアカウントの作成
+- それらに必要な IAM ロールの付与
 
-有効化されたか確認します。
-
-```bash
-gcloud services list \
-  --enabled \
-  --project "$PROJECT_ID" \
-  --filter="NAME:(serviceusage.googleapis.com OR iam.googleapis.com OR iamcredentials.googleapis.com OR cloudbuild.googleapis.com OR artifactregistry.googleapis.com OR run.googleapis.com OR storage.googleapis.com)" \
-  --format="table(NAME,TITLE)"
-```
+これ以降の手順では、**「GitHub Actions 自身が GCP にアクセスするための設定（手動での事前準備）」** を行います。
 
 ## 4. デプロイ用サービスアカウントの作成手順
 GitHub Actions が GCP を操作する際に使用する「デプロイ用」のサービスアカウントを作成します。
@@ -374,18 +382,22 @@ gcloud iam service-accounts get-iam-policy "$DEPLOY_SERVICE_ACCOUNT_EMAIL" \
 以上の設定が終わったら、実際にデプロイを試してみましょう。
 
 1. GitHub リポジトリの **Actions** タブを開きます。
-2. 左側の workflow 一覧から **Deploy to GCP** などの対象 workflow を選びます。
-3. **Run workflow** ボタンを押して実行します。
-4. 実行ログを開き、以下のステップが成功しているか確認します。
+2. 左側の workflow 一覧から **Deploy to GCP** を選びます。
+3. **Run workflow** ボタンを押します。
+4. `execute_after_deploy` というチェックボックスが表示されます。
+   - **チェックを入れた場合 (true)**: デプロイ完了後、そのまま Cloud Run Job の実行まで行われます。
+   - **チェックを外した場合 (false - デフォルト)**: Cloud Run Job のデプロイと情報の表示 (`describe`) だけで終了します。実行はされません。
+5. 実行ログを開き、以下のステップが成功しているか確認します。
    - GCP への認証 (Authenticate to Google Cloud)
+   - Setup GCP Resources (ここで初回実行時に必要な GCP リソースが自動作成されます。2回目以降は既存のリソースが再利用されるためエラーにはなりません。)
    - Cloud Build でのビルド
    - Cloud Run Job へのデプロイ
 
-必要に応じて、デプロイが成功したかを gcloud コマンドでも確認できます。
+必要に応じて、デプロイが成功したかをローカルの gcloud コマンドでも確認できます。
 ```bash
-gcloud run jobs describe "$CLOUD_RUN_JOB_NAME" \
-  --region "$REGION" \
-  --project "$PROJECT_ID"
+gcloud run jobs describe "<YOUR_CLOUD_RUN_JOB_NAME>" \
+  --region "<YOUR_GCP_REGION>" \
+  --project "<YOUR_GCP_PROJECT_ID>"
 ```
 
 ---
@@ -398,12 +410,6 @@ GitHub CLI がインストールされていない場合に発生します。こ
 
 ### `PERMISSION_DENIED`
 デプロイ用サービスアカウントの IAM ロールが不足しています。「5. デプロイ用サービスアカウントへの IAM 付与手順」を再度確認してください。
-
-### `NOT_FOUND: Artifact Registry repository`
-Artifact Registry が未作成である可能性があります。今後 workflow 側で自動作成されるようになれば、初回実行時に存在しなくても問題ありません。手動で作成する場合は Cloud Console から作成してください。
-
-### `gs://... not found`
-GCS バケットが未作成である可能性があります。こちらも今後 workflow 側で自動作成されるようになれば問題ありません。
 
 ### `workload_identity_provider` 関連のエラー
 以下を確認してください。
@@ -420,13 +426,11 @@ GCS バケットが未作成である可能性があります。こちらも今�
 
 - **`.github/workflows/deploy-gcp.yml`**
   - GitHub Actions で GCP に認証する。
+  - **(自動化済み)** 必要な API を有効化し、Artifact Registry、GCS、サービスアカウントなどを自動作成する。
   - Cloud Build を実行する。
   - Cloud Run Job にデプロイする。
 - **`cloudbuild.yaml`**
   - Gradle で shadowJar を作成する。
   - Docker イメージをビルドする。
   - Artifact Registry にプッシュする。
-
-**今後の改善について**:
-- `deploy-gcp.yml` に setup 用の job を追加すると、Artifact Registry、GCS、サービスアカウント作成、IAM 付与を全て自動化できます。
-- `cloudbuild.yaml` のイメージパス直書きを substitutions (変数) に置き換えることで、プロジェクト ID などの環境変更に強くなります。
+  - イメージパス等は substitutions (変数) を使って組み立てられており、環境変更に強くなっています。
