@@ -39,7 +39,8 @@ GCP の準備が整った後、GitHub Actions から GCP リソースへ安全�
 この仕組みにより、以下の柔軟な運用が可能になっています：
 
 * ローカル開発では、これまで通り YAML 設定ファイルを使用できます。
-* Cloud Run Job のようなクラウド環境では、設定ファイルがなくても起動でき、本当に必要な設定値だけを環境変数で上書きできます。
-* Cloud Run Job に渡す環境変数は、原則として `APP_DATA_DIR=/mnt/gcs/data` (GCS のマウントパス) などのデータディレクトリの指定のみで基本動作するように設計されています。
+* Cloud Run Job のようなクラウド環境では、設定ファイル（`application-gmo.yaml` 等）を使わず、すべての設定値を GitHub Actions Variables 経由で環境変数として直接渡す方針を採用しています。
+* これにより、環境ごとに設定ファイルを用意したり、イメージに組み込んだり・マウントしたりする手間を省き、GitHub の画面上から柔軟に設定値（例： `TRADING_SYMBOL` や `APP_INTERVAL` など）を変更してデプロイできます。
+* 環境変数は、GitHub Actions の `.github/workflows/deploy-gcp.yml` 内で `gcloud run jobs deploy` の `--set-env-vars` を通じて Cloud Run Job に渡されます。データディレクトリのマウントパス (`APP_DATA_DIR=/mnt/gcs/data`) 等もここで設定されます。
 
 > **Note:** API キーや API シークレットなどの秘密情報はこの優先順位の対象外です。GitHub Variables には設定せず、GitHub Secrets や Secret Manager などの安全な仕組みを利用して管理してください。
