@@ -27,6 +27,11 @@ on:
         required: false
         default: true
         description: "Cloud Build 用サービスアカウントと Cloud Run 実行用サービスアカウントを削除する"
+      delete_scheduler_service_account:
+        type: boolean
+        required: false
+        default: true
+        description: "Cloud Scheduler 用サービスアカウントを削除する"
       delete_cloud_run_job:
         type: boolean
         required: false
@@ -79,6 +84,7 @@ jobs:
           echo "Delete GCS Bucket: ${{ github.event.inputs.delete_gcs_bucket }}"
           echo "Delete Cloud Build Bucket: ${{ github.event.inputs.delete_cloudbuild_bucket }}"
           echo "Delete Service Accounts: ${{ github.event.inputs.delete_service_accounts }}"
+          echo "Delete Scheduler Service Account: ${{ inputs.delete_scheduler_service_account }}"
           echo "==========================="
 
       - name: Cleanup Cloud Run Job
@@ -176,6 +182,23 @@ jobs:
               gcloud iam service-accounts delete $SA_EMAIL --quiet
             else
               echo "Runtime Service Account not found, skipping."
+            fi
+          fi
+
+      - name: Cleanup Scheduler Service Account
+        if: ${{ inputs.delete_scheduler_service_account }}
+        run: |
+          echo "Target: Cloud Scheduler Service Account"
+          SA_EMAIL="${{ vars.SCHEDULER_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would delete Scheduler Service Account"
+          else
+            echo "Checking if Scheduler Service Account exists..."
+            if gcloud iam service-accounts describe $SA_EMAIL > /dev/null 2>&1; then
+              echo "Deleting Scheduler Service Account..."
+              gcloud iam service-accounts delete $SA_EMAIL --quiet
+            else
+              echo "Scheduler Service Account not found, skipping."
             fi
           fi
 

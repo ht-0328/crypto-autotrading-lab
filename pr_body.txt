@@ -1,0 +1,31 @@
+## 概要
+cleanup-gcp.yml にて GCP のリソースをクリーンアップする際、Cloud Scheduler 用のサービスアカウントが削除対象から漏れていたため、削除対象に含めるように修正しました。
+
+## 変更種類（必須）
+- [ ] feature
+- [ ] fix
+- [x] refactor
+- [ ] docs
+- [ ] chore
+
+## スコープ宣言（必須）
+- 対象: .github/workflows/cleanup-gcp.yml での Cloud Scheduler サービスアカウントの削除処理追加
+- 非対象: アプリケーションのコード変更や GCP の他リソースの削除処理の変更
+
+## 変更内容
+- `delete_scheduler_service_account` という boolean 型の input を追加 (デフォルト true)
+- ログ出力ステップ (`Display variables and dry run status`) で削除するかどうかのフラグを表示
+- `Cleanup Scheduler Service Account` ステップを追加し、`delete_scheduler_service_account` が true かつ `dry_run` が false の場合にサービスアカウントを削除するように対応
+
+## 影響範囲
+- `cleanup-gcp.yml` 実行時のクリーンアップ対象に Cloud Scheduler サービスアカウントが追加されるのみで、他の機能やロジックには影響しません。
+
+## 確認手順
+1. 手動で `cleanup-gcp.yml` を実行し、`delete_scheduler_service_account` オプションを設定する。
+2. `dry_run=true` の場合、削除はされずにログ出力されることを確認する。
+3. `dry_run=false` の場合、正しく Cloud Scheduler サービスアカウントが削除されることを確認する。
+
+## 分割方針チェック
+- [x] リファクタと機能追加を同一PRに混在させていない
+- [x] `domain` 変更時に `infrastructure` を同時変更していない（必要時は別PR）
+- [x] `application` にオーケストレーション以外のロジックを追加していない
