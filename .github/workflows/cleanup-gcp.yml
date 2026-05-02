@@ -1,0 +1,157 @@
+name: Cleanup GCP Resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_delete:
+        type: string
+        required: true
+        description: "削除を実行する場合は DELETE と入力する"
+      delete_gcs_bucket:
+        type: boolean
+        required: false
+        default: false
+        description: "GCS バケットと中身も削除する"
+      delete_artifact_registry:
+        type: boolean
+        required: false
+        default: true
+        description: "Artifact Registry リポジトリを削除する"
+      delete_service_accounts:
+        type: boolean
+        required: false
+        default: true
+        description: "Cloud Build 用サービスアカウントと Cloud Run 実行用サービスアカウントを削除する"
+      delete_cloud_run_job:
+        type: boolean
+        required: false
+        default: true
+        description: "Cloud Run Job を削除する"
+      dry_run:
+        type: boolean
+        required: false
+        default: true
+        description: "true の場合は削除対象を表示するだけで削除しない"
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check confirm_delete input
+        run: |
+          if [ "${{ github.event.inputs.confirm_delete }}" != "DELETE" ]; then
+            echo "Error: confirm_delete must be exactly 'DELETE'."
+            echo "You entered: ${{ github.event.inputs.confirm_delete }}"
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Display variables and dry run status
+        run: |
+          echo "=== Cleanup Configuration ==="
+          echo "Dry Run: ${{ github.event.inputs.dry_run }}"
+          echo "Delete Cloud Run Job: ${{ github.event.inputs.delete_cloud_run_job }}"
+          echo "Delete Artifact Registry: ${{ github.event.inputs.delete_artifact_registry }}"
+          echo "Delete GCS Bucket: ${{ github.event.inputs.delete_gcs_bucket }}"
+          echo "Delete Service Accounts: ${{ github.event.inputs.delete_service_accounts }}"
+          echo "==========================="
+
+      - name: Cleanup Cloud Run Job
+        if: ${{ github.event.inputs.delete_cloud_run_job == 'true' }}
+        run: |
+          echo "Target: Cloud Run Job"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would delete Cloud Run Job in region ${{ vars.GCP_REGION }}"
+          else
+            echo "Checking if Cloud Run Job exists..."
+            if gcloud run jobs describe ${{ vars.CLOUD_RUN_JOB_NAME }} --region ${{ vars.GCP_REGION }} > /dev/null 2>&1; then
+              echo "Deleting Cloud Run Job..."
+              gcloud run jobs delete ${{ vars.CLOUD_RUN_JOB_NAME }} --region ${{ vars.GCP_REGION }} --quiet
+            else
+              echo "Cloud Run Job not found, skipping."
+            fi
+          fi
+
+      - name: Cleanup Artifact Registry
+        if: ${{ github.event.inputs.delete_artifact_registry == 'true' }}
+        run: |
+          echo "Target: Artifact Registry Repository"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would delete Artifact Registry in region ${{ vars.GCP_REGION }}"
+          else
+            echo "Checking if Artifact Registry exists..."
+            if gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} > /dev/null 2>&1; then
+              echo "Deleting Artifact Registry..."
+              gcloud artifacts repositories delete ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} --quiet
+            else
+              echo "Artifact Registry not found, skipping."
+            fi
+          fi
+
+      - name: Cleanup GCS Bucket
+        if: ${{ github.event.inputs.delete_gcs_bucket == 'true' }}
+        run: |
+          echo "Target: GCS Bucket"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would delete GCS Bucket and its contents"
+          else
+            echo "Checking if GCS Bucket exists..."
+            if gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} > /dev/null 2>&1; then
+              echo "Deleting GCS Bucket and contents..."
+              gcloud storage rm --recursive gs://${{ vars.GCS_BUCKET_NAME }}
+            else
+              echo "GCS Bucket not found, skipping."
+            fi
+          fi
+
+      - name: Cleanup Cloud Build Service Account
+        if: ${{ github.event.inputs.delete_service_accounts == 'true' }}
+        run: |
+          echo "Target: Cloud Build Service Account"
+          SA_EMAIL="${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would delete Build Service Account"
+          else
+            echo "Checking if Build Service Account exists..."
+            if gcloud iam service-accounts describe $SA_EMAIL > /dev/null 2>&1; then
+              echo "Deleting Build Service Account..."
+              gcloud iam service-accounts delete $SA_EMAIL --quiet
+            else
+              echo "Build Service Account not found, skipping."
+            fi
+          fi
+
+      - name: Cleanup Runtime Service Account
+        if: ${{ github.event.inputs.delete_service_accounts == 'true' }}
+        run: |
+          echo "Target: Cloud Run Runtime Service Account"
+          SA_EMAIL="${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            echo "[DRY RUN] Would delete Runtime Service Account"
+          else
+            echo "Checking if Runtime Service Account exists..."
+            if gcloud iam service-accounts describe $SA_EMAIL > /dev/null 2>&1; then
+              echo "Deleting Runtime Service Account..."
+              gcloud iam service-accounts delete $SA_EMAIL --quiet
+            else
+              echo "Runtime Service Account not found, skipping."
+            fi
+          fi
