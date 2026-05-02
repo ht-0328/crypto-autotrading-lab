@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.math.BigDecimal
 import java.nio.file.Path
 
 class CsvRepositoryTest {
@@ -17,12 +18,12 @@ class CsvRepositoryTest {
         // Act
         repository.append(
             datetime = "2023-01-01T10:00:00",
-            price = 50000.0,
+            price = BigDecimal("50000.0"),
             sign = "買い",
             reason = "テスト理由",
-            profitAndLoss = 0.0,
+            profitAndLoss = BigDecimal("0.0"),
             isHolding = true,
-            fee = 10.0
+            fee = BigDecimal("10.0")
         )
 
         // Assert
@@ -49,12 +50,12 @@ class CsvRepositoryTest {
         // Act
         repository.append(
             datetime = "2023-01-01T11:00:00",
-            price = 51000.0,
+            price = BigDecimal("51000.0"),
             sign = "売り",
             reason = "テスト理由2",
-            profitAndLoss = 1000.0,
+            profitAndLoss = BigDecimal("1000.0"),
             isHolding = false,
-            fee = 15.0
+            fee = BigDecimal("15.0")
         )
 
         // Assert
@@ -74,12 +75,12 @@ class CsvRepositoryTest {
         // Act
         repository.append(
             datetime = "2023-01-01T12:00:00",
-            price = 50000.0,
+            price = BigDecimal("50000.0"),
             sign = "買い",
             reason = "急落, 注意",
-            profitAndLoss = 0.0,
+            profitAndLoss = BigDecimal("0.0"),
             isHolding = true,
-            fee = 10.0
+            fee = BigDecimal("10.0")
         )
 
         // Assert
@@ -98,12 +99,12 @@ class CsvRepositoryTest {
         // Act
         repository.append(
             datetime = "2023-01-01T12:00:00",
-            price = 50000.0,
+            price = BigDecimal("50000.0"),
             sign = "買い",
             reason = "理由: \"急落\"",
-            profitAndLoss = 0.0,
+            profitAndLoss = BigDecimal("0.0"),
             isHolding = true,
-            fee = 10.0
+            fee = BigDecimal("10.0")
         )
 
         // Assert
@@ -122,12 +123,12 @@ class CsvRepositoryTest {
         // Act
         repository.append(
             datetime = "2023-01-01T12:00:00",
-            price = 50000.0,
+            price = BigDecimal("50000.0"),
             sign = "買い",
             reason = "急落\n注意",
-            profitAndLoss = 0.0,
+            profitAndLoss = BigDecimal("0.0"),
             isHolding = true,
-            fee = 10.0
+            fee = BigDecimal("10.0")
         )
 
         // Assert

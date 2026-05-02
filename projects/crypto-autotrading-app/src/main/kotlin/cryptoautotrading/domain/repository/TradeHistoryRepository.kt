@@ -1,5 +1,7 @@
 package cryptoautotrading.domain.repository
 
+import java.math.BigDecimal
+
 /**
  * 取引履歴を保存するインターフェース
  */
@@ -9,11 +11,11 @@ interface TradeHistoryRepository {
      */
     fun append(
         datetime: String,
-        price: Double,
+        price: BigDecimal,
         sign: String,
         reason: String,
-        profitAndLoss: Double,
+        profitAndLoss: BigDecimal,
         isHolding: Boolean,
-        fee: Double
+        fee: BigDecimal
     )
 }

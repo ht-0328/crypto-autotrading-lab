@@ -1,6 +1,7 @@
 package cryptoautotrading.domain.model
 
 import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 
 /**
  * シミュレーションの状態を管理するデータクラス
@@ -13,7 +14,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SimulationState(
     val isHolding: Boolean = false,
-    val buyPrice: Double = 0.0,
-    val holdingAmount: Double = 0.0,
+    @Serializable(with = BigDecimalSerializer::class)
+    val buyPrice: BigDecimal = BigDecimal.ZERO,
+    @Serializable(with = BigDecimalSerializer::class)
+    val holdingAmount: BigDecimal = BigDecimal.ZERO,
     val lastUpdatedAt: String = ""
 )

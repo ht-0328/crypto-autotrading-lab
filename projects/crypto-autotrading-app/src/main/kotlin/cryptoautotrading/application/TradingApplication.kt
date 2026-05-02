@@ -61,7 +61,7 @@ class TradingApplication(
                 logger.warn { "Klines data is empty. Skipping this run." }
                 return
             }
-            val currentPrice = klineData.sortedBy { it.openTime }.last().close.toDouble()
+            val currentPrice = klineData.sortedBy { it.openTime }.last().close.toBigDecimal()
 
             // 損益と想定損益の計算
             val pnl = calculateProfitAndLoss(
@@ -71,7 +71,7 @@ class TradingApplication(
                 holdingAmount = currentState.holdingAmount,
                 shouldSell = decision.action == TradeAction.SELL_CANDIDATE
             )
-            val fee = 0.0 // Phase1 では手数料ゼロとする
+            val fee = java.math.BigDecimal.ZERO // Phase1 では手数料ゼロとする
 
             val nextState = simulationService.updateState(
                 currentState = currentState,
@@ -137,9 +137,9 @@ class TradingApplication(
 
     private fun calculateProfitAndLoss(
         isHolding: Boolean,
-        currentPrice: Double,
-        buyPrice: Double,
-        holdingAmount: Double,
+        currentPrice: java.math.BigDecimal,
+        buyPrice: java.math.BigDecimal,
+        holdingAmount: java.math.BigDecimal,
         shouldSell: Boolean
     ): ProfitAndLossResult {
         if (!isHolding) {
@@ -147,7 +147,7 @@ class TradingApplication(
         }
 
         val estimated = (currentPrice - buyPrice) * holdingAmount
-        val actual = if (shouldSell) estimated else 0.0
+        val actual = if (shouldSell) estimated else java.math.BigDecimal.ZERO
         return ProfitAndLossResult(
             profitAndLoss = actual,
             estimatedProfitAndLoss = estimated
@@ -155,7 +155,7 @@ class TradingApplication(
     }
 
     private data class ProfitAndLossResult(
-        val profitAndLoss: Double = 0.0,
-        val estimatedProfitAndLoss: Double = 0.0
+        val profitAndLoss: java.math.BigDecimal = java.math.BigDecimal.ZERO,
+        val estimatedProfitAndLoss: java.math.BigDecimal = java.math.BigDecimal.ZERO
     )
 }

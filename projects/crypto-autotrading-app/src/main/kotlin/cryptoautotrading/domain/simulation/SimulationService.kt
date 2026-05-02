@@ -4,6 +4,8 @@ import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -26,7 +28,7 @@ class SimulationService {
     fun updateState(
         currentState: SimulationState,
         decision: TradeDecision,
-        currentPrice: Double,
+        currentPrice: BigDecimal,
         tradeAmount: Int
     ): SimulationState {
         logger.info { "シミュレーション状態の更新処理を開始します" }
@@ -38,7 +40,7 @@ class SimulationService {
             TradeAction.BUY_CANDIDATE -> {
                 if (!currentState.isHolding) {
                     // 購入する
-                    val amount = tradeAmount.toDouble() / currentPrice
+                    val amount = BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
                     SimulationState(
                         isHolding = true,
                         buyPrice = currentPrice,
@@ -55,8 +57,8 @@ class SimulationService {
                     // 売却する（状態をリセット）
                     SimulationState(
                         isHolding = false,
-                        buyPrice = 0.0,
-                        holdingAmount = 0.0,
+                        buyPrice = BigDecimal.ZERO,
+                        holdingAmount = BigDecimal.ZERO,
                         lastUpdatedAt = nowStr
                     )
                 } else {
