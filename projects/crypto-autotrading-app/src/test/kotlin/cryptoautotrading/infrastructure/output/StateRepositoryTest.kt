@@ -16,8 +16,8 @@ class StateRepositoryTest {
         val repository = StateRepository(stateFilePath)
         val state = SimulationState(
             isHolding = true,
-            buyPrice = BigDecimal("50000.0"),
-            holdingAmount = BigDecimal("0.5"),
+            buyPrice = BigDecimal("10345678.12345678"),
+            holdingAmount = BigDecimal("0.00009665"),
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
 
@@ -27,8 +27,34 @@ class StateRepositoryTest {
 
         // Assert
         assertTrue(loadedState.isHolding)
-        assertEquals(BigDecimal("50000.0"), loadedState.buyPrice)
-        assertEquals(BigDecimal("0.5"), loadedState.holdingAmount)
+        assertEquals(BigDecimal("10345678.12345678"), loadedState.buyPrice)
+        assertEquals(BigDecimal("0.00009665"), loadedState.holdingAmount)
+        assertEquals("2023-01-01T00:00:00", loadedState.lastUpdatedAt)
+    }
+
+    @Test
+    fun `古い数値形式のJSONでも正しく読み込めること`(@TempDir tempDir: Path) {
+        // Arrange
+        val stateFile = tempDir.resolve("legacy_numeric_state.json").toFile()
+        stateFile.writeText(
+            """
+            {
+              "isHolding": true,
+              "buyPrice": 10000000.5,
+              "holdingAmount": 0.0001,
+              "lastUpdatedAt": "2023-01-01T00:00:00"
+            }
+            """.trimIndent()
+        )
+        val repository = StateRepository(stateFile.absolutePath)
+
+        // Act
+        val loadedState = repository.load()
+
+        // Assert
+        assertTrue(loadedState.isHolding)
+        assertEquals(BigDecimal("10000000.5"), loadedState.buyPrice)
+        assertEquals(BigDecimal("0.0001"), loadedState.holdingAmount)
         assertEquals("2023-01-01T00:00:00", loadedState.lastUpdatedAt)
     }
 

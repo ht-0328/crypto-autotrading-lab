@@ -14,11 +14,11 @@ import java.math.BigDecimal
  * BigDecimalをJSONシリアライズ/デシリアライズするためのカスタムシリアライザ
  */
 object BigDecimalSerializer : KSerializer<BigDecimal> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.DOUBLE)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: BigDecimal) {
-        // Kotlinx.serialization の JsonEncoder では Double として出力する
-        encoder.encodeDouble(value.toDouble())
+        // Kotlinx.serialization の JsonEncoder では、精度を落とさないためにStringとして出力する
+        encoder.encodeString(value.toPlainString())
     }
 
     override fun deserialize(decoder: Decoder): BigDecimal {
@@ -27,7 +27,7 @@ object BigDecimalSerializer : KSerializer<BigDecimal> {
             val element = decoder.decodeJsonElement()
             return BigDecimal(element.jsonPrimitive.content)
         }
-        // 他のフォーマットなどJsonDecoder以外の場合はDouble経由でデコード
-        return BigDecimal.valueOf(decoder.decodeDouble())
+        // 他のフォーマットなどJsonDecoder以外の場合はString経由でデコード
+        return BigDecimal(decoder.decodeString())
     }
 }
