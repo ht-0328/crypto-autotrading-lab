@@ -100,11 +100,25 @@ jobs:
         run: |
           IMAGE_URI="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPOSITORY }}/${{ vars.IMAGE_NAME }}:${{ env.SHORT_SHA }}"
 
+          ENV_VARS="APP_DATA_DIR=/mnt/gcs/data"
+          ENV_VARS="${ENV_VARS},API_BASE_URL=${{ vars.API_BASE_URL }}"
+          ENV_VARS="${ENV_VARS},API_RETRY_COUNT=${{ vars.API_RETRY_COUNT }}"
+          ENV_VARS="${ENV_VARS},APP_INTERVAL=${{ vars.APP_INTERVAL }}"
+          ENV_VARS="${ENV_VARS},OUTPUT_PATH=${{ vars.OUTPUT_PATH }}"
+          ENV_VARS="${ENV_VARS},STATE_PATH=${{ vars.STATE_PATH }}"
+          ENV_VARS="${ENV_VARS},TRADING_BUY_THRESHOLD=${{ vars.TRADING_BUY_THRESHOLD }}"
+          ENV_VARS="${ENV_VARS},TRADING_INITIAL_CAPITAL=${{ vars.TRADING_INITIAL_CAPITAL }}"
+          ENV_VARS="${ENV_VARS},TRADING_SELL_THRESHOLD=${{ vars.TRADING_SELL_THRESHOLD }}"
+          ENV_VARS="${ENV_VARS},TRADING_SHARP_CHANGE_THRESHOLD=${{ vars.TRADING_SHARP_CHANGE_THRESHOLD }}"
+          ENV_VARS="${ENV_VARS},TRADING_SYMBOL=${{ vars.TRADING_SYMBOL }}"
+          ENV_VARS="${ENV_VARS},TRADING_TRADE_AMOUNT=${{ vars.TRADING_TRADE_AMOUNT }}"
+          ENV_VARS="${ENV_VARS},TRADING_VOLATILITY_THRESHOLD=${{ vars.TRADING_VOLATILITY_THRESHOLD }}"
+
           gcloud run jobs deploy ${{ vars.CLOUD_RUN_JOB_NAME }} \
             --image ${IMAGE_URI} \
             --region ${{ vars.GCP_REGION }} \
             --service-account ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
-            --set-env-vars "APP_DATA_DIR=/mnt/gcs/data" \
+            --set-env-vars "${ENV_VARS}" \
             --add-volume=name=gcs,type=cloud-storage,bucket=${{ vars.GCS_BUCKET_NAME }},readonly=false \
             --add-volume-mount=volume=gcs,mount-path=/mnt/gcs \
             --tasks 1 \
