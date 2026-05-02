@@ -110,6 +110,7 @@ class TradingApplication(
 
         } catch (e: Exception) {
             logger.error(e) { "TradingApplication の実行中にエラーが発生しました: ${e.message}" }
+            throw e
         }
     }
 

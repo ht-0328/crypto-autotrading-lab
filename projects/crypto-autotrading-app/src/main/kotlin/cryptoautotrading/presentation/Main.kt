@@ -66,6 +66,7 @@ fun main() = runBlocking {
         }
     } catch (e: Exception) {
         logger.error(e) { "アプリケーションの起動・実行中に予期せぬエラーが発生しました: ${e.message}" }
+        throw e
     } finally {
         logger.info { "Crypto Auto-Trading Lab 起動処理が終了しました" }
     }
