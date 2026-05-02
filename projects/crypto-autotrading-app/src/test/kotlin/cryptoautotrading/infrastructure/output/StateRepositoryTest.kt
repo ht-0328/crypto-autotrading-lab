@@ -45,4 +45,17 @@ class StateRepositoryTest {
         assertEquals(0.0, loadedState.buyPrice)
         assertEquals(0.0, loadedState.holdingAmount)
     }
+
+    @Test
+    fun `ファイルが不正なJSONの場合は例外が発生すること`(@TempDir tempDir: Path) {
+        // Arrange
+        val stateFile = tempDir.resolve("invalid_state.json").toFile()
+        stateFile.writeText("{ invalid json }")
+        val repository = StateRepository(stateFile.absolutePath)
+
+        // Act & Assert
+        assertThrows(Exception::class.java) {
+            repository.load()
+        }
+    }
 }

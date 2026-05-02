@@ -22,7 +22,8 @@ class StateRepository(private val stateFilePath: String) : SimulationStateReposi
 
     /**
      * 状態ファイルからシミュレーション状態を読み込む。
-     * ファイルが存在しない、または読み込みに失敗した場合は初期状態を返す。
+     * ファイルが存在しない場合は初期状態を返す。
+     * 読み込みに失敗した場合（ファイルが壊れている等）は例外を送出する。
      *
      * @return 読み込んだシミュレーション状態、または初期状態
      */
@@ -33,8 +34,8 @@ class StateRepository(private val stateFilePath: String) : SimulationStateReposi
                 val content = file.readText()
                 json.decodeFromString<SimulationState>(content)
             } catch (e: Exception) {
-                logger.error(e) { "Failed to load state from $stateFilePath, returning default state." }
-                SimulationState()
+                logger.error(e) { "状態ファイルが壊れている可能性があります。読み込みに失敗しました。パス: $stateFilePath" }
+                throw e
             }
         } else {
             logger.info { "State file does not exist at $stateFilePath, returning default state." }
