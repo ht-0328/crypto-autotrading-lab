@@ -28,7 +28,20 @@ GCP の準備が整った後、GitHub Actions から GCP リソースへ安全�
 
 ---
 
-## 4. 設定ファイルと環境変数の優先順位について (アーキテクチャの補足)
+## 4. Cloud Scheduler による定期実行の手順
+
+Cloud Run Job をデプロイした後、指定したスケジュールで定期実行させたい場合は、専用の GitHub Actions ワークフロー (`scheduler-gcp.yml`) を手動で実行して Cloud Scheduler Job を作成します。
+このワークフローでは、Scheduler の作成・更新・一時停止 (pause)・再開 (resume)・削除・手動実行 (run) を管理できます。
+
+**実行方法**:
+1. GitHub リポジトリの **Actions** タブを開きます。
+2. 左側の workflow 一覧から **Cloud Scheduler Management** を選びます。
+3. **Run workflow** を押し、プルダウンから目的の操作 (`create`, `pause`, `resume`, `delete`, `run`) を選択して実行します。
+> ※削除 (`delete`) を行う場合のみ、`confirm_delete` 欄に `DELETE` と入力してください。
+
+---
+
+## 5. 設定ファイルと環境変数の優先順位について (アーキテクチャの補足)
 
 アプリケーションの設定値は、以下の優先順位で決定されます。これはローカル開発および Cloud Run などのデプロイ環境において共通のルールです：
 
