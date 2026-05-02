@@ -53,12 +53,27 @@ class CsvRepository(private val baseCsvFilePath: String) : TradeHistoryRepositor
             }
 
             val holdingStr = if (isHolding) "保有中" else "なし"
-            file.appendText("$datetime,$price,$sign,$reason,$profitAndLoss,$holdingStr,$fee\n")
+
+            val escapedDatetime = escapeCsvValue(datetime)
+            val escapedPrice = escapeCsvValue(price)
+            val escapedSign = escapeCsvValue(sign)
+            val escapedReason = escapeCsvValue(reason)
+            val escapedProfitAndLoss = escapeCsvValue(profitAndLoss)
+            val escapedHoldingStr = escapeCsvValue(holdingStr)
+            val escapedFee = escapeCsvValue(fee)
+
+            file.appendText("$escapedDatetime,$escapedPrice,$escapedSign,$escapedReason,$escapedProfitAndLoss,$escapedHoldingStr,$escapedFee\n")
 
             logger.info { "CSVへの保存が完了しました" }
 
         } catch (e: Exception) {
             logger.error(e) { "CSVファイルへの保存に失敗しました。パス: $baseCsvFilePath, 入力データ(datetime=$datetime, price=$price, sign=$sign, reason=$reason)" }
         }
+    }
+
+    private fun escapeCsvValue(value: Any): String {
+        val str = value.toString()
+        val escapedStr = str.replace("\"", "\"\"")
+        return "\"$escapedStr\""
     }
 }
