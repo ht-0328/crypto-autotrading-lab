@@ -1,11 +1,4 @@
 steps:
-  - name: 'gradle:8.13-jdk17'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        cd projects/crypto-autotrading-app
-        ./gradlew clean shadowJar --no-daemon
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'

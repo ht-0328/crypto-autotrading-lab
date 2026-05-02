@@ -46,11 +46,6 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Build shadowJar
-        run: |
-          cd projects/crypto-autotrading-app
-          ./gradlew clean shadowJar
-
       - name: Setup Network
         run: docker network create crypto-ci-net
 
