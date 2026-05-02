@@ -30,7 +30,14 @@ jobs:
       - name: Run Tests
         run: |
           cd projects/crypto-autotrading-app
-          ./gradlew test
+          ./gradlew build
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-test-reports
+          path: projects/crypto-autotrading-app/build/reports/tests/
 
   docker-run:
     needs: test
@@ -100,6 +107,16 @@ jobs:
           test -f ${{ github.workspace }}/data/state.json || (echo "state.json not found!" && exit 1)
           ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv not found!" && exit 1)
           echo "Output files verified successfully."
+
+      - name: Upload Application Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-data-artifacts
+          path: |
+            data/app.log
+            data/state.json
+            data/trades_*.csv
 
       - name: Show Logs and Cleanup
         if: always()
