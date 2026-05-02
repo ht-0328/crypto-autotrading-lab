@@ -18,6 +18,7 @@ build/
 
 # Environment / Secrets
 .env
+github-variables.env
 
 # Data directories created by Docker or app
 data/
