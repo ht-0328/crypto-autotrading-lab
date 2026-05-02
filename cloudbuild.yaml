@@ -10,11 +10,11 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'asia-northeast1-docker.pkg.dev/crypto-autotrading-lab/crypto-autotrading-lab/crypto-autotrading-lab:${_SHORT_SHA}'
+      - '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}:${_SHORT_SHA}'
       - '-f'
       - 'docker/app/Dockerfile'
       - '.'
 images:
-  - 'asia-northeast1-docker.pkg.dev/crypto-autotrading-lab/crypto-autotrading-lab/crypto-autotrading-lab:${_SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_ARTIFACT_REPOSITORY}/${_IMAGE_NAME}:${_SHORT_SHA}'
 options:
   logging: CLOUD_LOGGING_ONLY

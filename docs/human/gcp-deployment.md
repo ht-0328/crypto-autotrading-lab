@@ -1,94 +1,76 @@
 # GCP デプロイ事前準備ガイド
 
 本ドキュメントは、GitHub Actions を使用して Google Cloud Platform (GCP) の Cloud Run にアプリケーションをデプロイするための事前準備について説明します。
-`.github/workflows/deploy-gcp.yml` および `cloudbuild.yaml` の動作に必要な API、リソース、IAM（サービスアカウント）、および GitHub Variables の設定を網羅しています。
+デプロイプロセスを効率化するため、GCP リソースの多くは GitHub Actions (`.github/workflows/deploy-gcp.yml`) によって自動で作成・設定されます。手動で行う必要があるのは、基盤となるプロジェクトや認証設定などに限られます。
 
-## 1. 必要な GCP API の有効化
+## 1. 事前に必要な準備 (手動設定)
 
-GCP プロジェクト (`<YOUR_PROJECT_ID>`) において、以下の API を有効化してください。
+以下の項目は、GitHub Actions を実行する前に手動で設定する必要があります。
 
-- **Cloud Build API** (`cloudbuild.googleapis.com`): コンテナイメージのビルドに使用
-- **Artifact Registry API** (`artifactregistry.googleapis.com`): ビルドしたコンテナイメージの保存に使用
-- **Cloud Run Admin API** (`run.googleapis.com`): アプリケーションのデプロイに使用
-- **IAM Service Account Credentials API** (`iamcredentials.googleapis.com`): Workload Identity 連携による認証に使用
+### 1.1 GCP プロジェクトと課金設定
+- 紐づける GCP プロジェクト (`<YOUR_PROJECT_ID>`) を作成します。
+- プロジェクトに対して有効な課金アカウントが設定されていることを確認してください。
 
-## 2. GCP リソースの作成
-
-### 2.1 Artifact Registry リポジトリ
-
-Docker イメージを保存するためのリポジトリを作成します。
-
-- **形式**: Docker
-- **ロケーション**: `<YOUR_REGION>` (例: `asia-northeast1`)
-- **リポジトリ名**: `<YOUR_REPOSITORY_NAME>` (例: `crypto-autotrading-lab`)
-
-*※イメージのパスは以下のようになります:*
-`<YOUR_REGION>-docker.pkg.dev/<YOUR_PROJECT_ID>/<YOUR_REPOSITORY_NAME>/<YOUR_IMAGE_NAME>`
-
-### 2.2 Cloud Storage バケット
-
-アプリケーションが設定ファイル（`application-gmo.yaml` など）を読み込み、データ（`app.log` など）を出力するためのマウント用バケットを作成します。
-
-- **バケット名**: `<YOUR_BUCKET_NAME>`
-- **ロケーション**: `<YOUR_REGION>` またはマルチリージョン
-
-バケット内に以下のディレクトリ/ファイル構成を準備してください:
-- `<YOUR_BUCKET_NAME>/config/application-gmo.yaml`
-- `<YOUR_BUCKET_NAME>/data/` (ログやその他の永続化データ用)
-
-## 3. サービスアカウントと IAM 権限の設定
-
-デプロイプロセスでは、役割ごとに3つのサービスアカウントを使用します。
-
-### 3.1 デプロイ用サービスアカウント (GitHub Actions 連携用)
-GitHub Actions が GCP でリソースを操作（Cloud Buildの起動、Cloud Runのデプロイ）するためのサービスアカウントです。
+### 1.2 GitHub Actions 用デプロイサービスアカウントの作成
+GitHub Actions が GCP リソースの作成や操作（Cloud Build の実行、Cloud Run へのデプロイなど）を行うための権限を持つサービスアカウントです。
 - **アカウント名例**: `<YOUR_DEPLOY_SA_NAME>@<YOUR_PROJECT_ID>.iam.gserviceaccount.com`
 - **必要なロール**:
+  - `roles/serviceusage.serviceUsageAdmin` (API の有効化)
+  - `roles/artifactregistry.admin` (Artifact Registry リポジトリの作成)
+  - `roles/storage.admin` (GCS バケットの作成)
+  - `roles/iam.serviceAccountAdmin` (サービスアカウントの作成)
+  - `roles/resourcemanager.projectIamAdmin` (IAM 権限の付与)
   - `roles/cloudbuild.builds.editor` (Cloud Build の実行)
   - `roles/run.admin` (Cloud Run へのデプロイ)
-  - `roles/iam.serviceAccountUser` (Cloud Build ビルダー および Cloud Run ランナーのサービスアカウントとして振る舞う権限)
-  - `roles/viewer` (基本的なリソースの確認)
+  - `roles/iam.serviceAccountUser` (他のサービスアカウントとして振る舞う権限)
 
-### 3.2 Cloud Build ビルダー用サービスアカウント
-Cloud Build がコンテナイメージをビルドし、Artifact Registry にプッシュするために使用します。
-- **アカウント名例**: `<YOUR_BUILDER_SA_NAME>@<YOUR_PROJECT_ID>.iam.gserviceaccount.com`
-- **必要なロール**:
-  - `roles/artifactregistry.writer` (Artifact Registry へのイメージ書き込み)
-  - `roles/logging.logWriter` (ビルドログの書き込み)
-  - `roles/storage.objectAdmin` (Cloud Build で必要な一時的なストレージ操作)
-
-### 3.3 Cloud Run ランナー（実行用）サービスアカウント
-Cloud Run ジョブとして実行されるアプリケーション（コンテナ）が使用するサービスアカウントです。
-- **アカウント名例**: `<YOUR_RUNNER_SA_NAME>@<YOUR_PROJECT_ID>.iam.gserviceaccount.com`
-- **必要なロール**:
-  - `roles/storage.objectAdmin` または `roles/storage.objectUser` (Cloud Storage バケット `<YOUR_BUCKET_NAME>` の読み書き、設定ファイルの読み込みおよびデータの書き込み)
-
-## 4. Workload Identity Federation の設定
-
+### 1.3 Workload Identity Federation の設定
 GitHub Actions から GCP へ安全に認証するため、サービスアカウントキー（JSON）ではなく Workload Identity を設定します。
 
-1. **Workload Identity プールの作成**:
-   - 名前: `<YOUR_POOL_NAME>`
+1. **Workload Identity プールの作成**: 名前 `<YOUR_POOL_NAME>`
 2. **Workload Identity プロバイダの作成**:
-   - プール内に OIDC プロバイダ (`<YOUR_PROVIDER_NAME>`) を作成します。
    - Issuer URL: `https://token.actions.githubusercontent.com`
    - 属性マッピング: `google.subject` = `assertion.sub`
-   - 必要に応じて、特定のリポジトリのみ許可する属性条件を設定します (例: `assertion.repository == "your-org/your-repo"` )
 3. **サービスアカウントのバインディング**:
-   - プール/プロバイダから「3.1 デプロイ用サービスアカウント」へのアクセス（Workload Identity ユーザーロール `roles/iam.workloadIdentityUser`）を許可します。
+   - 上記プロバイダから「デプロイ用サービスアカウント」へのアクセス（`roles/iam.workloadIdentityUser`）を許可します。
 
 設定後、以下の形式の **Workload Identity プロバイダの完全なリソース名** を控えてください:
 `projects/<YOUR_PROJECT_NUMBER>/locations/global/workloadIdentityPools/<YOUR_POOL_NAME>/providers/<YOUR_PROVIDER_NAME>`
 
-## 5. GitHub Variables の設定
-
+### 1.4 GitHub Repository Variables の設定
 GitHub のリポジトリ設定 (`Settings` > `Secrets and variables` > `Actions`) の **Variables** に、以下の環境変数を登録します。
 
 | Variable 名 | 説明 | 値の例 |
 | --- | --- | --- |
-| `GCP_PROJECT_ID` | GCP のプロジェクトID | `<YOUR_PROJECT_ID>` |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Workload Identity プロバイダの完全なパス | `projects/<YOUR_PROJECT_NUMBER>/locations/global/workloadIdentityPools/<YOUR_POOL_NAME>/providers/<YOUR_PROVIDER_NAME>` |
-| `GCP_DEPLOY_SERVICE_ACCOUNT` | 3.1 で作成したデプロイ用サービスアカウントのメールアドレス | `<YOUR_DEPLOY_SA_NAME>@<YOUR_PROJECT_ID>.iam.gserviceaccount.com` |
+| `GCP_PROJECT_ID` | GCP プロジェクトID | `<YOUR_PROJECT_ID>` |
+| `GCP_REGION` | リソースを作成するリージョン | `asia-northeast1` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Workload Identity プロバイダパス | `projects/<YOUR_PROJECT_NUMBER>/locations/global/...` |
+| `GCP_DEPLOY_SERVICE_ACCOUNT` | デプロイ用サービスアカウントのメールアドレス | `<YOUR_DEPLOY_SA_NAME>@<YOUR_PROJECT_ID>.iam.gserviceaccount.com` |
+| `ARTIFACT_REPOSITORY` | Artifact Registry リポジトリ名 | `crypto-autotrading-lab` |
+| `IMAGE_NAME` | Docker イメージ名 | `crypto-autotrading-lab` |
+| `GCS_BUCKET_NAME` | データの保存などに使う GCS バケット名 | `crypto-autotrading-lab-bucket` |
+| `CLOUD_RUN_JOB_NAME` | Cloud Run Job の名前 | `crypto-autotrading-lab` |
+| `BUILD_SERVICE_ACCOUNT_NAME` | Cloud Build 用に作成するSAの名前 (ID部分) | `cloud-build-builder` |
+| `RUNTIME_SERVICE_ACCOUNT_NAME` | Cloud Run 実行用に作成するSAの名前 (ID部分) | `crypto-autotrading-runner` |
+
+## 2. GitHub Actions が自動作成するもの
+
+上記の事前準備が完了していれば、GitHub Actions 実行時に以下のリソースが自動的に作成・設定されます。（既に存在する場合は作成をスキップします）
+
+- **必要な GCP API の有効化**
+  - Cloud Build, Artifact Registry, Cloud Run, Storage, IAM, Service Usage, IAM Credentials API
+- **Artifact Registry リポジトリの作成**
+  - `${{ vars.ARTIFACT_REPOSITORY }}` として Docker 形式で作成されます。
+- **Cloud Storage バケットの作成**
+  - `${{ vars.GCS_BUCKET_NAME }}` として作成されます。
+  - *注意: デプロイ後、設定ファイル (`application-gmo.yaml` 等) を手動でこのバケットの `config/` ディレクトリに配置する必要があります。*
+- **Cloud Build ビルダー用サービスアカウントの作成と権限付与**
+  - Cloud Build がイメージをビルドし、Artifact Registry にプッシュするためのアカウントが作成されます。
+  - `roles/artifactregistry.writer`, `roles/logging.logWriter` が付与されます。
+- **Cloud Run ランナー（実行用）サービスアカウントの作成と権限付与**
+  - Cloud Run が実行時に GCS にアクセスするためのアカウントが作成されます。
+  - 対象の GCS バケットに対する `roles/storage.objectAdmin` が付与されます。
+- **Cloud Run Job のデプロイ**
 
 ※ これらは機密情報（Secret）として登録する必要はありませんが、必要に応じて Secrets を使用することも可能です。
 
