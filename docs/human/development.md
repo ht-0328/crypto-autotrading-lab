@@ -38,17 +38,25 @@ export VARIABLE_VALUE="my_value"
 gh variable set $VARIABLE_NAME --body "$VARIABLE_VALUE"
 ```
 
-ファイルを使って設定する場合:
-1. プロジェクトルートに一時ファイル（例: `github-variables.env`）を作成します。
-2. 以下のコマンドで登録します。
+ファイルを使って一括登録する場合:
+1. プロジェクトルートに一時ファイル（例: `github-variables.env`）を作成し、`キー=値` の形式で Variables を記述します。
+2. 以下のコマンドで一括登録します。
 
 ```bash
-gh variable set $VARIABLE_NAME < github-variables.env
+gh variable set -f github-variables.env --repo ht-0328/crypto-autotrading-lab
 ```
 
+3. 登録が完了したか、一覧表示コマンドで確認します。
+
+```bash
+gh variable list --repo ht-0328/crypto-autotrading-lab
+```
+
+4. 登録・確認完了後、一時ファイル `github-variables.env` を削除します。
+
 **【注意事項】**
+* `github-variables.env` はGit管理しない一時ファイルです。`.gitignore` に登録されていますが、誤ってコミットしないよう十分注意してください。
 * Personal Access Token (PAT) やAPIキー、認証情報などの**シークレット情報は絶対にファイル（`github-variables.env` 等）に書き込まない**でください。
-* `github-variables.env` は `.gitignore` に登録されていますが、誤ってコミットしないよう十分注意してください。
 
 ## アプリケーションの実行・テスト手順
 
