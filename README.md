@@ -27,15 +27,15 @@
 詳細は以下のリンクから参照してください。
 
 * [**ドキュメント一覧 (docs/README.md)**](docs/README.md)
-* [人間向けドキュメント一覧 (docs/human/README.md)](docs/human/README.md)
-  * [売買ロジック説明 (docs/human/trading-logic.md)](docs/human/trading-logic.md)
+* [ドキュメント一覧（全体像） (docs/overview/README.md)](docs/overview/README.md)
+  * [売買ロジック説明 (docs/architecture/trading-logic.md)](docs/architecture/trading-logic.md)
 * [AI向けドキュメント一覧 (docs/ai/README.md)](docs/ai/README.md)
 
 ### 本プロジェクトの前提事項と注意事項
 
 * **注意 (Phase1の制約):** このリポジトリでは現在Phase1を実行しており、実資金を用いた実注文は絶対に行いません。完全なシミュレーションとして動作します。
 * **Strategyの切り替え:** アプリケーションは複数の取引ロジックを持っており、設定や環境変数（`APP_TRADING_STRATEGY_NAME`）によりStrategyの切り替えが可能です。
-* **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/human/gcp-deployment.md](docs/human/gcp-deployment.md) を参照してください。
+* **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/operations/gcp/README.md](docs/operations/gcp/README.md) を参照してください。
 * **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
 
 ## リポジトリ構成
@@ -46,7 +46,7 @@
 * `config/`: 実行環境ごとの設定ファイル（GMO API / WireMock）
 * `mocks/wiremock/`: WireMock のスタブ定義
 * `docker/`: ローカル実行用の Dockerfile / Compose 定義
-* `docs/human/`: 人間向けの仕様・手順書
+* `docs/overview/`, `docs/architecture/`, `docs/development/`, `docs/operations/`: 人間向けの各種ドキュメント
 * `docs/ai/`: AIエージェント向けのプロンプト・制約ルール
 
 ## 起動方法 (ローカル実行)
