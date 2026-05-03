@@ -23,14 +23,19 @@
 
 ## 開発ドキュメント
 
-人間向けの各種仕様や開発手順については、以下のドキュメントを参照してください。
+各種ドキュメント（人間向け・AI向け）は `docs/` 配下に整理されています。
+詳細は以下のリンクから参照してください。
 
-* [プロダクト要求仕様（共通）](docs/human/product-requirements.md)
-* [Phase1 仕様書](docs/human/phase1.md)
-* [ロードマップ (Phase2以降)](docs/human/roadmap.md)
-* [開発フロー](docs/human/development-flow.md)
-* [開発環境セットアップ手順](docs/human/development.md)
-* [GCP デプロイ手順](docs/human/gcp-deployment.md)
+* [**ドキュメント一覧 (docs/README.md)**](docs/README.md)
+* [人間向けドキュメント一覧 (docs/human/README.md)](docs/human/README.md)
+* [AI向けドキュメント一覧 (docs/ai/README.md)](docs/ai/README.md)
+
+### 本プロジェクトの前提事項と注意事項
+
+> **注意 (Phase1の制約):** このリポジトリでは現在Phase1を実行しており、実資金を用いた実注文は絶対に行いません。完全なシミュレーションとして動作します。
+> **Strategyの切り替え:** アプリケーションは複数の取引ロジックを持っており、設定や環境変数（`APP_TRADING_STRATEGY_NAME`）によりStrategyの切り替えが可能です。
+> **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/human/gcp-deployment.md](docs/human/gcp-deployment.md) を参照してください。
+> **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
 
 ## リポジトリ構成
 

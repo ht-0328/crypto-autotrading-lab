@@ -1,5 +1,21 @@
 # GitHub Actions から GCP にデプロイするための準備
 
+## 概要
+GitHub ActionsからGCPにデプロイするための準備
+
+## 対象読者
+運用インフラ構築担当者
+
+## この文書で分かること
+Workload Identity Federationの設定、必要なIAMロールの付与
+
+## 関連ドキュメント
+[gcp-account-and-project-setup.md](gcp-account-and-project-setup.md)
+
+## 前提
+本ドキュメントの記載内容は、Phase1（シミュレーション環境）を前提としています。
+
+## 本文
 ## このドキュメントの目的
 このドキュメントは、GitHub Actions を使って GCP (Google Cloud Platform) へアプリケーションをデプロイするための準備手順を説明します。
 
@@ -485,3 +501,10 @@ GCP 上の検証や開発用リソースが不要になった場合は、専用�
   - Docker イメージをビルドする。
   - Artifact Registry にプッシュする。
   - イメージパス等は substitutions (変数) を使って組み立てられており、環境変更に強くなっています。
+
+
+## 注意点
+特にありません。
+
+## 更新タイミング
+システムの要件や運用フローが変更された際に更新してください。
