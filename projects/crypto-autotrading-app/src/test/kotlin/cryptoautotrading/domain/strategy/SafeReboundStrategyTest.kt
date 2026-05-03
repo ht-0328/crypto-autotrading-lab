@@ -74,6 +74,44 @@ class SafeReboundStrategyTest {
     }
 
     @Test
+    fun `保有中でlatestCloseが損切りライン以下、かつ直近3本が急変動に該当する場合でも、SELL_CANDIDATEかつ理由損切りになること`() {
+        val strategy = SafeReboundStrategy(defaultConfig)
+        val klines = (1..12).map { i ->
+            if (i >= 10) {
+                // Sharp drop causing sharp change filter to hit AND stop loss to hit
+                createKline(String.format("%02d", i), "100", "100", "90", "90")
+            } else {
+                createKline(String.format("%02d", i), "100", "100", "100", "100")
+            }
+        }
+
+        // buyPrice 100, sellThreshold 0.05 -> stop loss at 95, latestClose is 90
+        val decision = strategy.judge(klines, SimulationState(isHolding = true, buyPrice = BigDecimal("100")))
+
+        assertEquals(TradeAction.SELL_CANDIDATE, decision.action)
+        assertTrue(decision.reason.contains("損切り"))
+    }
+
+    @Test
+    fun `保有中でlatestCloseが利確ライン以上、かつ直近3本が急変動に該当する場合でも、SELL_CANDIDATEかつ理由利確になること`() {
+        val strategy = SafeReboundStrategy(defaultConfig)
+        val klines = (1..12).map { i ->
+            if (i >= 10) {
+                // Sharp rise causing sharp change filter to hit AND take profit to hit
+                createKline(String.format("%02d", i), "100", "115", "100", "110")
+            } else {
+                createKline(String.format("%02d", i), "100", "100", "100", "100")
+            }
+        }
+
+        // buyPrice 100, sellThreshold 0.05 -> take profit at 105, latestClose is 110
+        val decision = strategy.judge(klines, SimulationState(isHolding = true, buyPrice = BigDecimal("100")))
+
+        assertEquals(TradeAction.SELL_CANDIDATE, decision.action)
+        assertTrue(decision.reason.contains("利確"))
+    }
+
+    @Test
     fun `直近1時間で下落していても、最新足が陰線かつ下ヒゲが短い場合はSKIPを返すこと`() {
         val strategy = SafeReboundStrategy(defaultConfig)
         val klines = (1..12).map { i ->

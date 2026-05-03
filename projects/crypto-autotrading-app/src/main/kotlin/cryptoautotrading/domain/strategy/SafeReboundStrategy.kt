@@ -36,27 +36,28 @@ class SafeReboundStrategy(
             return decision
         }
 
-        // 急変動フィルター (直近15分 = 3本)
-        val recent3Klines = recentKlines.takeLast(3)
-        val maxHigh3 = recent3Klines.maxOfOrNull { it.high.toBigDecimal() } ?: BigDecimal.ZERO
-        val minLow3 = recent3Klines.minOfOrNull { it.low.toBigDecimal() } ?: BigDecimal.ONE
-
-        if (minLow3 > BigDecimal.ZERO) {
-            val sharpChangeRate = (maxHigh3 - minLow3).divide(minLow3, 8, RoundingMode.HALF_UP)
-            val sharpChangeThresholdBD = config.sharpChangeThreshold.toBigDecimal()
-
-            if (sharpChangeRate >= sharpChangeThresholdBD) {
-                val decision = TradeDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "急変動（直近15分）")
-                logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
-                return decision
-            }
-        }
-
         val latestKline = recentKlines.last()
         val latestClose = latestKline.close.toBigDecimal()
 
         if (!isHolding) {
             // --- 買い条件 ---
+
+            // 急変動フィルター (直近15分 = 3本)
+            val recent3Klines = recentKlines.takeLast(3)
+            val maxHigh3 = recent3Klines.maxOfOrNull { it.high.toBigDecimal() } ?: BigDecimal.ZERO
+            val minLow3 = recent3Klines.minOfOrNull { it.low.toBigDecimal() } ?: BigDecimal.ONE
+
+            if (minLow3 > BigDecimal.ZERO) {
+                val sharpChangeRate = (maxHigh3 - minLow3).divide(minLow3, 8, RoundingMode.HALF_UP)
+                val sharpChangeThresholdBD = config.sharpChangeThreshold.toBigDecimal()
+
+                if (sharpChangeRate >= sharpChangeThresholdBD) {
+                    val decision = TradeDecision(TradeAction.SKIP, "急変動（直近15分）")
+                    logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+                    return decision
+                }
+            }
+
             val oldestOpen = recentKlines.first().open.toBigDecimal()
 
             // 条件A: 直近1時間で十分に下落している
