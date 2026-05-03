@@ -12,6 +12,14 @@ on:
         required: false
         type: boolean
         default: false
+      strategy_name:
+        description: "Trading strategy to use"
+        required: false
+        type: choice
+        options:
+          - SafeReboundStrategy
+          - SimpleContrarianStrategy
+        default: SafeReboundStrategy
 
 jobs:
   test:
@@ -77,11 +85,16 @@ jobs:
       - name: Prepare CI Config
         run: |
           mkdir -p build/ci-config
+          STRATEGY="${{ inputs.strategy_name || 'SafeReboundStrategy' }}"
+          echo "Using trading strategy: $STRATEGY"
+
           if [ "${{ inputs.use_public_api }}" == "true" ]; then
-            echo "APP_CONFIG_PATH=/app/config/application-gmo.yaml" >> $GITHUB_ENV
+            sed "s/strategy_name:.*/strategy_name: \"$STRATEGY\"/g" config/application-gmo.yaml > build/ci-config/application-gmo-docker.yaml
+            echo "APP_CONFIG_PATH=/app/build/ci-config/application-gmo-docker.yaml" >> $GITHUB_ENV
           else
             # Create a temporary config that points to the WireMock container
-            sed 's|http://localhost:8080|http://wiremock:8080|g' config/application-ci.yaml > build/ci-config/application-ci-docker.yaml
+            sed "s|http://localhost:8080|http://wiremock:8080|g" config/application-ci.yaml | \
+            sed "s/strategy_name:.*/strategy_name: \"$STRATEGY\"/g" > build/ci-config/application-ci-docker.yaml
             echo "APP_CONFIG_PATH=/app/build/ci-config/application-ci-docker.yaml" >> $GITHUB_ENV
           fi
 

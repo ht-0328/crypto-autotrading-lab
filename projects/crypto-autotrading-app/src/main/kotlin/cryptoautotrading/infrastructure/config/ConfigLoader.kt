@@ -87,6 +87,7 @@ object ConfigLoader {
 
     private fun overrideWithEnvVars(base: AppConfig): AppConfig {
         val envInterval = System.getenv("APP_INTERVAL")
+        val envStrategyName = System.getenv("APP_TRADING_STRATEGY_NAME")
         val envSymbol = System.getenv("TRADING_SYMBOL")
         val envInitialCapital = System.getenv("TRADING_INITIAL_CAPITAL")
         val envTradeAmount = System.getenv("TRADING_TRADE_AMOUNT")
@@ -104,6 +105,7 @@ object ConfigLoader {
                 interval = envInterval ?: base.app.interval
             ),
             trading = TradingConfig(
+                strategyName = envStrategyName ?: base.trading.strategyName,
                 symbol = envSymbol ?: base.trading.symbol,
                 initialCapital = envInitialCapital?.toIntOrNull() ?: base.trading.initialCapital,
                 tradeAmount = envTradeAmount?.toIntOrNull() ?: base.trading.tradeAmount,

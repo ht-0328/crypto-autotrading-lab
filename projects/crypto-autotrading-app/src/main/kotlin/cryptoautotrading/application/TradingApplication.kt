@@ -4,9 +4,12 @@ import cryptoautotrading.domain.model.AppConfig
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.repository.MarketDataClient
 import cryptoautotrading.domain.repository.ResultOutputPort
+import cryptoautotrading.domain.model.TradingConfig
 import cryptoautotrading.domain.repository.SimulationStateRepository
 import cryptoautotrading.domain.repository.TradeHistoryRepository
 import cryptoautotrading.domain.simulation.SimulationService
+import cryptoautotrading.domain.strategy.SafeReboundStrategy
+import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
@@ -51,8 +54,8 @@ class TradingApplication(
             val klineData = fetchKlineData()
 
             // 3. 売買判定
-            val strategy = TradingStrategy(config.trading)
-            val decision = strategy.judge(klineData, currentState.isHolding)
+            val strategy = createStrategy(config.trading)
+            val decision = strategy.judge(klineData, currentState)
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
 
             // 4. 状態の更新
@@ -158,4 +161,12 @@ class TradingApplication(
         val profitAndLoss: java.math.BigDecimal = java.math.BigDecimal.ZERO,
         val estimatedProfitAndLoss: java.math.BigDecimal = java.math.BigDecimal.ZERO
     )
+
+    private fun createStrategy(config: TradingConfig): TradingStrategy {
+        return when (config.strategyName) {
+            "SafeReboundStrategy" -> SafeReboundStrategy(config)
+            "SimpleContrarianStrategy" -> SimpleContrarianStrategy(config)
+            else -> error("Unknown strategyName: ${config.strategyName}. Supported strategies: SafeReboundStrategy, SimpleContrarianStrategy")
+        }
+    }
 }

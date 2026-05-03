@@ -5,6 +5,7 @@ app:
 
 # 取引関連の設定
 trading:
+  strategy_name: "SafeReboundStrategy"
   # 取引する通貨ペア（例: BTC, ETH）
   symbol: "BTC"
   # 初期資金
