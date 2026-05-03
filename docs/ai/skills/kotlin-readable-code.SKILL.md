@@ -60,6 +60,13 @@ return calculateSomething(currentPrice, previousPrice)
 - 呼び出し側のコードが直感的になるなら使ってよいです。
 - 同じ判定や変換を複数箇所で安全に再利用できるなら使ってよいです。
 
+「拡張関数を使ってよい場合」の判断基準として、以下の考え方を追加します。
+- 対象の型だけを見れば意味が分かる処理は拡張関数に向いている
+- 対象の型の自然な判定・変換・表示補助は拡張関数に向いている
+- DB、API、ファイル、現在時刻、設定値、Repositoryなど外部要素に依存する処理は拡張関数に向いていない
+- 拡張関数は、呼び出し側を直感的にするために使う
+- ただし、責務が分かりにくくなる場合は通常の関数、UseCase、Service、Repository に置く
+
 一方で、以下のような処理は拡張関数にせず、通常の関数、UseCase、Service、Repository に置く方針としてください。
 - Repositoryを使う保存処理
 - API呼び出し
@@ -73,11 +80,19 @@ return calculateSomething(currentPrice, previousPrice)
 fun MarketPrice.isHigherThan(other: MarketPrice): Boolean =
     this.price > other.price
 ```
+- `MarketPrice` 同士の比較なので、対象の型に自然な処理である
+- DB、API、設定値など外部要素に依存していない
+- `marketPrice.isHigherThan(previousPrice)` と読めるため、呼び出し側の意図が分かりやすい
+- このように、対象の型だけで完結する判定は拡張関数に向いている
 
 ```kotlin
 fun TradingSignal.isBuy(): Boolean =
     this == TradingSignal.Buy
 ```
+- `TradingSignal` が買いシグナルかどうかを表すため、ドメインの言葉として自然に読める
+- `signal == TradingSignal.Buy` よりも、`signal.isBuy()` の方が「買いシグナルか？」という意図を表しやすい
+- 複数箇所で同じ判定を使う場合、判定の意味を1箇所に集約できる
+- ただし、1箇所でしか使わない単純比較なら、無理に拡張関数にしなくてもよい
 
 #### 拡張関数にしない方がよい例
 ```kotlin
@@ -85,6 +100,11 @@ fun MarketPrice.save(repository: MarketPriceRepository) {
     repository.save(this)
 }
 ```
+- `save` は `MarketPrice` 自体の性質や判定ではなく、保存処理である
+- Repositoryに依存しており、外部I/Oにつながる可能性がある
+- `marketPrice.save(repository)` と書くと、保存という重要な副作用が `MarketPrice` の自然な振る舞いのように見えてしまう
+- 保存処理は UseCase、Service、Repository に置いた方が責務が明確になる
+- 拡張関数にすると、ドメインモデルと永続化処理の境界が曖昧になる
 
 #### 改善例
 ```kotlin
@@ -96,6 +116,10 @@ class SaveMarketPriceUseCase(
     }
 }
 ```
+- 保存処理を UseCase に置くことで、「いつ保存するか」という処理手順が明確になる
+- Repositoryへの依存が `MarketPrice` ではなく UseCase 側に集まる
+- `MarketPrice` は価格データや価格に関する判定に集中できる
+- 外部I/Oを伴う処理を分離できるため、テストしやすくなる
 
 ## 5. 命名ルール
 - 意図が明確になる名前を選びます。処理の流れや責務が分かりにくくなる場合は、短いスコープ関数よりも明示的な変数名や関数名を優先します。
