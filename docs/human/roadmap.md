@@ -18,6 +18,8 @@
 * 実行ログをCSVとして保存できる
 * `./gradlew build` と `./gradlew run` が再現可能である
 * `docker compose -f docker/compose/local.yml up --build` で起動確認できる
+* GitHub Actions CI を用いた自動テスト・検証ができる
+* GCP Cloud Run Job を用いたシミュレーション実行がデプロイ・稼働できる
 
 ### 未解決リスク
 
@@ -91,4 +93,4 @@
 * 複数通貨対応
 * Python分析バッチ
 * グラフ表示
-* AWS やレンタルサーバー等のクラウド運用
+* AWS やレンタルサーバーなど、GCP以外のクラウドプラットフォームへの展開

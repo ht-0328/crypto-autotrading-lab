@@ -41,7 +41,23 @@ Cloud Run Job をデプロイした後、指定したスケジュールで定期
 
 ---
 
-## 5. 設定ファイルと環境変数の優先順位について (アーキテクチャの補足)
+## 5. デプロイ時の取引戦略の選択 (strategy_name)
+
+アプリケーションの取引戦略は、デプロイ時に動的に選択することができます。
+これは `Strategy` パターンによって実装されており、GitHub Actions でのデプロイ時に以下の戦略を選択できます。
+
+- `SafeReboundStrategy` (デフォルト): 買値を基準に利確・損切りを行う安全性を考慮した戦略。
+- `SimpleContrarianStrategy`: 開発初期の単純な逆張りロジック（比較用）。
+
+**戦略の渡し方と環境変数の確認:**
+- Deploy to GCP ワークフロー (`deploy-gcp.yml`) を手動実行 (workflow_dispatch) する際、入力フォームから `strategy_name` を選択します。
+- 選択された戦略は環境変数 `APP_TRADING_STRATEGY_NAME` として Cloud Run Job に設定されます。
+- デプロイ後、GCP コンソールや CLI コマンド (`gcloud run jobs describe`) を使って環境変数を確認できます。
+- **重要:** Cloud Scheduler は既存の Cloud Run Job を定期実行する役割のみを持ちます。したがって、実行される取引戦略は Cloud Run Job をデプロイした際の設定によって決まります。戦略を変更したい場合は、再度 `deploy-gcp.yml` ワークフローを実行して Cloud Run Job を更新してください。
+
+---
+
+## 6. 設定ファイルと環境変数の優先順位について (アーキテクチャの補足)
 
 アプリケーションの設定値は、以下の優先順位で決定されます。これはローカル開発および Cloud Run などのデプロイ環境において共通のルールです：
 
