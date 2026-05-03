@@ -48,6 +48,12 @@ object ConfigLoader {
         return finalConfig
     }
 
+    /**
+     * 環境変数やデフォルトのパスから、読み込むべき設定ファイルのパスを解決する。
+     *
+     * @param configPathEnv 環境変数(APP_CONFIG_PATH)で指定されたパス
+     * @return 最終的に使用する設定ファイルのパス
+     */
     internal fun resolveConfigPath(configPathEnv: String?): String {
         if (!configPathEnv.isNullOrBlank()) {
             return configPathEnv
