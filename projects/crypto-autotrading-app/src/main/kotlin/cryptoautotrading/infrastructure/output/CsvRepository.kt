@@ -72,6 +72,13 @@ class CsvRepository(private val baseCsvFilePath: String) : TradeHistoryRepositor
         }
     }
 
+    /**
+     * CSVの各フィールドがフォーマットを崩さないようにエスケープ処理を行う。
+     * 文字列内のダブルクォートをエスケープし、全体をダブルクォートで囲む。
+     *
+     * @param value エスケープ対象の値
+     * @return エスケープ処理された文字列
+     */
     private fun escapeCsvValue(value: Any): String {
         val str = value.toString()
         val escapedStr = str.replace("\"", "\"\"")
