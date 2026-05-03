@@ -32,10 +32,10 @@
 
 ### 本プロジェクトの前提事項と注意事項
 
-> **注意 (Phase1の制約):** このリポジトリでは現在Phase1を実行しており、実資金を用いた実注文は絶対に行いません。完全なシミュレーションとして動作します。
-> **Strategyの切り替え:** アプリケーションは複数の取引ロジックを持っており、設定や環境変数（`APP_TRADING_STRATEGY_NAME`）によりStrategyの切り替えが可能です。
-> **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/human/gcp-deployment.md](docs/human/gcp-deployment.md) を参照してください。
-> **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
+* **注意 (Phase1の制約):** このリポジトリでは現在Phase1を実行しており、実資金を用いた実注文は絶対に行いません。完全なシミュレーションとして動作します。
+* **Strategyの切り替え:** アプリケーションは複数の取引ロジックを持っており、設定や環境変数（`APP_TRADING_STRATEGY_NAME`）によりStrategyの切り替えが可能です。
+* **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/human/gcp-deployment.md](docs/human/gcp-deployment.md) を参照してください。
+* **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
 
 ## リポジトリ構成
 

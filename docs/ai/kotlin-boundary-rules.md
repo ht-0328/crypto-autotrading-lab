@@ -1,7 +1,7 @@
 # Kotlin本体の境界ルール
 
 ## 概要
-Kotlinプロジェクトの厳格なレイヤ依存ルール
+本ドキュメントは、Kotlinプロジェクトにおける各レイヤ（Domain, Application, Infrastructure）の責務と境界のルールを定義しています。アーキテクチャ制約を守るためのガイドです。
 
 ## 適用対象
 Kotlinコードの変更を行うAIエージェント
@@ -9,7 +9,6 @@ Kotlinコードの変更を行うAIエージェント
 ## 必ず読む関連ドキュメント
 [review-checklist.md](review-checklist.md)
 
-## 必須ルール
 対象ディレクトリ:
 `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/`
 

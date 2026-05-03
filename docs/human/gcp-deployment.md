@@ -1,13 +1,16 @@
 # GCP デプロイガイド
 
 ## 概要
-GCPへのデプロイガイドと運用手順
+本ドキュメントは、アプリケーションをGCP環境へデプロイし、運用・管理するための手順書です。Cloud Run JobのデプロイやCloud Schedulerによる定期実行の設定について記載しています。
 
 ## 対象読者
 開発メンバー、運用者
 
 ## この文書で分かること
-Cloud Run JobおよびCloud Schedulerのデプロイ、実行確認手順
+- GCP アカウントおよびプロジェクトのセットアップ
+- デプロイの事前準備事項
+- Cloud Schedulerを用いた定期実行の設定
+- 取引戦略の選択と設定変数の優先順位
 
 ## 関連ドキュメント
 [github-actions-gcp-deploy-setup.md](github-actions-gcp-deploy-setup.md)
@@ -15,7 +18,6 @@ Cloud Run JobおよびCloud Schedulerのデプロイ、実行確認手順
 ## 前提
 本ドキュメントの記載内容は、Phase1（シミュレーション環境）を前提としています。
 
-## 本文
 本ドキュメント群は、GitHub Actions を使用して Google Cloud Platform (GCP) にアプリケーションをデプロイするための手順を説明します。
 プロセスを分かりやすくするため、手順を「事前準備」と「デプロイ設定」の 2 つのステップに分けています。初心者の方は、以下の順番でドキュメントを読み進めてください。
 
@@ -90,9 +92,6 @@ Cloud Run Job をデプロイした後、指定したスケジュールで定期
 
 > **Note:** API キーや API シークレットなどの秘密情報はこの優先順位の対象外です。GitHub Variables には設定せず、GitHub Secrets や Secret Manager などの安全な仕組みを利用して管理してください。
 
-
-## 注意点
-特にありません。
 
 ## 更新タイミング
 システムの要件や運用フローが変更された際に更新してください。
