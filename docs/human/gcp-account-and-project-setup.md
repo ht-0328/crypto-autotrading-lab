@@ -1,5 +1,23 @@
 # GCP アカウントとプロジェクトのセットアップ
 
+## 概要
+本ドキュメントは、GCPの初期アカウント作成およびプロジェクト設定の手順を解説しています。インフラ担当者がクラウド環境を新規に構築する際に利用します。
+
+## 対象読者
+運用インフラ構築担当者
+
+## この文書で分かること
+- Google Cloud アカウントの準備
+- GCP プロジェクトの作成方法
+- 課金設定の有効化手順
+- gcloud CLIの導入と認証方法
+
+## 関連ドキュメント
+[github-actions-gcp-deploy-setup.md](github-actions-gcp-deploy-setup.md)
+
+## 前提
+本ドキュメントの記載内容は、Phase1（シミュレーション環境）を前提としています。
+
 ## このドキュメントの目的
 このドキュメントは、GCP (Google Cloud Platform) を初めて使う人向けの初期準備手順を説明します。
 GitHub Actions から GCP へデプロイするための設定に入る前に、まずは GCP アカウントの準備、GCP プロジェクトの作成、課金設定、および手元の PC で `gcloud` CLI を使えるようにする必要があります。
@@ -117,3 +135,7 @@ gcloud billing projects describe "$PROJECT_ID" \
 - [ ] `gcloud billing projects describe` の結果、`billingEnabled` が `True` になっていることが確認できる
 
 以上の準備が整ったら、次は `docs/human/github-actions-gcp-deploy-setup.md` に進んでください。
+
+
+## 更新タイミング
+システムの要件や運用フローが変更された際に更新してください。

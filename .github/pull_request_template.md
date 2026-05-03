@@ -25,6 +25,6 @@
 2. 
 
 ## 分割方針チェック
-- [ ] リファクタと機能追加を同一PRに混在させていない
-- [ ] `domain` 変更時に `infrastructure` を同時変更していない（必要時は別PR）
+- [ ] リファクタと機能追加を同一PRに混在させていない ([docs/ai/change-granularity.md](../docs/ai/change-granularity.md) 参照)
+- [ ] `domain` 変更時に `infrastructure` を同時変更していない（必要時は別PR） ([docs/ai/kotlin-boundary-rules.md](../docs/ai/kotlin-boundary-rules.md) 参照)
 - [ ] `application` にオーケストレーション以外のロジックを追加していない
