@@ -1,12 +1,14 @@
 package cryptoautotrading.application
 
 import cryptoautotrading.domain.model.AppConfig
+import cryptoautotrading.domain.model.Kline
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.repository.MarketDataClient
 import cryptoautotrading.domain.repository.ResultOutputPort
 import cryptoautotrading.domain.model.TradingConfig
 import cryptoautotrading.domain.repository.SimulationStateRepository
 import cryptoautotrading.domain.repository.TradeHistoryRepository
+import cryptoautotrading.domain.simulation.ProfitAndLossCalculator
 import cryptoautotrading.domain.simulation.SimulationService
 import cryptoautotrading.domain.strategy.SafeReboundStrategy
 import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
@@ -36,6 +38,7 @@ class TradingApplication(
 
     private val logger = KotlinLogging.logger {}
     private val simulationService = SimulationService()
+    private val pnlCalculator = ProfitAndLossCalculator()
 
     /**
      * アプリケーションの実行を開始する
@@ -67,7 +70,7 @@ class TradingApplication(
             val currentPrice = klineData.sortedBy { it.openTime }.last().close.toBigDecimal()
 
             // 損益と想定損益の計算
-            val pnl = calculateProfitAndLoss(
+            val pnl = pnlCalculator.calculate(
                 isHolding = currentState.isHolding,
                 currentPrice = currentPrice,
                 buyPrice = currentState.buyPrice,
@@ -117,7 +120,7 @@ class TradingApplication(
         }
     }
 
-    private suspend fun fetchKlineData() = run {
+    private suspend fun fetchKlineData(): List<Kline> {
         val tickerResponse = marketDataClient.getTicker(config.trading.symbol)
         val ticker = tickerResponse.data.firstOrNull()
         logger.debug { "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, bid=${ticker?.bid}, ask=${ticker?.ask}" }
@@ -125,7 +128,7 @@ class TradingApplication(
         val targetDate = resolveKlineTargetDate()
         val klineResponse = marketDataClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
         logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
-        klineResponse.data
+        return klineResponse.data
     }
 
     private fun resolveKlineTargetDate(): String {
@@ -137,30 +140,6 @@ class TradingApplication(
         }
         return date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
     }
-
-    private fun calculateProfitAndLoss(
-        isHolding: Boolean,
-        currentPrice: java.math.BigDecimal,
-        buyPrice: java.math.BigDecimal,
-        holdingAmount: java.math.BigDecimal,
-        shouldSell: Boolean
-    ): ProfitAndLossResult {
-        if (!isHolding) {
-            return ProfitAndLossResult()
-        }
-
-        val estimated = (currentPrice - buyPrice) * holdingAmount
-        val actual = if (shouldSell) estimated else java.math.BigDecimal.ZERO
-        return ProfitAndLossResult(
-            profitAndLoss = actual,
-            estimatedProfitAndLoss = estimated
-        )
-    }
-
-    private data class ProfitAndLossResult(
-        val profitAndLoss: java.math.BigDecimal = java.math.BigDecimal.ZERO,
-        val estimatedProfitAndLoss: java.math.BigDecimal = java.math.BigDecimal.ZERO
-    )
 
     private fun createStrategy(config: TradingConfig): TradingStrategy {
         return when (config.strategyName) {
