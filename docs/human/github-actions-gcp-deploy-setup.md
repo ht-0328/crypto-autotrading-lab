@@ -283,6 +283,10 @@ GitHub 側に、GCP に接続するための設定値を登録します。
 | `SCHEDULER_SERVICE_ACCOUNT_NAME` | `<YOUR_SCHEDULER_SERVICE_ACCOUNT_NAME>` (例: `crypto-scheduler`) |
 | `SCHEDULER_CRON` | `<YOUR_SCHEDULER_CRON>` (例: `*/5 * * * *`) |
 | `SCHEDULER_TIME_ZONE` | `<YOUR_SCHEDULER_TIME_ZONE>` (例: `Asia/Tokyo`) |
+| `TRADING_SYMBOL` | `BTC` (等、必要に応じてTRADING系の設定値を追加) |
+
+> **取引戦略 (strategy_name) についての注意点**:
+> 取引戦略を切り替えるための `APP_TRADING_STRATEGY_NAME` (または `strategy_name`) は、Repository Variables ではなく、デプロイワークフロー (`deploy-gcp.yml`) を実行する際の **入力フォーム (workflow_dispatch)** で選択する方針としています。そのため、ここへの登録は不要です。
 
 > **`SCHEDULER_SERVICE_ACCOUNT_NAME` についての注意点**:
 > - サービスアカウントID部分のみを指定してください。メールアドレス全体ではありません。
@@ -393,16 +397,19 @@ gcloud iam service-accounts get-iam-policy "$DEPLOY_SERVICE_ACCOUNT_EMAIL" \
 1. GitHub リポジトリの **Actions** タブを開きます。
 2. 左側の workflow 一覧から **Deploy to GCP** を選びます。
 3. **Run workflow** ボタンを押します。
-4. `execute_after_deploy` というチェックボックスが表示されます。
-   - **チェックを入れた場合 (true)**: デプロイ完了後、そのまま Cloud Run Job の実行まで行われます。
-   - **チェックを外した場合 (false - デフォルト)**: Cloud Run Job のデプロイと情報の表示 (`describe`) だけで終了します。実行はされません。
+4. 実行時の入力フォームが表示されます。
+   - `execute_after_deploy`:
+     - **チェックを入れた場合 (true)**: デプロイ完了後、そのまま Cloud Run Job の実行まで行われます。
+     - **チェックを外した場合 (false - デフォルト)**: Cloud Run Job のデプロイと情報の表示 (`describe`) だけで終了します。実行はされません。
+   - `strategy_name`:
+     - 利用する取引戦略を選択します。デフォルトは `SafeReboundStrategy` です。比較用の旧ロジックとして `SimpleContrarianStrategy` も選択可能です。
 5. 実行ログを開き、以下のステップが成功しているか確認します。
    - GCP への認証 (Authenticate to Google Cloud)
    - Setup GCP Resources (ここで初回実行時に必要な GCP リソースが自動作成されます。2回目以降は既存のリソースが再利用されるためエラーにはなりません。)
    - Cloud Build でのビルド
    - Cloud Run Job へのデプロイ
 
-必要に応じて、デプロイが成功したかをローカルの gcloud コマンドでも確認できます。
+必要に応じて、デプロイが成功したか、および選択した戦略が反映されているかをローカルの gcloud コマンドでも確認できます（出力に `APP_TRADING_STRATEGY_NAME` などの環境変数が含まれます）。
 ```bash
 gcloud run jobs describe "<YOUR_CLOUD_RUN_JOB_NAME>" \
   --region "<YOUR_GCP_REGION>" \
