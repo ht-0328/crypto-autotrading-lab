@@ -7,7 +7,15 @@ import java.math.BigDecimal
 object ConsoleOutput : ResultOutputPort {
 
     /**
-     * コンソールに出力する
+     * 実行結果をコンソールに標準出力する。
+     * 売買のアクションが発生した場合のみ、詳細な理由と想定損益を出力し、
+     * 見送りなどの場合は簡略化して出力する。
+     *
+     * @param price 現在の価格
+     * @param action 判定された売買アクション
+     * @param reason アクションを決定した理由
+     * @param profitAndLoss 確定した損益
+     * @param estimatedProfitAndLoss 現在の含み損益（想定損益）
      */
     override fun printResult(
         price: BigDecimal,

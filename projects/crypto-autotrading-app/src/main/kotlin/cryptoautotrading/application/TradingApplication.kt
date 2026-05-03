@@ -120,6 +120,11 @@ class TradingApplication(
         }
     }
 
+    /**
+     * 取引所のAPIから最新のティッカー情報とK線（ローソク足）データを取得する。
+     *
+     * @return 取得したK線データのリスト
+     */
     private suspend fun fetchKlineData(): List<Kline> {
         val tickerResponse = marketDataClient.getTicker(config.trading.symbol)
         val ticker = tickerResponse.data.firstOrNull()
@@ -131,6 +136,13 @@ class TradingApplication(
         return klineResponse.data
     }
 
+    /**
+     * K線データを取得するための対象日付を決定する。
+     * GMOコイン等の取引所の仕様（営業日は朝6時切り替え）を考慮し、
+     * 午前6時前の場合は前日の日付を返す。
+     *
+     * @return 対象日付の文字列（形式: yyyyMMdd）
+     */
     private fun resolveKlineTargetDate(): String {
         val nowJst = ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
         val date = if (nowJst.hour < 6) {
@@ -141,6 +153,14 @@ class TradingApplication(
         return date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
     }
 
+    /**
+     * 設定値に指定されたStrategy名から、実際に使用する売買戦略を生成する。
+     *
+     * 未対応のStrategy名が指定された場合は、誤った戦略で実行されないように例外を投げる。
+     *
+     * @param config 取引関連の設定
+     * @return 使用する売買戦略
+     */
     private fun createStrategy(config: TradingConfig): TradingStrategy {
         return when (config.strategyName) {
             "SafeReboundStrategy" -> SafeReboundStrategy(config)

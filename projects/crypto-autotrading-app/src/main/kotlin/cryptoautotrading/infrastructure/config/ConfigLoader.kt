@@ -48,6 +48,12 @@ object ConfigLoader {
         return finalConfig
     }
 
+    /**
+     * 環境変数やデフォルトのパスから、読み込むべき設定ファイルのパスを解決する。
+     *
+     * @param configPathEnv 環境変数(APP_CONFIG_PATH)で指定されたパス
+     * @return 最終的に使用する設定ファイルのパス
+     */
     internal fun resolveConfigPath(configPathEnv: String?): String {
         if (!configPathEnv.isNullOrBlank()) {
             return configPathEnv
@@ -60,6 +66,12 @@ object ConfigLoader {
         return FALLBACK_CONFIG_PATH
     }
 
+    /**
+     * デフォルトの設定値を生成する。
+     * 設定ファイルが見つからない場合のフォールバックとして使用される。
+     *
+     * @return デフォルト値が設定されたAppConfig
+     */
     private fun createDefaultConfig(): AppConfig {
         return AppConfig(
             app = AppSettings(
@@ -85,6 +97,13 @@ object ConfigLoader {
         )
     }
 
+    /**
+     * ベースとなる設定を環境変数の値で上書きする。
+     * 環境変数が設定されていない場合は、ベースの設定値をそのまま使用する。
+     *
+     * @param base ベースとなる設定
+     * @return 環境変数で上書きされた最終的なAppConfig
+     */
     private fun overrideWithEnvVars(base: AppConfig): AppConfig {
         val envInterval = System.getenv("APP_INTERVAL")
         val envStrategyName = System.getenv("APP_TRADING_STRATEGY_NAME")
