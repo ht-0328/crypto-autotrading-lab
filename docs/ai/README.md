@@ -21,6 +21,8 @@
   * [`change-granularity.md`](change-granularity.md)
 * **Kotlinのバックエンドコード（アーキテクチャ境界）を変更する場合**:
   * [`kotlin-boundary-rules.md`](kotlin-boundary-rules.md)
+* **Kotlinコードの読みやすさ・Scope functions・拡張関数を扱う場合**:
+  * [`skills/kotlin-readable-code.SKILL.md`](skills/kotlin-readable-code.SKILL.md)
 * **特定領域の深い分析や要件定義を求められた場合**:
   * [`skills-catalog.md`](skills-catalog.md) (必要なスキルを特定し、`docs/ai/skills/` 内の該当スキル定義を読み込む)
 
@@ -34,3 +36,4 @@
 | [`change-granularity.md`](change-granularity.md) | PRの粒度（1PR=1価値）、リファクタリングと機能追加の分離ルール |
 | [`kotlin-boundary-rules.md`](kotlin-boundary-rules.md) | Domain, Application, Infrastructure各層の責務と境界の定義 |
 | [`skills-catalog.md`](skills-catalog.md) | AIが提供可能な専門スキルの一覧と、その適用条件・入出力定義 |
+| [`skills/kotlin-readable-code.SKILL.md`](skills/kotlin-readable-code.SKILL.md) | Kotlinコードの可読性、Scope functions、拡張関数の使い方に関する判断基準 |

@@ -17,6 +17,11 @@
   * 読込対象: [`docs/ai/change-granularity.md`](docs/ai/change-granularity.md)
   * 読込対象: [`docs/ai/kotlin-boundary-rules.md`](docs/ai/kotlin-boundary-rules.md)
 
+* **Kotlinコードを追加・変更する場合**
+  * 読込対象: [`docs/ai/kotlin-boundary-rules.md`](docs/ai/kotlin-boundary-rules.md)
+  * 読込対象: [`docs/ai/skills/kotlin-readable-code.SKILL.md`](docs/ai/skills/kotlin-readable-code.SKILL.md)
+  * 方針: `let` / `run` / `with` / `apply` / `also` / 拡張関数は、コードの意図が明確になり、直感的に読める場合は積極的に使うこと。ただし、売買ロジック・設定・テストの意図が分かりにくくなる場合は、通常の関数、明示的な変数名、`if`、`return` を優先すること。
+
 * **AIスキルの適用が必要な場合**
   * 読込対象: [`docs/ai/skills-catalog.md`](docs/ai/skills-catalog.md)
   * さらに、必要なスキルの詳細定義（例: [`docs/ai/skills/spec-writer.SKILL.md`](docs/ai/skills/spec-writer.SKILL.md)）を読み込むこと。
