@@ -35,9 +35,6 @@ jobs:
       - name: Authenticate with GCP
         uses: google-github-actions/auth@v2
         with:
-          # 以下はGitHub Secrets/Variablesで設定すること
-          # GCP_WORKLOAD_IDENTITY_PROVIDER: 例 "projects/1234567890/locations/global/workloadIdentityPools/my-pool/providers/my-provider"
-          # GCP_DEPLOY_SERVICE_ACCOUNT: 例 "my-deploy-sa@crypto-autotrading-lab.iam.gserviceaccount.com"
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
@@ -46,55 +43,35 @@ jobs:
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
 
-      - name: Setup GCP Resources
+      - name: Verify GCP Resources Exist
         run: |
-          # 必要なGCP APIを有効化
-          gcloud services enable serviceusage.googleapis.com \
-            iam.googleapis.com \
-            iamcredentials.googleapis.com \
-            cloudbuild.googleapis.com \
-            artifactregistry.googleapis.com \
-            run.googleapis.com \
-            storage.googleapis.com
+          echo "Verifying that necessary GCP resources exist..."
 
-          # Artifact Registry を作成（存在する場合はエラーを無視）
-          gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} \
-            --location=${{ vars.GCP_REGION }} || \
-          gcloud artifacts repositories create ${{ vars.ARTIFACT_REPOSITORY }} \
-            --repository-format=docker \
-            --location=${{ vars.GCP_REGION }}
+          echo "Checking Artifact Registry..."
+          if ! gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} > /dev/null 2>&1; then
+            echo "Error: Artifact Registry が存在しません。bootstrap-gcp.yml を先に実行してください。"
+            exit 1
+          fi
 
-          # GCS バケットを作成（存在する場合はエラーを無視）
-          gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} || \
-          gcloud storage buckets create gs://${{ vars.GCS_BUCKET_NAME }} \
-            --location=${{ vars.GCP_REGION }}
+          echo "Checking GCS Bucket..."
+          if ! gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} > /dev/null 2>&1; then
+            echo "Error: GCS bucket が存在しません。bootstrap-gcp.yml を先に実行してください。"
+            exit 1
+          fi
 
-          # Cloud Build 用サービスアカウントを作成（存在する場合はエラーを無視）
-          gcloud iam service-accounts describe ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com || \
-          gcloud iam service-accounts create ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }} \
-            --description="Service Account for Cloud Build"
+          echo "Checking Cloud Build Service Account..."
+          if ! gcloud iam service-accounts describe ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com > /dev/null 2>&1; then
+            echo "Error: Cloud Build用サービスアカウントが存在しません。bootstrap-gcp.yml を先に実行してください。"
+            exit 1
+          fi
 
-          # Cloud Run 実行用サービスアカウントを作成（存在する場合はエラーを無視）
-          gcloud iam service-accounts describe ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com || \
-          gcloud iam service-accounts create ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }} \
-            --description="Service Account for Cloud Run Job Runner"
+          echo "Checking Cloud Run Runtime Service Account..."
+          if ! gcloud iam service-accounts describe ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com > /dev/null 2>&1; then
+            echo "Error: Cloud Run実行用サービスアカウントが存在しません。bootstrap-gcp.yml を先に実行してください。"
+            exit 1
+          fi
 
-          # Cloud Build 用サービスアカウントに権限を付与
-          gcloud projects add-iam-policy-binding ${{ vars.GCP_PROJECT_ID }} \
-            --member="serviceAccount:${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
-            --role="roles/artifactregistry.writer"
-          gcloud projects add-iam-policy-binding ${{ vars.GCP_PROJECT_ID }} \
-            --member="serviceAccount:${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
-            --role="roles/logging.logWriter"
-          # Cloud Build でソースコードを GCS ステージングバケットから読み取るために必要な権限
-          gcloud projects add-iam-policy-binding ${{ vars.GCP_PROJECT_ID }} \
-            --member="serviceAccount:${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
-            --role="roles/storage.objectViewer"
-
-          # Cloud Run 実行用サービスアカウントに権限を付与（対象バケットの Storage Object Admin）
-          gcloud storage buckets add-iam-policy-binding gs://${{ vars.GCS_BUCKET_NAME }} \
-            --member="serviceAccount:${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
-            --role="roles/storage.objectAdmin"
+          echo "All required resources verified successfully."
 
       - name: Build and Push Docker Image with Cloud Build
         run: |

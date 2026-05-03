@@ -25,12 +25,12 @@ on:
       delete_service_accounts:
         type: boolean
         required: false
-        default: true
+        default: false
         description: "Cloud Build 用サービスアカウントと Cloud Run 実行用サービスアカウントを削除する"
       delete_scheduler_service_account:
         type: boolean
         required: false
-        default: true
+        default: false
         description: "Cloud Scheduler 用サービスアカウントを削除する"
       delete_cloud_run_job:
         type: boolean

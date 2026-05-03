@@ -1,21 +1,26 @@
 # 4. デプロイ用サービスアカウントの作成と権限（IAM）設定
 
 ## 文書の目的
+
 - GitHub Actions が GCP を操作するための「専用アカウント（サービスアカウント）」の作り方
 - そのアカウントに、デプロイに必要な権限（IAMロール）を付ける方法
 - Workload Identity とサービスアカウントを繋ぐ方法
 
 ## 対象読者
+
 運用インフラ構築担当者
 
 ## 関連ドキュメント
+
 - [05-github-actions-variables.md](05-github-actions-variables.md)
 
 ## 概要
+
 GitHub Actions が GCP にプログラムをデプロイするには、「デプロイ専用のロボット（サービスアカウント）」を作る必要があります。
 そして、そのロボットに「必要な操作だけができる権限」を持たせ、先ほど作った Workload Identity（入り口）と繋げます。
 
 ## 1. 準備（環境変数の設定）
+
 引き続きターミナルで作業します。以下の変数を設定してください。
 
 ```bash
@@ -30,6 +35,7 @@ export DEPLOY_SERVICE_ACCOUNT_EMAIL="${DEPLOY_SERVICE_ACCOUNT_NAME}@${PROJECT_ID
 ```
 
 ## 2. サービスアカウントを作る
+
 デプロイ専用のアカウントを作ります。
 
 ```bash
@@ -39,19 +45,19 @@ gcloud iam service-accounts create "$DEPLOY_SERVICE_ACCOUNT_NAME" \
 ```
 
 ## 3. 必要な権限（IAMロール）を付ける
+
 このアカウントに、GCPのリソースを作ったり設定したりする権限を与えます。
-※初期構築を簡単にするため、ここでは少し強めの権限を付けています。本番運用では後から絞ることも検討してください。
+初期構築（Bootstrap）時にはリソース作成のための強い権限が必要ですが、通常デプロイ（Deploy）の運用段階では、セキュリティのため権限を最小限に絞る構成を推奨します。
+
+### 通常デプロイ用の最小権限構成
+
+通常デプロイでは、リソースの作成は行わず、既存リソースの利用と更新のみを行うため、以下の権限だけで十分です。
 
 ```bash
 ROLES=(
-  "roles/serviceusage.serviceUsageAdmin"    # APIをオンにするため
-  "roles/artifactregistry.admin"            # Dockerイメージ保存場所を作るため
-  "roles/storage.admin"                     # ファイル保存場所を作るため
-  "roles/iam.serviceAccountAdmin"           # 実行用のアカウントなどを作るため
-  "roles/resourcemanager.projectIamAdmin"   # 権限を設定するため
   "roles/cloudbuild.builds.editor"          # プログラムをビルドするため
-  "roles/run.admin"                         # Cloud Runにデプロイするため
-  "roles/iam.serviceAccountUser"            # 別のアカウントとして動かすため
+  "roles/run.developer"                     # Cloud Runにデプロイするため (adminより弱い権限)
+  "roles/serviceusage.serviceUsageConsumer" # 既存のAPIを利用するため
 )
 
 for ROLE in "${ROLES[@]}"; do
@@ -62,7 +68,31 @@ for ROLE in "${ROLES[@]}"; do
 done
 ```
 
+### 対象サービスアカウントへの `iam.serviceAccountUser` 付与
+
+さらに、セキュリティを強化するため、プロジェクト全体ではなく、デプロイ時に使用する特定のサービスアカウントに対してのみ `roles/iam.serviceAccountUser` を付与します。
+
+対象となるサービスアカウントの例：
+
+- `cloud-build-builder@<PROJECT_ID>.iam.gserviceaccount.com`
+- `crypto-autotrading-lab-runner@<PROJECT_ID>.iam.gserviceaccount.com`
+
+```bash
+# Cloud Build 用サービスアカウントへの付与
+gcloud iam service-accounts add-iam-policy-binding "cloud-build-builder@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --member="serviceAccount:$DEPLOY_SERVICE_ACCOUNT_EMAIL" \
+  --role="roles/iam.serviceAccountUser"
+
+# Cloud Run 実行用サービスアカウントへの付与
+gcloud iam service-accounts add-iam-policy-binding "crypto-autotrading-lab-runner@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --member="serviceAccount:$DEPLOY_SERVICE_ACCOUNT_EMAIL" \
+  --role="roles/iam.serviceAccountUser"
+```
+
+> **Note:** 初期構築（`bootstrap-gcp.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。初期構築完了後は、上記のような最小権限に戻すことを強く推奨します。
+
 ## 4. Workload Identity とサービスアカウントを繋ぐ
+
 「指定したGitHubリポジトリから来た通信」なら「このデプロイ用アカウントとして動いて良い」という設定をします。
 
 ```bash
@@ -73,6 +103,7 @@ gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SERVICE_ACCOUNT_EMAI
 ```
 
 ## 5. 設定の確認
+
 アカウントに正しい権限がついているか確認します。
 
 ```bash
@@ -83,6 +114,7 @@ gcloud projects get-iam-policy "$PROJECT_ID" \
 ```
 
 ## 完了条件チェックリスト
+
 - [ ] サービスアカウントを作れた
 - [ ] 必要なIAMロールをすべて付けられた
 - [ ] Workload Identity との紐づけ（バインディング）ができた
