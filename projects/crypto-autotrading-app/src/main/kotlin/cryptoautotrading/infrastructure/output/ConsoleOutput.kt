@@ -43,6 +43,8 @@ object ConsoleOutput : ResultOutputPort {
             println("残金: $cashBalance")
             println("保有BTC数量: $holdingAmount")
             println("買値: $buyPrice")
+            println("保有BTC評価額: $estimatedHoldingValue")
+            println("総資産: $totalAssetValue")
             println("確定損益: $realizedProfitAndLoss")
         } else {
             println("売買サイン: ${action.description}")
@@ -50,6 +52,8 @@ object ConsoleOutput : ResultOutputPort {
             println("残金: $cashBalance")
             println("保有BTC数量: $holdingAmount")
             println("買値: $buyPrice")
+            println("保有BTC評価額: $estimatedHoldingValue")
+            println("総資産: $totalAssetValue")
             println("確定損益: $realizedProfitAndLoss")
         }
         println("----------------")
