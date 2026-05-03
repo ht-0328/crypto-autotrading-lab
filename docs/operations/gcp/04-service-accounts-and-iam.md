@@ -89,7 +89,7 @@ gcloud iam service-accounts add-iam-policy-binding "crypto-autotrading-lab-runne
   --role="roles/iam.serviceAccountUser"
 ```
 
-> **Note:** 初期構築（`bootstrap-gcp.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。初期構築完了後は、上記のような最小権限に戻すことを強く推奨します。
+> **Note:** 初期構築（`bootstrap-create-gcp.yml` および `bootstrap-grant-iam.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。初期構築完了後は、上記のような最小権限に戻すことを強く推奨します。
 
 ## 4. Workload Identity とサービスアカウントを繋ぐ
 
