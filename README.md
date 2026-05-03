@@ -28,6 +28,7 @@
 
 * [**ドキュメント一覧 (docs/README.md)**](docs/README.md)
 * [人間向けドキュメント一覧 (docs/human/README.md)](docs/human/README.md)
+  * [売買ロジック説明 (docs/human/trading-logic.md)](docs/human/trading-logic.md)
 * [AI向けドキュメント一覧 (docs/ai/README.md)](docs/ai/README.md)
 
 ### 本プロジェクトの前提事項と注意事項
