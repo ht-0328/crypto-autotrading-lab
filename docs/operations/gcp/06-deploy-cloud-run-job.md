@@ -1,16 +1,16 @@
 # 6. Cloud Run Job へのデプロイ
 
-## この文書で分かること
+## 文書の目的
 - GitHub Actions を使って GCP にアプリをデプロイする手順
 - デプロイ時の取引戦略の選び方
 
-## 読む人
+## 対象読者
 運用担当者、開発メンバー
 
 ## 関連ドキュメント
 - [07-scheduler.md](07-scheduler.md)
 
-## まず結論
+## 概要
 設定がすべて終わったら、GitHub Actions の画面からボタンを押すだけで、GCP の Cloud Run Job にアプリをデプロイできます。
 初回実行時は、必要な保管場所（Artifact Registry や GCS など）が自動で作られます。
 

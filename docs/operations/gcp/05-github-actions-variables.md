@@ -1,15 +1,15 @@
 # 5. GitHub Actions の Variables 設定
 
-## この文書で分かること
+## 文書の目的
 - GCP に接続するための情報を、GitHub 側に登録する方法
 
-## 読む人
+## 対象読者
 運用インフラ構築担当者
 
 ## 関連ドキュメント
 - [06-deploy-cloud-run-job.md](06-deploy-cloud-run-job.md)
 
-## まず結論
+## 概要
 GitHub Actions が GCP にデプロイするためには、「どのプロジェクトの、どの入り口（Workload Identity）を使うか」を教えてあげる必要があります。
 これらの情報を GitHub の **Repository Variables** に登録します。
 
