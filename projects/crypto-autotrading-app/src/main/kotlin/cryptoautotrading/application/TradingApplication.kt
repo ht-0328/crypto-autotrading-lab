@@ -48,8 +48,22 @@ class TradingApplication(
             logger.info { "TradingApplication のメイン処理を開始します" }
             logger.debug { "実行設定: $config" }
 
-            // 1. 状態の読み込み
-            val currentState = stateRepository.load()
+            // 1. 状態の読み込みと初期資金の反映
+            var currentState = stateRepository.load()
+
+            if (currentState.cashBalance.compareTo(java.math.BigDecimal.ZERO) == 0) {
+                val initialCapital = java.math.BigDecimal(config.trading.initialCapital)
+                val newCashBalance = if (currentState.isHolding) {
+                    val cost = currentState.buyPrice * currentState.holdingAmount
+                    val balance = initialCapital - cost
+                    if (balance < java.math.BigDecimal.ZERO) java.math.BigDecimal.ZERO else balance
+                } else {
+                    initialCapital
+                }
+                currentState = currentState.copy(cashBalance = newCashBalance)
+                logger.info { "初期資金を反映し、残金を $newCashBalance に設定しました" }
+            }
+
             logger.info { "現在のシミュレーション状態を読み込みました" }
             logger.debug { "読み込んだ状態: $currentState" }
 
@@ -94,7 +108,11 @@ class TradingApplication(
                 action = decision.action,
                 reason = decision.reason,
                 profitAndLoss = pnl.profitAndLoss,
-                estimatedProfitAndLoss = pnl.estimatedProfitAndLoss
+                estimatedProfitAndLoss = pnl.estimatedProfitAndLoss,
+                cashBalance = nextState.cashBalance,
+                holdingAmount = nextState.holdingAmount,
+                buyPrice = nextState.buyPrice,
+                realizedProfitAndLoss = nextState.realizedProfitAndLoss
             )
 
             // CSV出力
@@ -106,7 +124,11 @@ class TradingApplication(
                 reason = decision.reason,
                 profitAndLoss = pnl.profitAndLoss,
                 isHolding = nextState.isHolding,
-                fee = fee
+                fee = fee,
+                cashBalance = nextState.cashBalance,
+                holdingAmount = nextState.holdingAmount,
+                buyPrice = nextState.buyPrice,
+                realizedProfitAndLoss = nextState.realizedProfitAndLoss
             )
 
             // 6. 状態の保存

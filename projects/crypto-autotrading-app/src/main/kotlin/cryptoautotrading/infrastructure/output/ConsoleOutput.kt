@@ -22,7 +22,11 @@ object ConsoleOutput : ResultOutputPort {
         action: TradeAction,
         reason: String,
         profitAndLoss: BigDecimal,
-        estimatedProfitAndLoss: BigDecimal
+        estimatedProfitAndLoss: BigDecimal,
+        cashBalance: BigDecimal,
+        holdingAmount: BigDecimal,
+        buyPrice: BigDecimal,
+        realizedProfitAndLoss: BigDecimal
     ) {
         println("--- 判定結果 ---")
         println("現在価格: $price")
@@ -34,9 +38,17 @@ object ConsoleOutput : ResultOutputPort {
             println("理由: $reason")
             println("損益: $profitAndLoss")
             println("想定損益: $estimatedProfitAndLoss")
+            println("残金: $cashBalance")
+            println("保有BTC数量: $holdingAmount")
+            println("買値: $buyPrice")
+            println("確定損益: $realizedProfitAndLoss")
         } else {
             println("売買サイン: ${action.description}")
             println("損益: $profitAndLoss")
+            println("残金: $cashBalance")
+            println("保有BTC数量: $holdingAmount")
+            println("買値: $buyPrice")
+            println("確定損益: $realizedProfitAndLoss")
         }
         println("----------------")
     }

@@ -15,6 +15,10 @@ interface ResultOutputPort {
         action: TradeAction,
         reason: String,
         profitAndLoss: BigDecimal,
-        estimatedProfitAndLoss: BigDecimal
+        estimatedProfitAndLoss: BigDecimal,
+        cashBalance: BigDecimal,
+        holdingAmount: BigDecimal,
+        buyPrice: BigDecimal,
+        realizedProfitAndLoss: BigDecimal
     )
 }

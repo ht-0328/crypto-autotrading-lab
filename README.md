@@ -26,28 +26,31 @@
 各種ドキュメント（人間向け・AI向け）は `docs/` 配下に整理されています。
 詳細は以下のリンクから参照してください。
 
-* [**ドキュメント一覧 (docs/README.md)**](docs/README.md)
-* [ドキュメント一覧（全体像） (docs/overview/README.md)](docs/overview/README.md)
-  * [売買ロジック説明 (docs/architecture/trading-logic.md)](docs/architecture/trading-logic.md)
-* [AI向けドキュメント一覧 (docs/ai/README.md)](docs/ai/README.md)
+- [**ドキュメント一覧 (docs/README.md)**](docs/README.md)
+- [ドキュメント一覧（全体像） (docs/overview/README.md)](docs/overview/README.md)
+  - [売買ロジック説明 (docs/architecture/trading-logic.md)](docs/architecture/trading-logic.md)
+- [AI向けドキュメント一覧 (docs/ai/README.md)](docs/ai/README.md)
 
 ### 本プロジェクトの前提事項と注意事項
 
-* **注意 (Phase1の制約):** このリポジトリでは現在Phase1を実行しており、実資金を用いた実注文は絶対に行いません。完全なシミュレーションとして動作します。
-* **Strategyの切り替え:** アプリケーションは複数の取引ロジックを持っており、設定や環境変数（`APP_TRADING_STRATEGY_NAME`）によりStrategyの切り替えが可能です。
-* **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/operations/gcp/README.md](docs/operations/gcp/README.md) を参照してください。
-* **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
+- **注意 (Phase1の制約):** このリポジトリでは現在Phase1を実行しており、実資金を用いた実注文は絶対に行いません。完全なシミュレーションとして動作します。
+  - シミュレーション上の残金を `state.json` に保存します。
+  - 買い判定時は残金を減らして保有BTC数量を更新し、売り判定時は残金を増やして確定損益を更新します。
+  - CSVにも資金情報（残金、保有BTC数量、買値、確定損益）を出力します。
+- **Strategyの切り替え:** アプリケーションは複数の取引ロジックを持っており、設定や環境変数（`APP_TRADING_STRATEGY_NAME`）によりStrategyの切り替えが可能です。
+- **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/operations/gcp/README.md](docs/operations/gcp/README.md) を参照してください。
+- **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
 
 ## リポジトリ構成
 
 主要ディレクトリの役割は以下です。
 
-* `projects/crypto-autotrading-app/`: Kotlin CLI アプリ本体
-* `config/`: 実行環境ごとの設定ファイル（GMO API / WireMock）
-* `mocks/wiremock/`: WireMock のスタブ定義
-* `docker/`: ローカル実行用の Dockerfile / Compose 定義
-* `docs/overview/`, `docs/architecture/`, `docs/development/`, `docs/operations/`: 人間向けの各種ドキュメント
-* `docs/ai/`: AIエージェント向けのプロンプト・制約ルール
+- `projects/crypto-autotrading-app/`: Kotlin CLI アプリ本体
+- `config/`: 実行環境ごとの設定ファイル（GMO API / WireMock）
+- `mocks/wiremock/`: WireMock のスタブ定義
+- `docker/`: ローカル実行用の Dockerfile / Compose 定義
+- `docs/overview/`, `docs/architecture/`, `docs/development/`, `docs/operations/`: 人間向けの各種ドキュメント
+- `docs/ai/`: AIエージェント向けのプロンプト・制約ルール
 
 ## 起動方法 (ローカル実行)
 

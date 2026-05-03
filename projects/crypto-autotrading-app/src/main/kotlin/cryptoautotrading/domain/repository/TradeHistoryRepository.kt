@@ -24,6 +24,10 @@ interface TradeHistoryRepository {
         reason: String,
         profitAndLoss: BigDecimal,
         isHolding: Boolean,
-        fee: BigDecimal
+        fee: BigDecimal,
+        cashBalance: BigDecimal,
+        holdingAmount: BigDecimal,
+        buyPrice: BigDecimal,
+        realizedProfitAndLoss: BigDecimal
     )
 }
