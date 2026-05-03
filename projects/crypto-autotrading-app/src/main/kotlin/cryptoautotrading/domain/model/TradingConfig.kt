@@ -14,6 +14,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * @property sharpChangeThreshold 急変動の閾値
  */
 data class TradingConfig(
+    @JsonProperty("strategy_name")
+    val strategyName: String = "SafeReboundStrategy",
     val symbol: String,
     @JsonProperty("initial_capital")
     val initialCapital: Int,

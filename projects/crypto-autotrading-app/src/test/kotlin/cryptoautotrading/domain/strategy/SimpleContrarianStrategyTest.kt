@@ -1,14 +1,16 @@
 package cryptoautotrading.domain.strategy
 
 import cryptoautotrading.domain.model.Kline
+import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradingConfig
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-class TradingStrategyTest {
+class SimpleContrarianStrategyTest {
 
     private val defaultConfig = TradingConfig(
+        strategyName = "SimpleContrarianStrategy",
         symbol = "BTC",
         initialCapital = 10000,
         tradeAmount = 1000,
@@ -32,12 +34,12 @@ class TradingStrategyTest {
     @Test
     fun `データ不足の場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
-        val strategy = TradingStrategy(defaultConfig)
+        val strategy = SimpleContrarianStrategy(defaultConfig)
         val klines = listOf(createKline("1", "100", "110", "90", "100"))
 
         // Act
-        val decisionNotHolding = strategy.judge(klines, isHolding = false)
-        val decisionHolding = strategy.judge(klines, isHolding = true)
+        val decisionNotHolding = strategy.judge(klines, SimulationState(isHolding = false))
+        val decisionHolding = strategy.judge(klines, SimulationState(isHolding = true))
 
         // Assert
         assertEquals(TradeAction.SKIP, decisionNotHolding.action)
@@ -48,15 +50,15 @@ class TradingStrategyTest {
     @Test
     fun `低ボラティリティの場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
-        val strategy = TradingStrategy(defaultConfig)
+        val strategy = SimpleContrarianStrategy(defaultConfig)
         // 12 klines with very low volatility (high-low variation < 0.3%)
         val klines = (1..12).map {
             createKline(String.format("%02d", it), "1000", "1001", "1000", "1001")
         }
 
         // Act
-        val decisionNotHolding = strategy.judge(klines, isHolding = false)
-        val decisionHolding = strategy.judge(klines, isHolding = true)
+        val decisionNotHolding = strategy.judge(klines, SimulationState(isHolding = false))
+        val decisionHolding = strategy.judge(klines, SimulationState(isHolding = true))
 
         // Assert
         assertEquals(TradeAction.SKIP, decisionNotHolding.action)
@@ -67,7 +69,7 @@ class TradingStrategyTest {
     @Test
     fun `直近15分で急落した場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
-        val strategy = TradingStrategy(defaultConfig)
+        val strategy = SimpleContrarianStrategy(defaultConfig)
         val klines = (1..12).map { i ->
             if (i == 12) {
                 createKline(String.format("%02d", i), "980", "1005", "900", "980")
@@ -79,8 +81,8 @@ class TradingStrategyTest {
         }
 
         // Act
-        val decisionNotHolding = strategy.judge(klines, isHolding = false)
-        val decisionHolding = strategy.judge(klines, isHolding = true)
+        val decisionNotHolding = strategy.judge(klines, SimulationState(isHolding = false))
+        val decisionHolding = strategy.judge(klines, SimulationState(isHolding = true))
 
         // Assert
         assertEquals(TradeAction.SKIP, decisionNotHolding.action)
@@ -91,7 +93,7 @@ class TradingStrategyTest {
     @Test
     fun `直近15分で急騰した場合はSKIPまたはHOLDINGを返すこと`() {
         // Arrange
-        val strategy = TradingStrategy(defaultConfig)
+        val strategy = SimpleContrarianStrategy(defaultConfig)
         val klines = (1..12).map { i ->
             if (i == 12) {
                 createKline(String.format("%02d", i), "1020", "1050", "950", "1020")
@@ -103,8 +105,8 @@ class TradingStrategyTest {
         }
 
         // Act
-        val decisionNotHolding = strategy.judge(klines, isHolding = false)
-        val decisionHolding = strategy.judge(klines, isHolding = true)
+        val decisionNotHolding = strategy.judge(klines, SimulationState(isHolding = false))
+        val decisionHolding = strategy.judge(klines, SimulationState(isHolding = true))
 
         // Assert
         assertEquals(TradeAction.SKIP, decisionNotHolding.action)
@@ -115,7 +117,7 @@ class TradingStrategyTest {
     @Test
     fun `未保有かつ条件を満たす下落が発生した場合はBUY_CANDIDATEを返すこと`() {
         // Arrange
-        val strategy = TradingStrategy(defaultConfig)
+        val strategy = SimpleContrarianStrategy(defaultConfig)
         val klines = (1..12).map { i ->
             // start at 1000, slowly drop to 994 (0.6% drop over 1 hour)
             // ensuring volatility >= 0.3% (high=1000, low=994 -> 0.6%)
@@ -124,7 +126,7 @@ class TradingStrategyTest {
         }
 
         // Act
-        val decision = strategy.judge(klines, isHolding = false)
+        val decision = strategy.judge(klines, SimulationState(isHolding = false))
 
         // Assert
         assertEquals(TradeAction.BUY_CANDIDATE, decision.action)
@@ -134,14 +136,14 @@ class TradingStrategyTest {
     @Test
     fun `保有中かつ条件を満たす上昇が発生した場合はSELL_CANDIDATEを返すこと`() {
         // Arrange
-        val strategy = TradingStrategy(defaultConfig)
+        val strategy = SimpleContrarianStrategy(defaultConfig)
         val klines = (1..12).map { i ->
             // start at 1000, slowly rise to 1006 (0.6% rise over 1 hour)
             createKline(String.format("%02d", i), "1000", "1006", "1000", "1006")
         }
 
         // Act
-        val decision = strategy.judge(klines, isHolding = true)
+        val decision = strategy.judge(klines, SimulationState(isHolding = true))
 
         // Assert
         assertEquals(TradeAction.SELL_CANDIDATE, decision.action)
