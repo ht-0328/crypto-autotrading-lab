@@ -15,9 +15,11 @@ class StateRepositoryTest {
         val stateFilePath = tempDir.resolve("state.json").toAbsolutePath().toString()
         val repository = StateRepository(stateFilePath)
         val state = SimulationState(
+            cashBalance = BigDecimal("150000.00"),
             isHolding = true,
             buyPrice = BigDecimal("10345678.12345678"),
             holdingAmount = BigDecimal("0.00009665"),
+            realizedProfitAndLoss = BigDecimal("1234.56"),
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
 
@@ -26,9 +28,11 @@ class StateRepositoryTest {
         val loadedState = repository.load()
 
         // Assert
+        assertEquals(BigDecimal("150000.00"), loadedState.cashBalance)
         assertTrue(loadedState.isHolding)
         assertEquals(BigDecimal("10345678.12345678"), loadedState.buyPrice)
         assertEquals(BigDecimal("0.00009665"), loadedState.holdingAmount)
+        assertEquals(BigDecimal("1234.56"), loadedState.realizedProfitAndLoss)
         assertEquals("2023-01-01T00:00:00", loadedState.lastUpdatedAt)
     }
 
@@ -68,9 +72,11 @@ class StateRepositoryTest {
         val loadedState = repository.load()
 
         // Assert
+        assertEquals(BigDecimal.ZERO, loadedState.cashBalance)
         assertFalse(loadedState.isHolding)
         assertEquals(BigDecimal.ZERO, loadedState.buyPrice)
         assertEquals(BigDecimal.ZERO, loadedState.holdingAmount)
+        assertEquals(BigDecimal.ZERO, loadedState.realizedProfitAndLoss)
     }
 
     @Test

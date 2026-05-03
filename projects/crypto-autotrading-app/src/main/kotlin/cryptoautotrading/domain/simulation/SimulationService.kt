@@ -38,31 +38,40 @@ class SimulationService {
 
         val nextState = when (decision.action) {
             TradeAction.BUY_CANDIDATE -> {
-                if (!currentState.isHolding) {
+                val tradeAmountBd = BigDecimal(tradeAmount)
+                if (!currentState.isHolding && currentState.cashBalance >= tradeAmountBd) {
                     // 購入する
-                    val amount = BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
+                    val amount = tradeAmountBd.divide(currentPrice, 8, RoundingMode.DOWN)
                     SimulationState(
+                        cashBalance = currentState.cashBalance - tradeAmountBd,
                         isHolding = true,
                         buyPrice = currentPrice,
                         holdingAmount = amount,
+                        realizedProfitAndLoss = currentState.realizedProfitAndLoss,
                         lastUpdatedAt = nowStr
                     )
                 } else {
-                    // すでに保有している場合は状態を維持
+                    // すでに保有している、または残金不足の場合は状態を維持
                     currentState.copy(lastUpdatedAt = nowStr)
                 }
             }
             TradeAction.SELL_CANDIDATE -> {
-                if (currentState.isHolding) {
-                    // 売却する（状態をリセット）
+                if (currentState.isHolding && currentState.holdingAmount > BigDecimal.ZERO && currentState.buyPrice > BigDecimal.ZERO) {
+                    // 売却する
+                    val sellAmount = currentState.holdingAmount * currentPrice
+                    val buyAmount = currentState.holdingAmount * currentState.buyPrice
+                    val profitAndLoss = sellAmount - buyAmount
+
                     SimulationState(
+                        cashBalance = currentState.cashBalance + sellAmount,
                         isHolding = false,
                         buyPrice = BigDecimal.ZERO,
                         holdingAmount = BigDecimal.ZERO,
+                        realizedProfitAndLoss = currentState.realizedProfitAndLoss + profitAndLoss,
                         lastUpdatedAt = nowStr
                     )
                 } else {
-                    // 保有していない場合は状態を維持
+                    // 保有していない、または売却に必要なデータがない場合は状態を維持
                     currentState.copy(lastUpdatedAt = nowStr)
                 }
             }
