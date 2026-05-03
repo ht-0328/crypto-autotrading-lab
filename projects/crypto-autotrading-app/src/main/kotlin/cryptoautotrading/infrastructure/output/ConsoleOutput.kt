@@ -26,7 +26,9 @@ object ConsoleOutput : ResultOutputPort {
         cashBalance: BigDecimal,
         holdingAmount: BigDecimal,
         buyPrice: BigDecimal,
-        realizedProfitAndLoss: BigDecimal
+        realizedProfitAndLoss: BigDecimal,
+        estimatedHoldingValue: BigDecimal,
+        totalAssetValue: BigDecimal
     ) {
         println("--- 判定結果 ---")
         println("現在価格: $price")

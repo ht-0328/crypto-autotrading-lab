@@ -27,7 +27,9 @@ class CsvRepositoryTest {
             cashBalance = BigDecimal("9000.0"),
             holdingAmount = BigDecimal("0.1"),
             buyPrice = BigDecimal("50000.0"),
-            realizedProfitAndLoss = BigDecimal("0.0")
+            realizedProfitAndLoss = BigDecimal("0.0"),
+            estimatedHoldingValue = BigDecimal("5000.0"),
+            totalAssetValue = BigDecimal("14000.0")
         )
 
         // Assert
@@ -37,8 +39,8 @@ class CsvRepositoryTest {
         assertTrue(actualCsvFile.exists())
         val lines = actualCsvFile.readLines()
         assertEquals(2, lines.size)
-        assertEquals("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,確定損益", lines[0])
-        assertEquals("\"2023-01-01T10:00:00\",\"50000.0\",\"買い\",\"テスト理由\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"0.0\"", lines[1])
+        assertEquals("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,保有BTC評価額,総資産,確定損益", lines[0])
+        assertEquals("\"2023-01-01T10:00:00\",\"50000.0\",\"買い\",\"テスト理由\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"5000.0\",\"14000.0\",\"0.0\"", lines[1])
     }
 
     @Test
@@ -46,7 +48,7 @@ class CsvRepositoryTest {
         // Arrange
         val dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
         val actualCsvFile = tempDir.resolve("trades_$dateStr.csv").toFile()
-        actualCsvFile.writeText("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,確定損益\n")
+        actualCsvFile.writeText("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,保有BTC評価額,総資産,確定損益\n")
 
         val baseCsvFile = tempDir.resolve("trades.csv").toFile()
         val repository = CsvRepository(baseCsvFile.absolutePath)
@@ -63,15 +65,17 @@ class CsvRepositoryTest {
             cashBalance = BigDecimal("10000.0"),
             holdingAmount = BigDecimal("0"),
             buyPrice = BigDecimal("0"),
-            realizedProfitAndLoss = BigDecimal("1000.0")
+            realizedProfitAndLoss = BigDecimal("1000.0"),
+            estimatedHoldingValue = BigDecimal("0.0"),
+            totalAssetValue = BigDecimal("10000.0")
         )
 
         // Assert
         assertTrue(actualCsvFile.exists())
         val lines = actualCsvFile.readLines()
         assertEquals(2, lines.size)
-        assertEquals("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,確定損益", lines[0])
-        assertEquals("\"2023-01-01T11:00:00\",\"51000.0\",\"売り\",\"テスト理由2\",\"1000.0\",\"なし\",\"15.0\",\"10000.0\",\"0\",\"0\",\"1000.0\"", lines[1])
+        assertEquals("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,保有BTC評価額,総資産,確定損益", lines[0])
+        assertEquals("\"2023-01-01T11:00:00\",\"51000.0\",\"売り\",\"テスト理由2\",\"1000.0\",\"なし\",\"15.0\",\"10000.0\",\"0\",\"0\",\"0.0\",\"10000.0\",\"1000.0\"", lines[1])
     }
 
     @Test
@@ -92,14 +96,16 @@ class CsvRepositoryTest {
             cashBalance = BigDecimal("9000.0"),
             holdingAmount = BigDecimal("0.1"),
             buyPrice = BigDecimal("50000.0"),
-            realizedProfitAndLoss = BigDecimal("0.0")
+            realizedProfitAndLoss = BigDecimal("0.0"),
+            estimatedHoldingValue = BigDecimal("5000.0"),
+            totalAssetValue = BigDecimal("14000.0")
         )
 
         // Assert
         val dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
         val actualCsvFile = tempDir.resolve("trades_$dateStr.csv").toFile()
         val lines = actualCsvFile.readLines()
-        assertEquals("\"2023-01-01T12:00:00\",\"50000.0\",\"買い\",\"急落, 注意\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"0.0\"", lines[1])
+        assertEquals("\"2023-01-01T12:00:00\",\"50000.0\",\"買い\",\"急落, 注意\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"5000.0\",\"14000.0\",\"0.0\"", lines[1])
     }
 
     @Test
@@ -120,14 +126,16 @@ class CsvRepositoryTest {
             cashBalance = BigDecimal("9000.0"),
             holdingAmount = BigDecimal("0.1"),
             buyPrice = BigDecimal("50000.0"),
-            realizedProfitAndLoss = BigDecimal("0.0")
+            realizedProfitAndLoss = BigDecimal("0.0"),
+            estimatedHoldingValue = BigDecimal("5000.0"),
+            totalAssetValue = BigDecimal("14000.0")
         )
 
         // Assert
         val dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
         val actualCsvFile = tempDir.resolve("trades_$dateStr.csv").toFile()
         val lines = actualCsvFile.readLines()
-        assertEquals("\"2023-01-01T12:00:00\",\"50000.0\",\"買い\",\"理由: \"\"急落\"\"\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"0.0\"", lines[1])
+        assertEquals("\"2023-01-01T12:00:00\",\"50000.0\",\"買い\",\"理由: \"\"急落\"\"\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"5000.0\",\"14000.0\",\"0.0\"", lines[1])
     }
 
     @Test
@@ -148,7 +156,9 @@ class CsvRepositoryTest {
             cashBalance = BigDecimal("9000.0"),
             holdingAmount = BigDecimal("0.1"),
             buyPrice = BigDecimal("50000.0"),
-            realizedProfitAndLoss = BigDecimal("0.0")
+            realizedProfitAndLoss = BigDecimal("0.0"),
+            estimatedHoldingValue = BigDecimal("5000.0"),
+            totalAssetValue = BigDecimal("14000.0")
         )
 
         // Assert
@@ -159,7 +169,7 @@ class CsvRepositoryTest {
         // Therefore, we just read the whole text and check the content.
         val content = actualCsvFile.readText()
         assertTrue(content.contains("\"急落\n注意\""))
-        assertTrue(content.startsWith("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,確定損益\n"))
-        assertTrue(content.contains("\"2023-01-01T12:00:00\",\"50000.0\",\"買い\",\"急落\n注意\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"0.0\"\n"))
+        assertTrue(content.startsWith("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,保有BTC評価額,総資産,確定損益\n"))
+        assertTrue(content.contains("\"2023-01-01T12:00:00\",\"50000.0\",\"買い\",\"急落\n注意\",\"0.0\",\"保有中\",\"10.0\",\"9000.0\",\"0.1\",\"50000.0\",\"5000.0\",\"14000.0\",\"0.0\"\n"))
     }
 }

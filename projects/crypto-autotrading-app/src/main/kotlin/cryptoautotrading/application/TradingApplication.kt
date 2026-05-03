@@ -101,6 +101,9 @@ class TradingApplication(
             )
             logger.info { "Next Simulation State: $nextState" }
 
+            val estimatedHoldingValue = nextState.holdingAmount * currentPrice
+            val totalAssetValue = nextState.cashBalance + estimatedHoldingValue
+
             // 5. 出力
             // コンソール出力
             resultOutputPort.printResult(
@@ -112,7 +115,9 @@ class TradingApplication(
                 cashBalance = nextState.cashBalance,
                 holdingAmount = nextState.holdingAmount,
                 buyPrice = nextState.buyPrice,
-                realizedProfitAndLoss = nextState.realizedProfitAndLoss
+                realizedProfitAndLoss = nextState.realizedProfitAndLoss,
+                estimatedHoldingValue = estimatedHoldingValue,
+                totalAssetValue = totalAssetValue
             )
 
             // CSV出力
@@ -128,8 +133,44 @@ class TradingApplication(
                 cashBalance = nextState.cashBalance,
                 holdingAmount = nextState.holdingAmount,
                 buyPrice = nextState.buyPrice,
-                realizedProfitAndLoss = nextState.realizedProfitAndLoss
+                realizedProfitAndLoss = nextState.realizedProfitAndLoss,
+                estimatedHoldingValue = estimatedHoldingValue,
+                totalAssetValue = totalAssetValue
             )
+
+            // シミュレーション結果サマリーのログ出力
+            val isHoldingStr = if (nextState.isHolding) "保有中" else "なし"
+            val sb = java.lang.StringBuilder()
+            sb.appendLine()
+            sb.appendLine("============================================================")
+            sb.appendLine("【シミュレーション結果サマリー】")
+            sb.appendLine("------------------------------------------------------------")
+            sb.appendLine("判定              : ${decision.action.description}")
+            sb.appendLine("理由              : ${decision.reason}")
+            sb.appendLine("現在価格          : $currentPrice")
+            sb.appendLine("残金              : ${nextState.cashBalance}")
+            sb.appendLine("保有BTC数量        : ${nextState.holdingAmount}")
+            sb.appendLine("保有BTC評価額      : $estimatedHoldingValue")
+            sb.appendLine("総資産            : $totalAssetValue")
+            sb.appendLine("買値              : ${nextState.buyPrice}")
+            sb.appendLine("確定損益          : ${nextState.realizedProfitAndLoss}")
+            sb.appendLine("想定損益          : ${pnl.estimatedProfitAndLoss}")
+            sb.appendLine("更新後の保有状態    : $isHoldingStr")
+
+            // 買い・売りの詳細
+            if (decision.action == TradeAction.BUY_CANDIDATE && !currentState.isHolding && nextState.isHolding) {
+                sb.appendLine("購入金額          : ${config.trading.tradeAmount}")
+                sb.appendLine("購入BTC数量       : ${nextState.holdingAmount}")
+                sb.appendLine("購入後残金        : ${nextState.cashBalance}")
+            } else if (decision.action == TradeAction.SELL_CANDIDATE && currentState.isHolding && !nextState.isHolding) {
+                val sellAmount = currentState.holdingAmount * currentPrice
+                sb.appendLine("売却金額          : $sellAmount")
+                sb.appendLine("売却BTC数量       : ${currentState.holdingAmount}")
+                sb.appendLine("売却損益          : ${pnl.profitAndLoss}")
+                sb.appendLine("売却後残金        : ${nextState.cashBalance}")
+            }
+            sb.append("============================================================")
+            logger.info { sb.toString() }
 
             // 6. 状態の保存
             stateRepository.save(nextState)

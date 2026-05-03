@@ -30,7 +30,9 @@ class CsvRepository(private val baseCsvFilePath: String) : TradeHistoryRepositor
         cashBalance: BigDecimal,
         holdingAmount: BigDecimal,
         buyPrice: BigDecimal,
-        realizedProfitAndLoss: BigDecimal
+        realizedProfitAndLoss: BigDecimal,
+        estimatedHoldingValue: BigDecimal,
+        totalAssetValue: BigDecimal
     ) {
         logger.info { "CSV保存処理を開始します" }
         try {
@@ -54,7 +56,7 @@ class CsvRepository(private val baseCsvFilePath: String) : TradeHistoryRepositor
             val isNewFile = !file.exists()
 
             if (isNewFile) {
-                file.appendText("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,確定損益\n")
+                file.appendText("日時,価格,売買サイン,理由,損益,保有状態,手数料,残金,保有BTC数量,買値,保有BTC評価額,総資産,確定損益\n")
             }
 
             val holdingStr = if (isHolding) "保有中" else "なし"
@@ -69,9 +71,11 @@ class CsvRepository(private val baseCsvFilePath: String) : TradeHistoryRepositor
             val escapedCashBalance = escapeCsvValue(cashBalance)
             val escapedHoldingAmount = escapeCsvValue(holdingAmount)
             val escapedBuyPrice = escapeCsvValue(buyPrice)
+            val escapedEstimatedHoldingValue = escapeCsvValue(estimatedHoldingValue)
+            val escapedTotalAssetValue = escapeCsvValue(totalAssetValue)
             val escapedRealizedProfitAndLoss = escapeCsvValue(realizedProfitAndLoss)
 
-            file.appendText("$escapedDatetime,$escapedPrice,$escapedSign,$escapedReason,$escapedProfitAndLoss,$escapedHoldingStr,$escapedFee,$escapedCashBalance,$escapedHoldingAmount,$escapedBuyPrice,$escapedRealizedProfitAndLoss\n")
+            file.appendText("$escapedDatetime,$escapedPrice,$escapedSign,$escapedReason,$escapedProfitAndLoss,$escapedHoldingStr,$escapedFee,$escapedCashBalance,$escapedHoldingAmount,$escapedBuyPrice,$escapedEstimatedHoldingValue,$escapedTotalAssetValue,$escapedRealizedProfitAndLoss\n")
 
             logger.info { "CSVへの保存が完了しました" }
 

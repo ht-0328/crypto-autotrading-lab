@@ -19,6 +19,8 @@ interface ResultOutputPort {
         cashBalance: BigDecimal,
         holdingAmount: BigDecimal,
         buyPrice: BigDecimal,
-        realizedProfitAndLoss: BigDecimal
+        realizedProfitAndLoss: BigDecimal,
+        estimatedHoldingValue: BigDecimal,
+        totalAssetValue: BigDecimal
     )
 }
