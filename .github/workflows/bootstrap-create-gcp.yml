@@ -79,54 +79,56 @@ jobs:
 
       - name: Create Cloud Build Service Account
         run: |
-          SA_EMAIL="${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
+          PROJECT_ID="${{ vars.GCP_PROJECT_ID }}"
+          SA_EMAIL="${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${PROJECT_ID}.iam.gserviceaccount.com"
           echo "Checking if Cloud Build Service Account exists..."
           set +e
-          DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL --project=${{ vars.GCP_PROJECT_ID }} 2>&1)
-          DESCRIBE_STATUS=$?
+          EXISTING_EMAIL=$(gcloud iam service-accounts list \
+            --project="${PROJECT_ID}" \
+            --filter="email:${SA_EMAIL}" \
+            --format="value(email)" 2>&1)
+          STATUS=$?
           set -e
 
-          if [ $DESCRIBE_STATUS -eq 0 ]; then
-            echo "Cloud Build Service Account already exists."
+          if [ "${STATUS}" -ne 0 ]; then
+            echo "Error: サービスアカウント一覧の取得に失敗しました。"
+            echo "Actual error: ${EXISTING_EMAIL}"
+            exit 1
+          fi
+
+          if [ -z "${EXISTING_EMAIL}" ]; then
+            echo "Service Account not found. Creating..."
+            gcloud iam service-accounts create "${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}" \
+              --description="Service Account for Cloud Build" \
+              --project="${PROJECT_ID}"
           else
-            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
-              echo "Cloud Build Service Account not found. Creating..."
-              gcloud iam service-accounts create ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }} \
-                --description="Service Account for Cloud Build" \
-                --project=${{ vars.GCP_PROJECT_ID }}
-            elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
-              echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
-              echo "Actual error: $DESCRIBE_OUT"
-              exit 1
-            else
-              echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
-              exit 1
-            fi
+            echo "Service Account already exists: ${EXISTING_EMAIL}"
           fi
 
       - name: Create Cloud Run Runtime Service Account
         run: |
-          SA_EMAIL="${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
+          PROJECT_ID="${{ vars.GCP_PROJECT_ID }}"
+          SA_EMAIL="${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${PROJECT_ID}.iam.gserviceaccount.com"
           echo "Checking if Cloud Run Runtime Service Account exists..."
           set +e
-          DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL --project=${{ vars.GCP_PROJECT_ID }} 2>&1)
-          DESCRIBE_STATUS=$?
+          EXISTING_EMAIL=$(gcloud iam service-accounts list \
+            --project="${PROJECT_ID}" \
+            --filter="email:${SA_EMAIL}" \
+            --format="value(email)" 2>&1)
+          STATUS=$?
           set -e
 
-          if [ $DESCRIBE_STATUS -eq 0 ]; then
-            echo "Cloud Run Runtime Service Account already exists."
+          if [ "${STATUS}" -ne 0 ]; then
+            echo "Error: サービスアカウント一覧の取得に失敗しました。"
+            echo "Actual error: ${EXISTING_EMAIL}"
+            exit 1
+          fi
+
+          if [ -z "${EXISTING_EMAIL}" ]; then
+            echo "Service Account not found. Creating..."
+            gcloud iam service-accounts create "${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}" \
+              --description="Service Account for Cloud Run Job Runner" \
+              --project="${PROJECT_ID}"
           else
-            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
-              echo "Cloud Run Runtime Service Account not found. Creating..."
-              gcloud iam service-accounts create ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }} \
-                --description="Service Account for Cloud Run Job Runner" \
-                --project=${{ vars.GCP_PROJECT_ID }}
-            elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
-              echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
-              echo "Actual error: $DESCRIBE_OUT"
-              exit 1
-            else
-              echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
-              exit 1
-            fi
+            echo "Service Account already exists: ${EXISTING_EMAIL}"
           fi
