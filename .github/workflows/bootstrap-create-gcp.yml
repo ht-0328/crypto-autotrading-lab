@@ -39,62 +39,82 @@ jobs:
       - name: Create Artifact Registry
         run: |
           echo "Checking if Artifact Registry repository exists..."
-          DESCRIBE_OUT=$(gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} 2>&1 || true)
-          if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND"; then
-            echo "Artifact Registry repository not found. Creating..."
-            gcloud artifacts repositories create ${{ vars.ARTIFACT_REPOSITORY }} \
-              --repository-format=docker \
-              --location=${{ vars.GCP_REGION }}
-          elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
-            echo "Error: Permission denied to describe Artifact Registry. Please check your IAM roles."
-            exit 1
+          if gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} > /dev/null 2>&1; then
+            echo "Artifact Registry repository already exists."
           else
-            echo "Artifact Registry repository already exists or another error occurred: $DESCRIBE_OUT"
+            DESCRIBE_OUT=$(gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} 2>&1 || true)
+            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND"; then
+              echo "Artifact Registry repository not found. Creating..."
+              gcloud artifacts repositories create ${{ vars.ARTIFACT_REPOSITORY }} \
+                --repository-format=docker \
+                --location=${{ vars.GCP_REGION }}
+            elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
+              echo "Error: Permission denied to describe Artifact Registry. Please check your IAM roles."
+              exit 1
+            else
+              echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
+              exit 1
+            fi
           fi
 
       - name: Create GCS Bucket
         run: |
           echo "Checking if GCS Bucket exists..."
-          DESCRIBE_OUT=$(gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} 2>&1 || true)
-          if echo "$DESCRIBE_OUT" | grep -q "404" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
-            echo "GCS Bucket not found. Creating..."
-            gcloud storage buckets create gs://${{ vars.GCS_BUCKET_NAME }} \
-              --location=${{ vars.GCP_REGION }}
-          elif echo "$DESCRIBE_OUT" | grep -q "403" || echo "$DESCRIBE_OUT" | grep -q "access to this bucket"; then
-            echo "Error: Permission denied to describe GCS Bucket. Please check your IAM roles."
-            exit 1
+          if gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} > /dev/null 2>&1; then
+            echo "GCS Bucket already exists."
           else
-            echo "GCS Bucket already exists or another error occurred: $DESCRIBE_OUT"
+            DESCRIBE_OUT=$(gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} 2>&1 || true)
+            if echo "$DESCRIBE_OUT" | grep -q "404" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
+              echo "GCS Bucket not found. Creating..."
+              gcloud storage buckets create gs://${{ vars.GCS_BUCKET_NAME }} \
+                --location=${{ vars.GCP_REGION }}
+            elif echo "$DESCRIBE_OUT" | grep -q "403" || echo "$DESCRIBE_OUT" | grep -q "access to this bucket"; then
+              echo "Error: Permission denied to describe GCS Bucket. Please check your IAM roles."
+              exit 1
+            else
+              echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
+              exit 1
+            fi
           fi
 
       - name: Create Cloud Build Service Account
         run: |
           SA_EMAIL="${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
           echo "Checking if Cloud Build Service Account exists..."
-          DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL 2>&1 || true)
-          if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
-            echo "Cloud Build Service Account not found. Creating..."
-            gcloud iam service-accounts create ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }} \
-              --description="Service Account for Cloud Build"
-          elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
-            echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
-            exit 1
+          if gcloud iam service-accounts describe $SA_EMAIL > /dev/null 2>&1; then
+            echo "Cloud Build Service Account already exists."
           else
-            echo "Cloud Build Service Account already exists or another error occurred: $DESCRIBE_OUT"
+            DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL 2>&1 || true)
+            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
+              echo "Cloud Build Service Account not found. Creating..."
+              gcloud iam service-accounts create ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }} \
+                --description="Service Account for Cloud Build"
+            elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
+              echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
+              exit 1
+            else
+              echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
+              exit 1
+            fi
           fi
 
       - name: Create Cloud Run Runtime Service Account
         run: |
           SA_EMAIL="${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
           echo "Checking if Cloud Run Runtime Service Account exists..."
-          DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL 2>&1 || true)
-          if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
-            echo "Cloud Run Runtime Service Account not found. Creating..."
-            gcloud iam service-accounts create ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }} \
-              --description="Service Account for Cloud Run Job Runner"
-          elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
-            echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
-            exit 1
+          if gcloud iam service-accounts describe $SA_EMAIL > /dev/null 2>&1; then
+            echo "Cloud Run Runtime Service Account already exists."
           else
-            echo "Cloud Run Runtime Service Account already exists or another error occurred: $DESCRIBE_OUT"
+            DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL 2>&1 || true)
+            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
+              echo "Cloud Run Runtime Service Account not found. Creating..."
+              gcloud iam service-accounts create ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }} \
+                --description="Service Account for Cloud Run Job Runner"
+            elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
+              echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
+              exit 1
+            else
+              echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
+              exit 1
+            fi
           fi

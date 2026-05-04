@@ -16,6 +16,9 @@
 ## 概要
 
 設定がすべて終わったら、GitHub Actions の画面からボタンを押すだけで、GCP の Cloud Run Job にアプリをデプロイできます。
+初回は `bootstrap-create-gcp.yml` と `bootstrap-grant-iam.yml` を順番に実行します。
+通常デプロイでは、既に作成済み・権限設定済みのリソースを使います。
+Artifact Registry や GCS などは `deploy-gcp.yml` では自動作成しません。
 
 ## GCP 運用手順（3段階）
 

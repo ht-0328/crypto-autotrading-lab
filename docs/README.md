@@ -8,24 +8,31 @@
 ## 目的別の案内（どこから読めばよいか）
 
 ### 🔰 初めてこのプロジェクトに参加する方
+
 まずはプロジェクトの目的や全体像を把握してください。
+
 1. [リポジトリの全体像](../README.md)
 2. [アプリの目的と一番大事な方針 (overview/product.md)](overview/product.md)
 3. [Phase1 の仕様と全体像 (architecture/phase1-overview.md)](architecture/phase1-overview.md)
 
 ### 📈 アプリの目的やロードマップを知りたい方
+
 1. [アプリの目的と一番大事な方針 (overview/product.md)](overview/product.md)
 2. [ロードマップと完了条件 (overview/roadmap.md)](overview/roadmap.md)
 
 ### 🧠 売買ロジックの仕組みを知りたい方
+
 1. [売買ロジック説明 (architecture/trading-logic.md)](architecture/trading-logic.md)
 
 ### 💻 ローカルで開発・テストをしたい方
+
 1. [開発環境のセットアップ (development/setup.md)](development/setup.md)
 2. [日々の開発フローとルール (development/workflow.md)](development/workflow.md)
 
 ### ☁️ GCPへデプロイやGitHub Actionsの設定をしたい方
+
 GCPへのデプロイ準備は、以下の順番で進めてください。
+
 1. [GCP アカウントとプロジェクトのセットアップ (operations/gcp/01-account-and-project.md)](operations/gcp/01-account-and-project.md)
 2. [gcloud CLI の準備とログイン (operations/gcp/02-gcloud-cli.md)](operations/gcp/02-gcloud-cli.md)
 3. [Workload Identity Federation の設定 (operations/gcp/03-workload-identity-federation.md)](operations/gcp/03-workload-identity-federation.md)
@@ -36,7 +43,9 @@ GCPへのデプロイ準備は、以下の順番で進めてください。
 8. （不要になった場合）[リソースのクリーンアップ (operations/gcp/08-cleanup.md)](operations/gcp/08-cleanup.md)
 
 ### 🤖 JulesやCodex（AI）に作業させたい方
+
 AIエージェントに開発を依頼する前に、人間が内容を把握しておくべきルールです。
+
 1. [AIエージェント用コアルール (../AGENTS.md)](../AGENTS.md)
 2. [AIの禁止事項・必須チェック項目 (ai/agents-guidelines.md)](ai/agents-guidelines.md)
 3. [PRの粒度に関するルール (ai/change-granularity.md)](ai/change-granularity.md)

@@ -58,6 +58,7 @@ ROLES=(
   "roles/cloudbuild.builds.editor"          # プログラムをビルドするため
   "roles/run.developer"                     # Cloud Runにデプロイするため (adminより弱い権限)
   "roles/serviceusage.serviceUsageConsumer" # 既存のAPIを利用するため
+  "roles/iam.serviceAccountViewer"          # サービスアカウントの存在確認を行うため
 )
 
 for ROLE in "${ROLES[@]}"; do
