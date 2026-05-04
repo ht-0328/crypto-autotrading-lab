@@ -37,6 +37,10 @@ export DEPLOY_SERVICE_ACCOUNT_EMAIL="${DEPLOY_SERVICE_ACCOUNT_NAME}@${PROJECT_ID
 ## 2. サービスアカウントを作る
 
 デプロイ専用のアカウントを作ります。
+自動化スクリプト（GitHub Actionsなど）でサービスアカウントの存在確認を行う場合は、`describe` ではなく `list` を使う方針としています。
+
+**理由:**
+`describe` コマンドは、対象が存在しない場合や削除された直後などに `PERMISSION_DENIED ... or it may not exist` という曖昧なエラーを返すことがあり、自動化ワークフローが誤って停止してしまう原因になります。そのため、`list` コマンドでフィルタリングして結果が空になるかを確認する方針（`gcloud iam service-accounts list --filter="email:${SA_EMAIL}" --format="value(email)"`）を採っています。
 
 ```bash
 gcloud iam service-accounts create "$DEPLOY_SERVICE_ACCOUNT_NAME" \
@@ -90,7 +94,9 @@ gcloud iam service-accounts add-iam-policy-binding "crypto-autotrading-lab-runne
   --role="roles/iam.serviceAccountUser"
 ```
 
-> **Note:** 初期構築（`bootstrap-create-gcp.yml` および `bootstrap-grant-iam.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。初期構築完了後は、上記のような最小権限に戻すことを強く推奨します。
+> **Note:** 初期構築（`bootstrap-create-gcp.yml` および `bootstrap-grant-iam.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。
+>
+> 現在は動作確認のため `github-actions-deployer` に一時的に強めの権限が残っています。Bootstrap Create → Grant IAM → Deploy の一連の流れが main ブランチで安定して通ることを確認した後、別作業としてこの権限を段階的に削減・最小化する方針です。
 
 ## 4. Workload Identity とサービスアカウントを繋ぐ
 

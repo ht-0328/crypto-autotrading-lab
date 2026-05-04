@@ -43,6 +43,22 @@ GCP に作った Cloud Run Job や Dockerイメージ（Artifact Registry）は�
 5. まずは `dry_run` にチェックを入れたまま実行し、ログを見て問題ないか確認することを強くお勧めします。
 6. 問題なければ、再度 `Run workflow` を開き、`dry_run` のチェックを外し、`confirm_delete` に `DELETE` を入力して実行します。
 
+## クリーンアップ後の注意（再構築について）
+
+クリーンアップ実行後、再度デプロイを行いたい場合は、以下の手順を**順番通り**に再実行する必要があります。
+
+1. **Bootstrap Create GCP Resources**
+2. **Bootstrap Grant IAM Permissions**
+3. **Deploy to GCP**
+
+### サービスアカウント削除に関する注意事項
+
+通常のクリーンアップ運用では、サービスアカウントの削除は慎重に行ってください。
+万が一 `cloud-build-builder` や `crypto-autotrading-lab-runner` などのサービスアカウントを削除した場合、GCPのIAM設定（ポリシーバインディング）に `deleted:serviceAccount:ユーザー名@...` という形で古い紐付けが残ることがあります。
+この状態で再構築（Bootstrap Create）を行うと同名の新しいサービスアカウントが作られますが、内部IDが異なるため、古い `deleted:` のバインディングが邪魔をして「権限がない」とエラーになるなど、再構築時に混乱を招きやすくなります。
+
+そのため、トラブルシューティング目的以外では、サービスアカウントの削除を避け、Cloud Run Job や Artifact Registry などのリソース削除に留める運用を推奨します。
+
 ## 完了条件チェックリスト
 
 - [ ] Cleanup ワークフローが緑色（成功）で終わった
