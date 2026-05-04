@@ -1,19 +1,24 @@
 # 3. Workload Identity Federation の設定
 
 ## 文書の目的
+
 - GitHub Actions から GCP へ安全にアクセスするための仕組み（Workload Identity Federation）の作り方
 
 ## 対象読者
+
 運用インフラ構築担当者
 
 ## 関連ドキュメント
+
 - [04-service-accounts-and-iam.md](04-service-accounts-and-iam.md)
 
 ## 概要
+
 GCP にプログラムをデプロイするとき、昔は「パスワード（JSONキー）」を発行してGitHubに登録していましたが、これは漏れると危険です。
 代わりに **Workload Identity Federation** という仕組みを使って、「このGitHubリポジトリから来た通信なら許可する」という安全な設定を行います。
 
 ## 1. 準備（環境変数の設定）
+
 ターミナルで以下のコマンドを実行し、必要な変数（名前）を設定します。
 `<YOUR_GITHUB_USER>/<YOUR_GITHUB_REPO>` の部分は、自分のGitHubのURLに合わせて書き換えてください。（例: `ht-0328/crypto-autotrading-lab`）
 
@@ -30,6 +35,7 @@ export GITHUB_REPO="<YOUR_GITHUB_USER>/<YOUR_GITHUB_REPO>"
 ```
 
 ## 2. API を有効にする
+
 この機能を使うためのAPIをオンにします。
 
 ```bash
@@ -39,9 +45,11 @@ gcloud services enable \
 ```
 
 ## 3. Workload Identity Pool と Provider を作る
+
 GitHub と GCP を繋ぐ「入り口」を作ります。
 
 **Pool（プール）の作成:**
+
 ```bash
 gcloud iam workload-identity-pools create "$WORKLOAD_IDENTITY_POOL" \
   --project "$PROJECT_ID" \
@@ -64,6 +72,7 @@ gcloud iam workload-identity-pools providers create-oidc "$WORKLOAD_IDENTITY_PRO
 ```
 
 ## 4. 設定の確認
+
 正しく作られたか確認します。
 
 ```bash
@@ -75,6 +84,7 @@ gcloud iam workload-identity-pools providers list \
 ```
 
 ## 完了条件チェックリスト
+
 - [ ] Pool と Provider をエラーなく作成できた
 - [ ] 確認コマンドで一覧に `GitHub Actions Provider` が表示される
 

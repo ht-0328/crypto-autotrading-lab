@@ -16,7 +16,6 @@
 ## 概要
 
 設定がすべて終わったら、GitHub Actions の画面からボタンを押すだけで、GCP の Cloud Run Job にアプリをデプロイできます。
-初回実行時は、必要な保管場所（Artifact Registry や GCS など）が自動で作られます。
 
 ## GCP 運用手順（3段階）
 

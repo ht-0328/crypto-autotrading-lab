@@ -1,24 +1,29 @@
 # 8. リソースのクリーンアップ手順
 
 ## 文書の目的
+
 - GCP に作ったアプリやデータを安全に削除（お掃除）する方法
 
 ## 対象読者
+
 運用担当者
 
 ## 概要
+
 GCP に作った Cloud Run Job や Dockerイメージ（Artifact Registry）は、置いておくだけでもお金がかかる場合があります。
 検証が終わって不要になった場合は、専用の GitHub Actions ワークフロー **`Cleanup GCP Resources`** を使って安全に削除できます。
 
 ## 削除されるもの・残るもの
 
 **自動で削除されるもの（この機能で消えるもの）:**
+
 - Cloud Run Job
 - Artifact Registry のリポジトリ（Dockerイメージ）
 - 実行用・ビルド用のサービスアカウント
 - （オプションを選んだ場合のみ）GCS バケットと保存されたファイル
 
 **自動で削除されないもの（消えないもの）:**
+
 - GCP プロジェクトそのもの
 - 課金設定
 - Workload Identity とデプロイ用サービスアカウント（※1）
@@ -39,5 +44,6 @@ GCP に作った Cloud Run Job や Dockerイメージ（Artifact Registry）は�
 6. 問題なければ、再度 `Run workflow` を開き、`dry_run` のチェックを外し、`confirm_delete` に `DELETE` を入力して実行します。
 
 ## 完了条件チェックリスト
+
 - [ ] Cleanup ワークフローが緑色（成功）で終わった
 - [ ] GCP のコンソールで、Cloud Run Job や Artifact Registry が消えていることが確認できた

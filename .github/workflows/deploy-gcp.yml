@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       execute_after_deploy:
-        description: 'デプロイ後に Cloud Run Job を実行する'
+        description: "デプロイ後に Cloud Run Job を実行する"
         required: false
         type: boolean
         default: false
       strategy_name:
-        description: 'Trading strategy to use'
+        description: "Trading strategy to use"
         required: false
         type: choice
         options:
@@ -49,29 +49,31 @@ jobs:
 
           echo "Checking Artifact Registry..."
           if ! gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} > /dev/null 2>&1; then
-            echo "Error: Artifact Registry が存在しません。bootstrap-gcp.yml を先に実行してください。"
+            echo "Error: Artifact Registry が存在しません。bootstrap-create-gcp.yml を先に実行してください。"
             exit 1
           fi
 
           echo "Checking GCS Bucket..."
           if ! gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} > /dev/null 2>&1; then
-            echo "Error: GCS bucket が存在しません。bootstrap-gcp.yml を先に実行してください。"
+            echo "Error: GCS bucket が存在しません。bootstrap-create-gcp.yml を先に実行してください。"
             exit 1
           fi
 
           echo "Checking Cloud Build Service Account..."
           if ! gcloud iam service-accounts describe ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com > /dev/null 2>&1; then
-            echo "Error: Cloud Build用サービスアカウントが存在しません。bootstrap-gcp.yml を先に実行してください。"
+            echo "Error: Cloud Build用サービスアカウントが存在しません。bootstrap-create-gcp.yml を先に実行してください。"
             exit 1
           fi
 
           echo "Checking Cloud Run Runtime Service Account..."
           if ! gcloud iam service-accounts describe ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com > /dev/null 2>&1; then
-            echo "Error: Cloud Run実行用サービスアカウントが存在しません。bootstrap-gcp.yml を先に実行してください。"
+            echo "Error: Cloud Run実行用サービスアカウントが存在しません。bootstrap-create-gcp.yml を先に実行してください。"
             exit 1
           fi
 
           echo "All required resources verified successfully."
+          echo "※ もしこれ以降のビルドやデプロイステップで権限エラー (Permission Denied) が発生する場合は、"
+          echo "  bootstrap-grant-iam.yml の実行が漏れている可能性があります。確認してください。"
 
       - name: Build and Push Docker Image with Cloud Build
         run: |
