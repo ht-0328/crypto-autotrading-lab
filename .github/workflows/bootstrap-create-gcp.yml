@@ -25,14 +25,6 @@ jobs:
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
 
-      - name: Debug GCP Auth
-        run: |
-          echo "Active Account:"
-          gcloud auth list --filter=status:ACTIVE --format="value(account)"
-          echo "Current Project:"
-          gcloud config get-value project
-          echo "Expected Service Account (vars.GCP_DEPLOY_SERVICE_ACCOUNT): ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}"
-
       - name: Enable GCP APIs
         run: |
           echo "Enabling necessary GCP APIs..."
