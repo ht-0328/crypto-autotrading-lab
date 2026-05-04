@@ -25,6 +25,14 @@ jobs:
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
 
+      - name: Debug GCP Auth
+        run: |
+          echo "Active Account:"
+          gcloud auth list --filter=status:ACTIVE --format="value(account)"
+          echo "Current Project:"
+          gcloud config get-value project
+          echo "Expected Service Account (vars.GCP_DEPLOY_SERVICE_ACCOUNT): ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}"
+
       - name: Enable GCP APIs
         run: |
           echo "Enabling necessary GCP APIs..."
@@ -81,16 +89,22 @@ jobs:
         run: |
           SA_EMAIL="${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
           echo "Checking if Cloud Build Service Account exists..."
-          if gcloud iam service-accounts describe $SA_EMAIL > /dev/null 2>&1; then
+          set +e
+          DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL --project=${{ vars.GCP_PROJECT_ID }} 2>&1)
+          DESCRIBE_STATUS=$?
+          set -e
+
+          if [ $DESCRIBE_STATUS -eq 0 ]; then
             echo "Cloud Build Service Account already exists."
           else
-            DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL 2>&1 || true)
             if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
               echo "Cloud Build Service Account not found. Creating..."
               gcloud iam service-accounts create ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }} \
-                --description="Service Account for Cloud Build"
+                --description="Service Account for Cloud Build" \
+                --project=${{ vars.GCP_PROJECT_ID }}
             elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
               echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
+              echo "Actual error: $DESCRIBE_OUT"
               exit 1
             else
               echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
@@ -102,16 +116,22 @@ jobs:
         run: |
           SA_EMAIL="${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
           echo "Checking if Cloud Run Runtime Service Account exists..."
-          if gcloud iam service-accounts describe $SA_EMAIL > /dev/null 2>&1; then
+          set +e
+          DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL --project=${{ vars.GCP_PROJECT_ID }} 2>&1)
+          DESCRIBE_STATUS=$?
+          set -e
+
+          if [ $DESCRIBE_STATUS -eq 0 ]; then
             echo "Cloud Run Runtime Service Account already exists."
           else
-            DESCRIBE_OUT=$(gcloud iam service-accounts describe $SA_EMAIL 2>&1 || true)
             if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
               echo "Cloud Run Runtime Service Account not found. Creating..."
               gcloud iam service-accounts create ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }} \
-                --description="Service Account for Cloud Run Job Runner"
+                --description="Service Account for Cloud Run Job Runner" \
+                --project=${{ vars.GCP_PROJECT_ID }}
             elif echo "$DESCRIBE_OUT" | grep -q "PERMISSION_DENIED"; then
               echo "Error: Permission denied to describe Service Account. Please check your IAM roles."
+              echo "Actual error: $DESCRIBE_OUT"
               exit 1
             else
               echo "Error: An unexpected error occurred: $DESCRIBE_OUT"
