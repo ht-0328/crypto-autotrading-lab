@@ -97,7 +97,7 @@ jobs:
           if [ $DESCRIBE_STATUS -eq 0 ]; then
             echo "Cloud Build Service Account already exists."
           else
-            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
+            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist" || echo "$DESCRIBE_OUT" | grep -q "may not exist"; then
               echo "Cloud Build Service Account not found. Creating..."
               gcloud iam service-accounts create ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }} \
                 --description="Service Account for Cloud Build" \
@@ -124,7 +124,7 @@ jobs:
           if [ $DESCRIBE_STATUS -eq 0 ]; then
             echo "Cloud Run Runtime Service Account already exists."
           else
-            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist"; then
+            if echo "$DESCRIBE_OUT" | grep -q "NOT_FOUND" || echo "$DESCRIBE_OUT" | grep -q "does not exist" || echo "$DESCRIBE_OUT" | grep -q "may not exist"; then
               echo "Cloud Run Runtime Service Account not found. Creating..."
               gcloud iam service-accounts create ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }} \
                 --description="Service Account for Cloud Run Job Runner" \
