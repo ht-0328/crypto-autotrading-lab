@@ -1,9 +1,11 @@
 # Skill: kotlin-readable-code
 
 ## 1. 目的
+
 Kotlinコードを、読みやすさ・安全性・保守性を優先して実装・レビューするためのルールです。目的は「Kotlinらしい構文を避けること」ではなく、「読み手が自然に理解できるコードにすること」です。
 
 ## 2. 基本方針
+
 - **Scope functions (`let`, `run`, `with`, `apply`, `also`) は禁止しません。**
 - **拡張関数も禁止しません。**
 - むしろ、Kotlinらしく読みやすくなり、コードの意図が直感的になる場合は**積極的に使ってください**。
@@ -12,17 +14,20 @@ Kotlinコードを、読みやすさ・安全性・保守性を優先して実�
 ## 3. Scope functions の使用方針
 
 ### 共通方針
+
 - コードの意図が明確になる場合は積極的に使います。
 - 一時変数を増やすより処理の流れが自然になるなら使ってよいです。
 - ただし、`it` / `this` が分かりにくい場合は明示的な変数名を使います。
 - スコープ関数のネストで読みづらくなる場合は、通常の関数や変数に分けます。
 
 ### `let`
+
 - nullチェックと後続処理を自然につなげられる場合に使います。
 - 値を別の値へ短く変換する場合に使います。
 - ただし、複雑な売買判定を `let` チェーンに隠さないようにします。
 
 #### `let` のよい例
+
 ```kotlin
 val signal = marketPrice
     ?.let { calculateSignal(it) }
@@ -30,6 +35,7 @@ val signal = marketPrice
 ```
 
 #### `it` が分かりにくい場合の改善例
+
 ```kotlin
 val currentPrice = price ?: return TradingSignal.Hold
 val previousPrice = previous ?: return TradingSignal.Hold
@@ -38,29 +44,35 @@ return calculateSomething(currentPrice, previousPrice)
 ```
 
 ### `apply`
+
 - オブジェクトの初期設定が読みやすくなる場合に使います。
 - 設定値をまとめて代入する場合に使います。
 - ただし、ビジネスロジックの判定や外部I/Oを隠さないようにします。
 
 ### `also`
+
 - ログ出力や補助的な確認処理を自然に添えられる場合に使います。
 - ただし、注文実行、保存、送信などの重要な副作用を `also` の中に隠さないようにします。
 
 ### `run`
+
 - 複数の値から1つの結果を作る小さな式として読みやすい場合に使います。
 - ただし、戻り値が分かりにくい場合は通常の関数に分けます。
 
 ### `with`
+
 - 1つのオブジェクトに対して複数の関連操作を行う場合に使います。
 - ただし、`this` が何を指すか分かりにくい場合は使わないようにします。
 
 ## 4. 拡張関数の使用方針
+
 - 対象の型に自然な振る舞いを追加できる場合は積極的に使います。
 - ドメインの言葉として意味が明確になる場合は使ってよいです。
 - 呼び出し側のコードが直感的になるなら使ってよいです。
 - 同じ判定や変換を複数箇所で安全に再利用できるなら使ってよいです。
 
 「拡張関数を使ってよい場合」の判断基準として、以下の考え方を追加します。
+
 - 対象の型だけを見れば意味が分かる処理は拡張関数に向いている
 - 対象の型の自然な判定・変換・表示補助は拡張関数に向いている
 - DB、API、ファイル、現在時刻、設定値、Repositoryなど外部要素に依存する処理は拡張関数に向いていない
@@ -68,6 +80,7 @@ return calculateSomething(currentPrice, previousPrice)
 - ただし、責務が分かりにくくなる場合は通常の関数、UseCase、Service、Repository に置く
 
 一方で、以下のような処理は拡張関数にせず、通常の関数、UseCase、Service、Repository に置く方針としてください。
+
 - Repositoryを使う保存処理
 - API呼び出し
 - ファイルI/O
@@ -76,10 +89,12 @@ return calculateSomething(currentPrice, previousPrice)
 - DIコンテナや外部サービスに依存する処理
 
 #### 拡張関数のよい例
+
 ```kotlin
 fun MarketPrice.isHigherThan(other: MarketPrice): Boolean =
     this.price > other.price
 ```
+
 - `MarketPrice` 同士の比較なので、対象の型に自然な処理である
 - DB、API、設定値など外部要素に依存していない
 - `marketPrice.isHigherThan(previousPrice)` と読めるため、呼び出し側の意図が分かりやすい
@@ -89,17 +104,20 @@ fun MarketPrice.isHigherThan(other: MarketPrice): Boolean =
 fun TradingSignal.isBuy(): Boolean =
     this == TradingSignal.Buy
 ```
+
 - `TradingSignal` が買いシグナルかどうかを表すため、ドメインの言葉として自然に読める
 - `signal == TradingSignal.Buy` よりも、`signal.isBuy()` の方が「買いシグナルか？」という意図を表しやすい
 - 複数箇所で同じ判定を使う場合、判定の意味を1箇所に集約できる
 - ただし、1箇所でしか使わない単純比較なら、無理に拡張関数にしなくてもよい
 
 #### 拡張関数にしない方がよい例
+
 ```kotlin
 fun MarketPrice.save(repository: MarketPriceRepository) {
     repository.save(this)
 }
 ```
+
 - `save` は `MarketPrice` 自体の性質や判定ではなく、保存処理である
 - Repositoryに依存しており、外部I/Oにつながる可能性がある
 - `marketPrice.save(repository)` と書くと、保存という重要な副作用が `MarketPrice` の自然な振る舞いのように見えてしまう
@@ -107,6 +125,7 @@ fun MarketPrice.save(repository: MarketPriceRepository) {
 - 拡張関数にすると、ドメインモデルと永続化処理の境界が曖昧になる
 
 #### 改善例
+
 ```kotlin
 class SaveMarketPriceUseCase(
     private val repository: MarketPriceRepository,
@@ -116,16 +135,20 @@ class SaveMarketPriceUseCase(
     }
 }
 ```
+
 - 保存処理を UseCase に置くことで、「いつ保存するか」という処理手順が明確になる
 - Repositoryへの依存が `MarketPrice` ではなく UseCase 側に集まる
 - `MarketPrice` は価格データや価格に関する判定に集中できる
 - 外部I/Oを伴う処理を分離できるため、テストしやすくなる
 
 ## 5. 命名ルール
+
 - 意図が明確になる名前を選びます。処理の流れや責務が分かりにくくなる場合は、短いスコープ関数よりも明示的な変数名や関数名を優先します。
 
 ## 6. 自動売買ロジックでの特別ルール
+
 自動売買ロジックでは、読み間違いが損失につながるため、以下の特別ルールを遵守します。
+
 - 売買判定は名前付き関数に切り出します。
 - 購入価格、現在価格、損益率、手数料、最小注文数量は明示的な変数名で扱います。
 - `let` チェーンの中に売買判断を隠さないようにします。
@@ -134,12 +157,15 @@ class SaveMarketPriceUseCase(
 - テスト名には「何を入力したら、何を期待するか」を日本語で表します。
 
 ## 7. レビュー観点
+
 - Scope functions や拡張関数によって、処理の流れ、責務、戻り値、`it` / `this` の意味が直感的に分かるようになっているか。
 - 分かりにくくなっている場合は、通常の関数、明示的な変数名、`if`、`return` への書き換えを提案できているか。
 - 自動売買ロジックにおいて、重要な判定や注文処理が明示的な名前で表現されているか。
 
 ## 8. 出力要件
+
 AIエージェントがKotlinコードを変更した場合、完了報告に必ず以下を含めてください。
+
 - Scope functions を使った箇所と理由
 - Scope functions をあえて使わなかった箇所と理由
 - 追加・変更した拡張関数と、その配置理由

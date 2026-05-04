@@ -4,20 +4,20 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Cloud Scheduler の操作を選択してください'
+        description: "Cloud Scheduler の操作を選択してください"
         required: true
         type: choice
         options:
-          - 'create - 作成または更新'
-          - 'pause - 一時停止'
-          - 'resume - 再開'
-          - 'delete - 削除'
-          - 'run - 手動実行'
+          - "create - 作成または更新"
+          - "pause - 一時停止"
+          - "resume - 再開"
+          - "delete - 削除"
+          - "run - 手動実行"
       confirm_delete:
-        description: '削除する場合のみ DELETE と入力してください'
+        description: "削除する場合のみ DELETE と入力してください"
         required: false
         type: string
-        default: ''
+        default: ""
 
 jobs:
   manage-scheduler:

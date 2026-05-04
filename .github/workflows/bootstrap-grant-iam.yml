@@ -1,0 +1,83 @@
+name: Bootstrap Grant IAM Permissions
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bootstrap-grant:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Verify GCP Resources Exist
+        run: |
+          echo "Verifying that necessary GCP resources exist..."
+
+          echo "Checking Artifact Registry..."
+          if ! gcloud artifacts repositories describe ${{ vars.ARTIFACT_REPOSITORY }} --location=${{ vars.GCP_REGION }} > /dev/null 2>&1; then
+            echo "Error: Artifact Registry が存在しません。bootstrap-create-gcp.yml を先に実行してください。"
+            exit 1
+          fi
+
+          echo "Checking GCS Bucket..."
+          if ! gcloud storage buckets describe gs://${{ vars.GCS_BUCKET_NAME }} > /dev/null 2>&1; then
+            echo "Error: GCS bucket が存在しません。bootstrap-create-gcp.yml を先に実行してください。"
+            exit 1
+          fi
+
+          echo "Checking Cloud Build Service Account..."
+          if ! gcloud iam service-accounts describe ${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com > /dev/null 2>&1; then
+            echo "Error: Cloud Build用サービスアカウントが存在しません。bootstrap-create-gcp.yml を先に実行してください。"
+            exit 1
+          fi
+
+          echo "Checking Cloud Run Runtime Service Account..."
+          if ! gcloud iam service-accounts describe ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com > /dev/null 2>&1; then
+            echo "Error: Cloud Run実行用サービスアカウントが存在しません。bootstrap-create-gcp.yml を先に実行してください。"
+            exit 1
+          fi
+
+          echo "All required resources verified successfully."
+
+      - name: Grant IAM Permissions to Service Accounts
+        run: |
+          echo "Granting IAM roles to Cloud Build Service Account..."
+          gcloud projects add-iam-policy-binding ${{ vars.GCP_PROJECT_ID }} \
+            --member="serviceAccount:${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --role="roles/artifactregistry.writer"
+          gcloud projects add-iam-policy-binding ${{ vars.GCP_PROJECT_ID }} \
+            --member="serviceAccount:${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --role="roles/logging.logWriter"
+          gcloud projects add-iam-policy-binding ${{ vars.GCP_PROJECT_ID }} \
+            --member="serviceAccount:${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --role="roles/storage.objectViewer"
+
+          echo "Granting IAM roles to Cloud Run Runtime Service Account..."
+          gcloud storage buckets add-iam-policy-binding gs://${{ vars.GCS_BUCKET_NAME }} \
+            --member="serviceAccount:${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --role="roles/storage.objectAdmin"
+
+          echo "Granting roles/iam.serviceAccountUser to github-actions-deployer for specific service accounts..."
+          gcloud iam service-accounts add-iam-policy-binding "${{ vars.BUILD_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --member="serviceAccount:${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}" \
+            --role="roles/iam.serviceAccountUser"
+
+          gcloud iam service-accounts add-iam-policy-binding "${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com" \
+            --member="serviceAccount:${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}" \
+            --role="roles/iam.serviceAccountUser"

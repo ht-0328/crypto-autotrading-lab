@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       use_public_api:
-        description: 'Use Public API (GMO)'
+        description: "Use Public API (GMO)"
         required: false
         type: boolean
         default: false
@@ -31,9 +31,9 @@ jobs:
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
 
       - name: Build and Test
         run: |
@@ -57,9 +57,9 @@ jobs:
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
 
       - name: Setup Network
         run: docker network create crypto-ci-net
