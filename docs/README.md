@@ -25,6 +25,7 @@
 1. [売買ロジック説明 (architecture/trading-logic.md)](architecture/trading-logic.md)
 2. [過去K線CSV作成機能の仕様 (architecture/kline-csv-export.md)](architecture/kline-csv-export.md)
 3. [過去K線CSV読み込み機能の仕様 (architecture/kline-csv-import.md)](architecture/kline-csv-import.md)
+4. [バックテスト機能の仕様 (architecture/backtest.md)](architecture/backtest.md)
 
 ### 💻 ローカルで開発・テストをしたい方
 
