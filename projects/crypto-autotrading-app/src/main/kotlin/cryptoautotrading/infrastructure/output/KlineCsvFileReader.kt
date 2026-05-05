@@ -52,6 +52,10 @@ class KlineCsvFileReader : KlineCsvReader {
                             }
                         } else {
                             // データ行の処理
+                            if (nextLine.size != expectedHeader.size) {
+                                throw IllegalArgumentException("CSVの${lineNumber}行目の列数が不正です。期待値: ${expectedHeader.size}列, 実際: ${nextLine.size}列")
+                            }
+
                             val openTime = getValue(nextLine, expectedHeader, "openTime", lineNumber)
                             val open = getValue(nextLine, expectedHeader, "open", lineNumber)
                             val high = getValue(nextLine, expectedHeader, "high", lineNumber)
@@ -79,7 +83,7 @@ class KlineCsvFileReader : KlineCsvReader {
             // 重複排除 (最初の行を採用) とソート
             val result = klines
                 .distinctBy { it.openTime }
-                .sortedBy { it.openTime.toLongOrNull() ?: 0L }
+                .sortedBy { it.openTime }
 
             logger.info { "過去K線データのCSV読み込みが完了しました。読み込み件数: ${result.size}" }
             return result

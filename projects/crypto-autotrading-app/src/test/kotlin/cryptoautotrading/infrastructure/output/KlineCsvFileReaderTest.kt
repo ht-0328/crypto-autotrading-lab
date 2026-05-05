@@ -191,6 +191,44 @@ class KlineCsvFileReaderTest {
     }
 
     @Test
+    fun `read - 異常系_データ行の列数が足りない場合にエラーになること`(@TempDir tempDir: Path) {
+        // Arrange
+        val csvFile = tempDir.resolve("test_missing_columns.csv").toFile()
+        // 2行目のデータが5列しかない
+        csvFile.writeText(
+            """
+            openTime,open,high,low,close,volume
+            1717200000000,1000,1005,995,1002
+            """.trimIndent()
+        )
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            reader.read(csvFile.absolutePath)
+        }
+        assertTrue(exception.message!!.contains("CSVの2行目の列数が不正です。期待値: 6列, 実際: 5列"))
+    }
+
+    @Test
+    fun `read - 異常系_データ行の列数が多い場合にエラーになること`(@TempDir tempDir: Path) {
+        // Arrange
+        val csvFile = tempDir.resolve("test_extra_columns.csv").toFile()
+        // 2行目のデータが7列ある
+        csvFile.writeText(
+            """
+            openTime,open,high,low,close,volume
+            1717200000000,1000,1005,995,1002,12.5,extra
+            """.trimIndent()
+        )
+
+        // Act & Assert
+        val exception = assertThrows<IllegalArgumentException> {
+            reader.read(csvFile.absolutePath)
+        }
+        assertTrue(exception.message!!.contains("CSVの2行目の列数が不正です。期待値: 6列, 実際: 7列"))
+    }
+
+    @Test
     fun `read - 異常系_ファイルが空の場合_例外がスローされること`(@TempDir tempDir: Path) {
         // Arrange
         val csvFile = tempDir.resolve("test_empty_file.csv").toFile()
