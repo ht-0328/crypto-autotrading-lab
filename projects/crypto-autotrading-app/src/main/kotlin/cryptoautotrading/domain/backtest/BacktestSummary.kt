@@ -15,6 +15,15 @@ import java.math.BigDecimal
  * @property buyCount 買い回数
  * @property sellCount 売り回数
  * @property maxDrawdown 最大ドローダウン
+ * @property takeProfitCount 利確で売却した回数
+ * @property stopLossCount 損切りで売却した回数
+ * @property winRate 売却回数のうち、利確だった割合
+ * @property averageProfit 利確1回あたりの平均利益
+ * @property averageLoss 損切り1回あたりの平均損失
+ * @property maxProfit 1回の売却で得た最大利益
+ * @property maxLoss 1回の売却で出た最大損失
+ * @property maxConsecutiveLossCount 連続して損切りした最大回数
+ * @property hasOpenPosition バックテスト終了時点で未売却の保有が残っているか
  */
 data class BacktestSummary(
     val strategyName: String,
@@ -25,5 +34,14 @@ data class BacktestSummary(
     val tradeCount: Int,
     val buyCount: Int,
     val sellCount: Int,
-    val maxDrawdown: BigDecimal
+    val maxDrawdown: BigDecimal,
+    val takeProfitCount: Int,
+    val stopLossCount: Int,
+    val winRate: BigDecimal,
+    val averageProfit: BigDecimal,
+    val averageLoss: BigDecimal,
+    val maxProfit: BigDecimal,
+    val maxLoss: BigDecimal,
+    val maxConsecutiveLossCount: Int,
+    val hasOpenPosition: Boolean
 )

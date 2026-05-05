@@ -48,7 +48,16 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
                     "tradeCount",
                     "buyCount",
                     "sellCount",
-                    "maxDrawdown"
+                    "maxDrawdown",
+                    "takeProfitCount",
+                    "stopLossCount",
+                    "winRate",
+                    "averageProfit",
+                    "averageLoss",
+                    "maxProfit",
+                    "maxLoss",
+                    "maxConsecutiveLossCount",
+                    "hasOpenPosition"
                 )
             )
 
@@ -63,7 +72,16 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
                     summary.tradeCount.toString(),
                     summary.buyCount.toString(),
                     summary.sellCount.toString(),
-                    summary.maxDrawdown.toPlainString()
+                    summary.maxDrawdown.toPlainString(),
+                    summary.takeProfitCount.toString(),
+                    summary.stopLossCount.toString(),
+                    summary.winRate.toPlainString(),
+                    summary.averageProfit.toPlainString(),
+                    summary.averageLoss.toPlainString(),
+                    summary.maxProfit.toPlainString(),
+                    summary.maxLoss.toPlainString(),
+                    summary.maxConsecutiveLossCount.toString(),
+                    summary.hasOpenPosition.toString()
                 )
             )
         }
