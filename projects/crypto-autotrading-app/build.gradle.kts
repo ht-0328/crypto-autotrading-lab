@@ -78,3 +78,11 @@ tasks.register<JavaExec>("exportKlinesCsv") {
     classpath = sourceSets["main"].runtimeClasspath
     systemProperty("file.encoding", "UTF-8")
 }
+
+tasks.register<JavaExec>("runBacktest") {
+    group = "application"
+    description = "過去K線CSVを使用してバックテストを実行します"
+    mainClass.set("cryptoautotrading.presentation.BacktestMainKt")
+    classpath = sourceSets["main"].runtimeClasspath
+    systemProperty("file.encoding", "UTF-8")
+}
