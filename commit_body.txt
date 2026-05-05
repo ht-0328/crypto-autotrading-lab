@@ -1,33 +1,37 @@
 ## 概要
 
-CI上で `exportKlinesCsv` (過去K線CSV出力) と `runBacktest` (バックテスト) を実行し、その結果が出力されていることを確認するスモークテストのジョブを追加しましたが、前のPR（#106）でバックテスト結果CSVのヘッダーが日本語に変更されたため、CI上のgrep検証でヘッダーが見つからず失敗するようになっていました。
-このPRでは、CIジョブ内で期待するヘッダー文字列を日本語（"戦略名", "K線開始時刻"）に修正し、ファイルが見つからない際のエラーハンドリングを追加してCIが正常に動作するように修正しました。
+CI上で `exportKlinesCsv` (過去K線CSV出力) と `runBacktest` (バックテスト) を実行し、その結果が出力されていることを確認するスモークテストのジョブを、既存の `ci.yml` とは別の新しいワークフロー `backtest-smoke.yml` として追加しました。
 
 ## 変更種類（必須）
 
 - [ ] feature
-- [x] fix
+- [ ] fix
 - [ ] refactor
 - [ ] docs
-- [ ] chore
+- [x] chore
 
 ## スコープ宣言（必須）
 
-- 対象: CIワークフロー (`.github/workflows/ci.yml`) にバックテストの実行確認の修正
-- 非対象: プロダクションコードの変更、GCPやDocker関連の既存ジョブの変更
+- 対象: 新規CIワークフロー (`.github/workflows/backtest-smoke.yml`) によるバックテストの実行確認
+- 非対象: プロダクションコードの変更、GCPやDocker関連の既存ジョブの変更、既存の `ci.yml` の変更
 
 ## 変更内容
 
-- `ci.yml` 内の `SUMMARY_PATH` と `STEPS_PATH` のヘッダー検証で使用する文字列を、`strategyName` から `戦略名` へ、`step` から `K線開始時刻` へ修正。
-- CSVファイルが見つからなかった場合や、ヘッダーが見つからなかった場合に明確なエラーメッセージを出力し、CIが正しく失敗するようエラーハンドリングを修正。
+- `.github/workflows/ci.yml` をリセットし、変更前の状態に戻した。
+- 新しく `.github/workflows/backtest-smoke.yml` を作成。
+- GMO Public APIの過去K線データ取得機能を用いて、20240101の1日分のBTCデータを取得 (`exportKlinesCsv` 実行)。
+- 出力されたK線CSVファイルと英語ヘッダーの存在を確認。
+- 取得したCSVを用いてバックテストを実行 (`runBacktest` 実行)。
+- 出力された Summary CSV と Steps CSV、および日本語ヘッダー（戦略名、初期資金、K線開始時刻、売買判定）の存在を確認。
+- 生成された各種CSVと `app.log` を GitHub Actions の Artifact としてアップロードするように設定。
 
 ## 影響範囲
 
-- `.github/workflows/ci.yml` のみ
+- `.github/workflows/backtest-smoke.yml` (新規追加)
 
 ## 確認手順
 
-1. GitHub ActionsでCIが実行されることを確認する。
+1. GitHub Actions 上で `backtest-smoke` が成功したことを確認しました（実行結果：成功）。
 2. `backtest` ジョブが成功し、Artifactsとして `backtest-artifacts` がアップロードされていることを確認する。
 
 ## 分割方針チェック
