@@ -6,3 +6,4 @@
 
 - [phase1-overview.md](phase1-overview.md): Phase1におけるシステムのフォルダ構成や実行フローの全体像。
 - [trading-logic.md](trading-logic.md): 売買判定のロジック（いつ買い、いつ売るのか）についての解説。
+- [kline-csv-export.md](kline-csv-export.md): 過去K線CSV作成機能の仕様書。
