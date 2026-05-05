@@ -1,29 +1,25 @@
 ## 概要
 
-CI上で `exportKlinesCsv` (過去K線CSV出力) と `runBacktest` (バックテスト) を実行し、その結果が出力されていることを確認するスモークテストのジョブを追加しました。
+CI上で `exportKlinesCsv` (過去K線CSV出力) と `runBacktest` (バックテスト) を実行し、その結果が出力されていることを確認するスモークテストのジョブを追加しましたが、前のPR（#106）でバックテスト結果CSVのヘッダーが日本語に変更されたため、CI上のgrep検証でヘッダーが見つからず失敗するようになっていました。
+このPRでは、CIジョブ内で期待するヘッダー文字列を日本語（"戦略名", "K線開始時刻"）に修正し、ファイルが見つからない際のエラーハンドリングを追加してCIが正常に動作するように修正しました。
 
 ## 変更種類（必須）
 
 - [ ] feature
-- [ ] fix
+- [x] fix
 - [ ] refactor
 - [ ] docs
-- [x] chore
+- [ ] chore
 
 ## スコープ宣言（必須）
 
-- 対象: CIワークフロー (`.github/workflows/ci.yml`) にバックテストの実行確認を追加
+- 対象: CIワークフロー (`.github/workflows/ci.yml`) にバックテストの実行確認の修正
 - 非対象: プロダクションコードの変更、GCPやDocker関連の既存ジョブの変更
 
 ## 変更内容
 
-- `ci.yml` に新しいジョブ `backtest` を追加
-- ジョブ内で `projects/crypto-autotrading-app/data/backtest/{input,output}` ディレクトリを作成
-- GMO Public APIの過去K線データ取得機能を用いて、20240101の1日分のBTCデータを取得 (`exportKlinesCsv` 実行)
-- 出力されたK線CSVファイルとヘッダーの存在を確認
-- 取得したCSVを用いてバックテストを実行 (`runBacktest` 実行)
-- 出力された Summary CSV と Steps CSV、およびヘッダーの存在を確認
-- 生成された各種CSVと `app.log` を GitHub Actions の Artifact としてアップロードするように設定
+- `ci.yml` 内の `SUMMARY_PATH` と `STEPS_PATH` のヘッダー検証で使用する文字列を、`strategyName` から `戦略名` へ、`step` から `K線開始時刻` へ修正。
+- CSVファイルが見つからなかった場合や、ヘッダーが見つからなかった場合に明確なエラーメッセージを出力し、CIが正しく失敗するようエラーハンドリングを修正。
 
 ## 影響範囲
 

@@ -185,8 +185,15 @@ jobs:
           cd projects/crypto-autotrading-app
           CSV_PATH="../../data/backtest/input/ci_btc_5min_20240101.csv"
           echo "Verifying $CSV_PATH..."
-          test -f "$CSV_PATH"
-          head -n 1 "$CSV_PATH" | grep -q "openTime,open,high,low,close,volume"
+          if ! test -f "$CSV_PATH"; then
+            echo "CSV not found"
+            exit 1
+          fi
+          if ! head -n 1 "$CSV_PATH" | grep -q "openTime,open,high,low,close,volume"; then
+            echo "Header missing"
+            cat "$CSV_PATH" || true
+            exit 1
+          fi
           echo "K-lines CSV verified successfully."
 
       - name: Run Backtest
@@ -207,12 +214,28 @@ jobs:
           SUMMARY_PATH="../../data/backtest/output/ci_summary_btc_5min_20240101.csv"
           STEPS_PATH="../../data/backtest/output/ci_steps_btc_5min_20240101.csv"
           echo "Verifying $SUMMARY_PATH..."
-          test -f "$SUMMARY_PATH"
-          head -n 1 "$SUMMARY_PATH" | grep -q "strategyName"
+          ls -la ../../data/backtest/output/ || true
+
+          if ! test -f "$SUMMARY_PATH"; then
+            echo "Summary not found"
+            exit 1
+          fi
+          if ! head -n 1 "$SUMMARY_PATH" | grep -q "戦略名"; then
+            echo "Summary header missing"
+            cat "$SUMMARY_PATH" || true
+            exit 1
+          fi
 
           echo "Verifying $STEPS_PATH..."
-          test -f "$STEPS_PATH"
-          head -n 1 "$STEPS_PATH" | grep -q "step"
+          if ! test -f "$STEPS_PATH"; then
+            echo "Steps not found"
+            exit 1
+          fi
+          if ! head -n 1 "$STEPS_PATH" | grep -q "K線開始時刻"; then
+            echo "Steps header missing"
+            cat "$STEPS_PATH" || true
+            exit 1
+          fi
 
           echo "Backtest outputs verified successfully."
 
