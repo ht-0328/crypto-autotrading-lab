@@ -30,7 +30,7 @@ class SimpleContrarianStrategy(
         currentState: SimulationState
     ): TradeDecision {
         val isHolding = currentState.isHolding
-        logger.info { "売買判定を開始します (SimpleContrarianStrategy)" }
+        logger.debug { "売買判定を開始します (SimpleContrarianStrategy)" }
         logger.debug { "入力値: K線データ件数=${klines.size}, 保有状態=$isHolding" }
 
         val recentKlines = selectRecentKlines(klines)
@@ -184,7 +184,7 @@ class SimpleContrarianStrategy(
      */
     private fun createDecision(action: TradeAction, reason: String): TradeDecision {
         val decision = TradeDecision(action, reason)
-        logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+        logger.debug { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
         return decision
     }
 }
