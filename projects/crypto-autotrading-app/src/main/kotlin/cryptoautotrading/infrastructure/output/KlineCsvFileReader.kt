@@ -16,6 +16,16 @@ class KlineCsvFileReader : KlineCsvReader {
 
     private val logger = KotlinLogging.logger {}
 
+    /**
+     * 指定されたパスからCSVファイルを読み込み、K線データ（Kline）のリストに変換して返す。
+     *
+     * ヘッダーの順序（openTime, open, high, low, close, volume）と列数の検証、各値の空文字・数値検証を行う。
+     * 読み込み後は openTime を基準に重複を排除（最初の行を採用）し、openTime の昇順でソートする。
+     *
+     * @param inputPath 読み込むCSVファイルのパス
+     * @return 検証・ソート・重複排除された Kline のリスト
+     * @throws IllegalArgumentException ファイルパス未指定、ファイルが存在しない、ヘッダー不正、必須項目不足、または数値変換に失敗した場合
+     */
     override fun read(inputPath: String): List<Kline> {
         logger.info { "過去K線データのCSV読み込み処理を開始します: $inputPath" }
 
@@ -100,43 +110,89 @@ class KlineCsvFileReader : KlineCsvReader {
         }
     }
 
+    /**
+     * CSVファイルのヘッダー順序および各データ行の列数を検証する。
+     *
+     * @param file 検証対象のCSVファイル
+     * @throws IllegalArgumentException ヘッダーが不正、データ行の列数が不正、またはファイルが空の場合
+     */
     private fun validateHeaderAndColumns(file: File) {
         file.bufferedReader().use { reader ->
             CSVReader(reader).use { csvReader ->
                 val expectedHeader = listOf("openTime", "open", "high", "low", "close", "volume")
-                var header: Array<String>? = null
+                var hasHeader = false
                 var lineNumber = 0
 
                 var nextLine: Array<String>? = csvReader.readNext()
                 while (nextLine != null) {
                     lineNumber++
-                    // 空行を無視
-                    if (nextLine.isEmpty() || (nextLine.size == 1 && nextLine[0].isBlank())) {
+
+                    if (isBlankCsvLine(nextLine)) {
                         nextLine = csvReader.readNext()
                         continue
                     }
 
-                    if (header == null) {
-                        header = nextLine
-                        if (header.toList() != expectedHeader) {
-                            throw IllegalArgumentException("ヘッダーが openTime,open,high,low,close,volume の順番ではありません: ${header.joinToString(",")}")
-                        }
+                    if (!hasHeader) {
+                        validateHeader(nextLine, expectedHeader)
+                        hasHeader = true
                     } else {
-                        // データ行の列数チェック
-                        if (nextLine.size != expectedHeader.size) {
-                            throw IllegalArgumentException("CSVの${lineNumber}行目の列数が不正です。期待値: ${expectedHeader.size}列, 実際: ${nextLine.size}列")
-                        }
+                        validateColumnCount(nextLine, expectedHeader.size, lineNumber)
                     }
                     nextLine = csvReader.readNext()
                 }
 
-                if (header == null) {
+                if (!hasHeader) {
                     throw IllegalArgumentException("CSVファイルが空か、ヘッダーが存在しません: ${file.absolutePath}")
                 }
             }
         }
     }
 
+    /**
+     * CSVの行が空行（または空文字のみ）かどうかを判定する。
+     *
+     * @param line CSVの1行分のデータ配列
+     * @return 空行であれば true、そうでなければ false
+     */
+    private fun isBlankCsvLine(line: Array<String>): Boolean {
+        return line.isEmpty() || (line.size == 1 && line[0].isBlank())
+    }
+
+    /**
+     * ヘッダー行が期待される列順序と一致するかを検証する。
+     *
+     * @param actualHeader 実際のヘッダー配列
+     * @param expectedHeader 期待されるヘッダーのリスト
+     * @throws IllegalArgumentException ヘッダーの順序が不正な場合
+     */
+    private fun validateHeader(actualHeader: Array<String>, expectedHeader: List<String>) {
+        if (actualHeader.toList() != expectedHeader) {
+            throw IllegalArgumentException("ヘッダーが openTime,open,high,low,close,volume の順番ではありません: ${actualHeader.joinToString(",")}")
+        }
+    }
+
+    /**
+     * データ行の列数がヘッダーの列数と一致するかを検証する。
+     *
+     * @param line データ行の配列
+     * @param expectedSize 期待される列数
+     * @param lineNumber 検証中の行番号（エラーメッセージ用）
+     * @throws IllegalArgumentException 列数が不正な場合
+     */
+    private fun validateColumnCount(line: Array<String>, expectedSize: Int, lineNumber: Int) {
+        if (line.size != expectedSize) {
+            throw IllegalArgumentException("CSVの${lineNumber}行目の列数が不正です。期待値: ${expectedSize}列, 実際: ${line.size}列")
+        }
+    }
+
+    /**
+     * 文字列が数値（BigDecimal）として解釈できるかを検証する。
+     *
+     * @param value 検証対象の文字列
+     * @param columnName 検証対象の列名（エラーメッセージ用）
+     * @param lineNumber 検証中の行番号（エラーメッセージ用）
+     * @throws IllegalArgumentException 文字列が数値として解釈できない場合
+     */
     private fun validateNumber(value: String, columnName: String, lineNumber: Int) {
         try {
             BigDecimal(value)
