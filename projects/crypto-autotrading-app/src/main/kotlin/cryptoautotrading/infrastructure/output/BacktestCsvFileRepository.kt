@@ -40,24 +40,24 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
             // ヘッダー
             writer.writeNext(
                 arrayOf(
-                    "strategyName",
-                    "initialCapital",
-                    "finalAssetValue",
-                    "realizedProfitAndLoss",
-                    "totalReturnRate",
-                    "tradeCount",
-                    "buyCount",
-                    "sellCount",
-                    "maxDrawdown",
-                    "takeProfitCount",
-                    "stopLossCount",
-                    "winRate",
-                    "averageProfit",
-                    "averageLoss",
-                    "maxProfit",
-                    "maxLoss",
-                    "maxConsecutiveLossCount",
-                    "hasOpenPosition"
+                    "戦略名",
+                    "初期資金",
+                    "最終総資産",
+                    "確定損益",
+                    "利益率",
+                    "売買回数",
+                    "買い回数",
+                    "売り回数",
+                    "最大ドローダウン",
+                    "利確回数",
+                    "損切り回数",
+                    "勝率",
+                    "平均利益",
+                    "平均損失",
+                    "最大利益",
+                    "最大損失",
+                    "最大連続損切り回数",
+                    "未決済ポジションあり"
                 )
             )
 
@@ -96,16 +96,16 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
             // ヘッダー
             writer.writeNext(
                 arrayOf(
-                    "openTime",
-                    "close",
-                    "action",
-                    "reason",
-                    "cashBalance",
-                    "holdingAmount",
-                    "buyPrice",
-                    "realizedProfitAndLoss",
-                    "estimatedHoldingValue",
-                    "totalAssetValue"
+                    "K線開始時刻",
+                    "終値",
+                    "売買判定",
+                    "判定理由",
+                    "現金残高",
+                    "保有数量",
+                    "買値",
+                    "確定損益",
+                    "評価額",
+                    "総資産額"
                 )
             )
 
