@@ -41,7 +41,6 @@ class BacktestApplication(
 
         // 入力チェック
         if (klineCsvPath.isNullOrBlank()) throw IllegalArgumentException("過去K線CSVファイルのパスが指定されていません")
-        if (strategyName.isNullOrBlank()) throw IllegalArgumentException("使用する売買戦略名が指定されていません")
         if (initialCapitalStr.isNullOrBlank()) throw IllegalArgumentException("初期資金が指定されていません")
         if (summaryOutputPath.isNullOrBlank()) throw IllegalArgumentException("サマリー出力先パスが指定されていません")
         if (stepsOutputPath.isNullOrBlank()) throw IllegalArgumentException("明細出力先パスが指定されていません")

@@ -42,6 +42,7 @@ BACKTEST_STRATEGY_NAME=SafeReboundStrategy
 BACKTEST_INITIAL_CAPITAL=1000000
 BACKTEST_SUMMARY_OUTPUT_PATH=data/backtest/output/summary_btc_5min_20260501_20260531.csv
 BACKTEST_STEPS_OUTPUT_PATH=data/backtest/output/steps_btc_5min_20260501_20260531.csv
+APP_CONFIG_PATH=config/application-test.yaml
 ```
 
 ## 4. 出力仕様
@@ -153,8 +154,7 @@ K線が不足している場合の判定は、Strategy の結果を尊重しま�
 | ------------------------------------------ | ------------ |
 | 過去K線CSVファイルのパスが指定されていない | エラーにする |
 | 過去K線CSVの読み込みに失敗した             | エラーにする |
-| 使用する売買戦略名が指定されていない       | エラーにする |
-| 対応していない売買戦略名が指定された       | エラーにする |
+| 使用する売買戦略名が対応していない         | エラーにする |
 | 初期資金が指定されていない                 | エラーにする |
 | 初期資金が数値として解釈できない           | エラーにする |
 | 初期資金が0以下                            | エラーにする |

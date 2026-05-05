@@ -21,11 +21,12 @@ fun main() {
         val summaryOutputPath = System.getenv("BACKTEST_SUMMARY_OUTPUT_PATH")
         val stepsOutputPath = System.getenv("BACKTEST_STEPS_OUTPUT_PATH")
 
+        // 設定を読み込む。APP_CONFIG_PATH が未指定、またはファイルがない場合は
+        // ConfigLoader 内でデフォルト設定にフォールバックされる
+        val appConfig = cryptoautotrading.infrastructure.config.ConfigLoader.load()
+
         val klineCsvReader = KlineCsvFileReader()
         val resultOutputPort = BacktestCsvFileRepository()
-
-        // 設定を読み込む
-        val appConfig = cryptoautotrading.infrastructure.config.ConfigLoader.load()
 
         val application = BacktestApplication(klineCsvReader, resultOutputPort, appConfig.trading)
 
