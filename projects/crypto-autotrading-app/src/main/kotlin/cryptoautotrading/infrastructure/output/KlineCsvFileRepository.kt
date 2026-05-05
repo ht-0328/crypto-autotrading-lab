@@ -1,5 +1,6 @@
 package cryptoautotrading.infrastructure.output
 
+import com.opencsv.CSVWriter
 import cryptoautotrading.domain.model.Kline
 import cryptoautotrading.domain.repository.KlineCsvRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -24,12 +25,23 @@ class KlineCsvFileRepository : KlineCsvRepository {
             }
 
             file.bufferedWriter().use { writer ->
-                // ヘッダー書き込み
-                writer.write("openTime,open,high,low,close,volume\n")
+                CSVWriter(writer).use { csvWriter ->
+                    // ヘッダー書き込み
+                    val header = arrayOf("openTime", "open", "high", "low", "close", "volume")
+                    csvWriter.writeNext(header, false)
 
-                // データ書き込み
-                klines.forEach { kline ->
-                    writer.write("${kline.openTime},${kline.open},${kline.high},${kline.low},${kline.close},${kline.volume}\n")
+                    // データ書き込み
+                    klines.forEach { kline ->
+                        val row = arrayOf(
+                            kline.openTime,
+                            kline.open,
+                            kline.high,
+                            kline.low,
+                            kline.close,
+                            kline.volume
+                        )
+                        csvWriter.writeNext(row, false)
+                    }
                 }
             }
             logger.info { "過去K線データのCSV保存が完了しました。保存件数: ${klines.size}" }

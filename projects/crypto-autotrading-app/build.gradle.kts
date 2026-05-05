@@ -31,6 +31,9 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1")
 
+    // CSV
+    implementation("com.opencsv:opencsv:5.12.0")
+
     testImplementation(kotlin("test"))
     testImplementation("io.mockk:mockk:1.13.10")
     testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
