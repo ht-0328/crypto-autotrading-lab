@@ -24,7 +24,7 @@ class SafeReboundStrategy(
         val isHolding = currentState.isHolding
         val buyPrice = currentState.buyPrice
 
-        logger.info { "売買判定を開始します (SafeReboundStrategy)" }
+        logger.debug { "売買判定を開始します (SafeReboundStrategy)" }
         logger.debug { "入力値: K線データ件数=${klines.size}, 保有状態=$isHolding, 購入価格=$buyPrice" }
 
         // 直近12本のデータのみを使用（1時間が対象）
@@ -171,7 +171,7 @@ class SafeReboundStrategy(
      */
     private fun createDecision(action: TradeAction, reason: String): TradeDecision {
         val decision = TradeDecision(action, reason)
-        logger.info { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
+        logger.debug { "売買判定結果: ${decision.action.description} (理由: ${decision.reason})" }
         return decision
     }
 }

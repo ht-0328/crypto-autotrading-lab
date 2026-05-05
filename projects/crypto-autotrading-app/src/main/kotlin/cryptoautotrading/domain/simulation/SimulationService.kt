@@ -31,7 +31,7 @@ class SimulationService {
         currentPrice: BigDecimal,
         tradeAmount: Int
     ): SimulationState {
-        logger.info { "シミュレーション状態の更新処理を開始します" }
+        logger.debug { "シミュレーション状態の更新処理を開始します" }
         logger.debug { "更新前状態: $currentState, 判定結果: ${decision.action}, 現在価格: $currentPrice, 取引額: $tradeAmount" }
 
         val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
@@ -81,7 +81,7 @@ class SimulationService {
             }
         }
 
-        logger.info { "シミュレーション状態の更新が完了しました" }
+        logger.debug { "シミュレーション状態の更新が完了しました" }
         logger.debug { "更新後状態: $nextState" }
 
         return nextState

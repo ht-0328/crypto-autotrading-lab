@@ -13,7 +13,7 @@
          コンソールへのログ出力は行わず、ファイルのみに出力する。
          ※ ConsoleOutput.kt の println のみがコンソールに出るようになります
     -->
-    <root level="debug">
+    <root level="${LOG_LEVEL:-info}">
         <appender-ref ref="FILE" />
     </root>
 </configuration>
