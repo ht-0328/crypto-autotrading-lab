@@ -14,7 +14,7 @@ class BacktestApplicationTest {
 
     @Test
     fun `必須パラメータが不足している場合はIllegalArgumentExceptionをスローすること`() {
-        val application = BacktestApplication(mockk(), mockk())
+        val application = BacktestApplication(mockk(), mockk(), mockk())
 
         assertThrows<IllegalArgumentException> {
             application.run(null, "strategy", "1000", "out1", "out2")
@@ -26,12 +26,22 @@ class BacktestApplicationTest {
         // Arrange
         val mockReader = mockk<KlineCsvReader>()
         val mockOutputPort = mockk<BacktestResultOutputPort>(relaxed = true)
+        val dummyConfig = cryptoautotrading.domain.model.TradingConfig(
+            strategyName = "TestStrategy",
+            symbol = "BTC",
+            initialCapital = 10000,
+            tradeAmount = 1000,
+            buyThreshold = 0.01,
+            sellThreshold = 0.01,
+            volatilityThreshold = 0.01,
+            sharpChangeThreshold = 0.01
+        )
 
         every { mockReader.read(any()) } returns listOf(
             Kline("202605010000", "100", "110", "90", "105", "10")
         )
 
-        val application = BacktestApplication(mockReader, mockOutputPort)
+        val application = BacktestApplication(mockReader, mockOutputPort, dummyConfig)
 
         // Act
         application.run(

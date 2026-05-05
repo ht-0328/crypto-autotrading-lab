@@ -24,7 +24,10 @@ fun main() {
         val klineCsvReader = KlineCsvFileReader()
         val resultOutputPort = BacktestCsvFileRepository()
 
-        val application = BacktestApplication(klineCsvReader, resultOutputPort)
+        // 設定を読み込む
+        val appConfig = cryptoautotrading.infrastructure.config.ConfigLoader.load()
+
+        val application = BacktestApplication(klineCsvReader, resultOutputPort, appConfig.trading)
 
         application.run(
             klineCsvPath = klineCsvPath,

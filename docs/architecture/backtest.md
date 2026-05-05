@@ -32,6 +32,7 @@
 | BACKTEST_INITIAL_CAPITAL     | 1000000                                                     | バックテスト開始時の仮想資金       |
 | BACKTEST_SUMMARY_OUTPUT_PATH | data/backtest/output/summary_btc_5min_20260501_20260531.csv | バックテスト結果(サマリー)の出力先 |
 | BACKTEST_STEPS_OUTPUT_PATH   | data/backtest/output/steps_btc_5min_20260501_20260531.csv   | バックテスト結果(明細)の出力先     |
+| APP_CONFIG_PATH              | config/application-test.yaml                                | 読み込む設定ファイルのパス         |
 
 入力例:
 

@@ -15,7 +15,8 @@ import java.math.BigDecimal
  */
 class BacktestApplication(
     private val klineCsvReader: KlineCsvReader,
-    private val resultOutputPort: BacktestResultOutputPort
+    private val resultOutputPort: BacktestResultOutputPort,
+    private val tradingConfig: TradingConfig
 ) {
     private val logger = KotlinLogging.logger {}
     private val engine = BacktestEngine()
@@ -58,17 +59,12 @@ class BacktestApplication(
         // CSV読み込み
         val klines = klineCsvReader.read(klineCsvPath)
 
-        // 戦略の生成 (本来は外部から注入すべきだが要件に合わせてダミー設定を生成)
-        val config = TradingConfig(
-            strategyName = strategyName,
-            symbol = "BTC",
-            initialCapital = initialCapital.toInt(),
-            tradeAmount = 1000,
-            buyThreshold = 0.005,
-            sellThreshold = 0.005,
-            volatilityThreshold = 0.003,
-            sharpChangeThreshold = 0.01
-        )
+        // 外部から注入されたTradingConfigをベースに、指定されたstrategyNameがあれば上書きする
+        val config = if (!strategyName.isNullOrBlank()) {
+            tradingConfig.copy(strategyName = strategyName)
+        } else {
+            tradingConfig
+        }
         val strategy = createStrategy(config)
 
         // バックテスト実行
