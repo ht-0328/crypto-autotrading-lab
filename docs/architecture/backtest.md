@@ -25,12 +25,13 @@
 
 この機能は、以下の値を入力として受け取ります。
 
-| 項目                     | 例                                                         | 説明                             |
-| ------------------------ | ---------------------------------------------------------- | -------------------------------- |
-| BACKTEST_KLINE_CSV_PATH  | data/backtest/input/btc_5min_20260501_20260531.csv         | 読み込む過去K線CSVファイルのパス |
-| BACKTEST_STRATEGY_NAME   | SafeReboundStrategy                                        | 使用する売買戦略名               |
-| BACKTEST_INITIAL_CAPITAL | 1000000                                                    | バックテスト開始時の仮想資金     |
-| BACKTEST_OUTPUT_PATH     | data/backtest/output/result_btc_5min_20260501_20260531.csv | バックテスト結果の出力先パス     |
+| 項目                         | 例                                                          | 説明                               |
+| ---------------------------- | ----------------------------------------------------------- | ---------------------------------- |
+| BACKTEST_KLINE_CSV_PATH      | data/backtest/input/btc_5min_20260501_20260531.csv          | 読み込む過去K線CSVファイルのパス   |
+| BACKTEST_STRATEGY_NAME       | SafeReboundStrategy                                         | 使用する売買戦略名                 |
+| BACKTEST_INITIAL_CAPITAL     | 1000000                                                     | バックテスト開始時の仮想資金       |
+| BACKTEST_SUMMARY_OUTPUT_PATH | data/backtest/output/summary_btc_5min_20260501_20260531.csv | バックテスト結果(サマリー)の出力先 |
+| BACKTEST_STEPS_OUTPUT_PATH   | data/backtest/output/steps_btc_5min_20260501_20260531.csv   | バックテスト結果(明細)の出力先     |
 
 入力例:
 
@@ -38,7 +39,8 @@
 BACKTEST_KLINE_CSV_PATH=data/backtest/input/btc_5min_20260501_20260531.csv
 BACKTEST_STRATEGY_NAME=SafeReboundStrategy
 BACKTEST_INITIAL_CAPITAL=1000000
-BACKTEST_OUTPUT_PATH=data/backtest/output/result_btc_5min_20260501_20260531.csv
+BACKTEST_SUMMARY_OUTPUT_PATH=data/backtest/output/summary_btc_5min_20260501_20260531.csv
+BACKTEST_STEPS_OUTPUT_PATH=data/backtest/output/steps_btc_5min_20260501_20260531.csv
 ```
 
 ## 4. 出力仕様
@@ -59,8 +61,13 @@ BACKTEST_OUTPUT_PATH=data/backtest/output/result_btc_5min_20260501_20260531.csv
 | sellCount             | 売り回数               |
 | maxDrawdown           | 最大ドローダウン       |
 
-最大ドローダウンは、途中の最高資産額からどれだけ下がったかを表します。
-一時的にどれくらい資産が減ったかを見るための値です。
+**各項目の出力形式と数え方:**
+
+- **totalReturnRate**: 小数で出力します（例: 10%の利益なら 0.10、5%の損失なら -0.05）。
+- **maxDrawdown**: 小数で出力します（例: 10%下落なら 0.10）。途中の最高資産額からどれだけ下がったかを表し、一時的にどれくらい資産が減ったかを見るための値です。
+- **buyCount**: 実際に仮想購入が成立した回数です。
+- **sellCount**: 実際に仮想売却が成立した回数です。
+- **tradeCount**: buyCount と sellCount の合計（buyCount + sellCount）です。
 
 明細情報は、各K線時点での状態を表します。
 
@@ -93,7 +100,7 @@ BACKTEST_OUTPUT_PATH=data/backtest/output/result_btc_5min_20260501_20260531.csv
 10. cashBalance、holdingAmount、buyPrice、realizedProfitAndLoss を記録する
 11. estimatedHoldingValue と totalAssetValue を計算する
 12. 全K線の処理が完了したらサマリー情報を作成する
-13. バックテスト結果を出力する
+13. バックテスト結果をサマリー用と明細用の2つのファイルに出力する
 
 ## 6. 売買判定の扱い
 
@@ -150,6 +157,8 @@ K線が不足している場合の判定は、Strategy の結果を尊重しま�
 | 初期資金が指定されていない                 | エラーにする |
 | 初期資金が数値として解釈できない           | エラーにする |
 | 初期資金が0以下                            | エラーにする |
+| サマリー出力先パスが指定されていない       | エラーにする |
+| 明細出力先パスが指定されていない           | エラーにする |
 | バックテスト結果の出力に失敗した           | エラーにする |
 
 エラー時は、原因が分かるメッセージにします。
