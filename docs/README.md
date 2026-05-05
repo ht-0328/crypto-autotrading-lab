@@ -23,6 +23,7 @@
 ### 🧠 売買ロジックの仕組みを知りたい方
 
 1. [売買ロジック説明 (architecture/trading-logic.md)](architecture/trading-logic.md)
+2. [過去K線CSV作成機能の仕様 (architecture/kline-csv-export.md)](architecture/kline-csv-export.md)
 
 ### 💻 ローカルで開発・テストをしたい方
 
