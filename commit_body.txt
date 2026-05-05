@@ -1,0 +1,41 @@
+## 概要
+
+CI上で `exportKlinesCsv` (過去K線CSV出力) と `runBacktest` (バックテスト) を実行し、その結果が出力されていることを確認するスモークテストのジョブを追加しました。
+
+## 変更種類（必須）
+
+- [ ] feature
+- [ ] fix
+- [ ] refactor
+- [ ] docs
+- [x] chore
+
+## スコープ宣言（必須）
+
+- 対象: CIワークフロー (`.github/workflows/ci.yml`) にバックテストの実行確認を追加
+- 非対象: プロダクションコードの変更、GCPやDocker関連の既存ジョブの変更
+
+## 変更内容
+
+- `ci.yml` に新しいジョブ `backtest` を追加
+- ジョブ内で `projects/crypto-autotrading-app/data/backtest/{input,output}` ディレクトリを作成
+- GMO Public APIの過去K線データ取得機能を用いて、20240101の1日分のBTCデータを取得 (`exportKlinesCsv` 実行)
+- 出力されたK線CSVファイルとヘッダーの存在を確認
+- 取得したCSVを用いてバックテストを実行 (`runBacktest` 実行)
+- 出力された Summary CSV と Steps CSV、およびヘッダーの存在を確認
+- 生成された各種CSVと `app.log` を GitHub Actions の Artifact としてアップロードするように設定
+
+## 影響範囲
+
+- `.github/workflows/ci.yml` のみ
+
+## 確認手順
+
+1. GitHub ActionsでCIが実行されることを確認する。
+2. `backtest` ジョブが成功し、Artifactsとして `backtest-artifacts` がアップロードされていることを確認する。
+
+## 分割方針チェック
+
+- [x] リファクタと機能追加を同一PRに混在させていない ([docs/ai/change-granularity.md](../docs/ai/change-granularity.md) 参照)
+- [x] `domain` 変更時に `infrastructure` を同時変更していない（必要時は別PR） ([docs/ai/kotlin-boundary-rules.md](../docs/ai/kotlin-boundary-rules.md) 参照)
+- [x] `application` にオーケストレーション以外のロジックを追加していない
