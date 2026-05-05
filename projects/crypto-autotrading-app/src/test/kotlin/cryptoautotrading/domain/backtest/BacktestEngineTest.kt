@@ -44,4 +44,74 @@ class BacktestEngineTest {
         assertEquals(TradeAction.SKIP, result.steps[0].action)
         assertEquals(0, BigDecimal("10000").compareTo(result.steps[0].cashBalance))
     }
+
+    @Test
+    fun `取引が行われ、利確と損切りが正しく集計されること`() {
+        // Arrange
+        val engine = BacktestEngine()
+        val mockStrategy = mockk<TradingStrategy>()
+
+        // 判定のシナリオ:
+        // 1回目: 買い (価格100) -> 数量: 10
+        // 2回目: 利確売り (価格120) -> 損益: +200
+        // 3回目: 買い (価格100) -> 数量: 10
+        // 4回目: 損切り売り (価格80) -> 損益: -200
+        // 5回目: 買い (価格100) -> 数量: 10
+        // 6回目: 損切り売り (価格90) -> 損益: -100
+        // 7回目: 買い (価格100) -> 数量: 10 (未売却で終了)
+
+        every { mockStrategy.judge(any(), any()) } returnsMany listOf(
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 1"),
+            TradeDecision(TradeAction.SELL_CANDIDATE, "Sell 1 (Profit)"),
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 2"),
+            TradeDecision(TradeAction.SELL_CANDIDATE, "Sell 2 (Loss)"),
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 3"),
+            TradeDecision(TradeAction.SELL_CANDIDATE, "Sell 3 (Loss)"),
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 4")
+        )
+
+        val klines = listOf(
+            Kline("1", "100", "100", "100", "100", "10"),
+            Kline("2", "120", "120", "120", "120", "10"),
+            Kline("3", "100", "100", "100", "100", "10"),
+            Kline("4", "80", "80", "80", "80", "10"),
+            Kline("5", "100", "100", "100", "100", "10"),
+            Kline("6", "90", "90", "90", "90", "10"),
+            Kline("7", "100", "100", "100", "100", "10")
+        )
+        val initialCapital = BigDecimal("10000")
+        val tradeAmount = 1000
+
+        // Act
+        val result = engine.run(klines, mockStrategy, initialCapital, tradeAmount)
+
+        // Assert
+        val summary = result.summary
+
+        // 基本的なカウントの確認
+        assertEquals(4, summary.buyCount)
+        assertEquals(3, summary.sellCount)
+        assertEquals(7, summary.tradeCount)
+
+        // 拡張指標の確認
+        assertEquals(1, summary.takeProfitCount)
+        assertEquals(2, summary.stopLossCount)
+
+        // 勝率は 1/3 = 0.33333333
+        assertEquals(0, BigDecimal("0.33333333").compareTo(summary.winRate))
+
+        // 利確は+200が1回
+        assertEquals(0, BigDecimal("200").compareTo(summary.averageProfit))
+        assertEquals(0, BigDecimal("200").compareTo(summary.maxProfit))
+
+        // 損切りは-200と-100の2回。平均は-150、最大損失は-200(最もマイナスが大きいもの)
+        assertEquals(0, BigDecimal("-150").compareTo(summary.averageLoss))
+        assertEquals(0, BigDecimal("-200").compareTo(summary.maxLoss))
+
+        // 連続損切り回数は2回 (Sell 2, Sell 3 が連続)
+        assertEquals(2, summary.maxConsecutiveLossCount)
+
+        // 最後はBuy 4で終わっているので、未売却のポジションがある
+        assertEquals(true, summary.hasOpenPosition)
+    }
 }

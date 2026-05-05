@@ -62,10 +62,20 @@ APP_CONFIG_PATH=config/application-test.yaml
 | buyCount              | 買い回数               |
 | sellCount             | 売り回数               |
 | maxDrawdown           | 最大ドローダウン       |
+| takeProfitCount       | 利確で売却した回数 |
+| stopLossCount         | 損切りで売却した回数 |
+| winRate               | 売却回数のうち、利確だった割合 |
+| averageProfit         | 利確1回あたりの平均利益 |
+| averageLoss           | 損切り1回あたりの平均損失 |
+| maxProfit             | 1回の売却で得た最大利益 |
+| maxLoss               | 1回の売却で出た最大損失 |
+| maxConsecutiveLossCount | 連続して損切りした最大回数 |
+| hasOpenPosition       | バックテスト終了時点で未売却の保有が残っているか |
 
 **各項目の出力形式と数え方:**
 
 - **totalReturnRate**: 小数で出力します（例: 10%の利益なら 0.10、5%の損失なら -0.05）。
+- **winRate**: 小数で出力します（例: 60%なら 0.60）。
 - **maxDrawdown**: 小数で出力します（例: 10%下落なら 0.10）。途中の最高資産額からどれだけ下がったかを表し、一時的にどれくらい資産が減ったかを見るための値です。
 - **buyCount**: 実際に仮想購入が成立した回数です。
 - **sellCount**: 実際に仮想売却が成立した回数です。
