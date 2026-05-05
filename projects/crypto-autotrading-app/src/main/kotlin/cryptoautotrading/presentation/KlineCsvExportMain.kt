@@ -32,7 +32,7 @@ fun main() = runBlocking {
         } else {
             dataDirEnv
         }
-        val resolvedOutputPath = outputPathEnv?.let { Paths.get(finalDir, it).toString() }
+        val resolvedOutputPath = resolveOutputPath(finalDir, outputPathEnv)
 
         // 設定ファイルからのAPI情報取得
         logger.info { "設定ファイルの読み込みを開始します" }
@@ -59,5 +59,28 @@ fun main() = runBlocking {
         throw e
     } finally {
         logger.info { "過去K線CSV作成機能の処理が終了しました" }
+    }
+}
+
+/**
+ * データの保存先パスを解決する。
+ * KLINE_EXPORT_OUTPUT_PATH が相対パスの場合は APP_DATA_DIR 配下として扱う。
+ * KLINE_EXPORT_OUTPUT_PATH が絶対パスの場合は、そのまま使う。
+ *
+ * @param dataDir APP_DATA_DIR で指定されたベースディレクトリ
+ * @param outputPath KLINE_EXPORT_OUTPUT_PATH で指定された出力先パス
+ * @return 解決後の絶対パスまたは相対パス
+ * @throws IllegalArgumentException outputPathがnullまたは空の場合
+ */
+internal fun resolveOutputPath(dataDir: String, outputPath: String?): String {
+    if (outputPath.isNullOrBlank()) {
+        throw IllegalArgumentException("KLINE_EXPORT_OUTPUT_PATH が未設定または空です。")
+    }
+
+    val path = Paths.get(outputPath)
+    return if (path.isAbsolute) {
+        outputPath
+    } else {
+        Paths.get(dataDir, outputPath).toString()
     }
 }
