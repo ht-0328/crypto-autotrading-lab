@@ -24,7 +24,7 @@ class SimulationServiceTest {
             lastUpdatedAt = "2023-01-01T00:00:00"
         )
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val currentPrice = BigDecimal("50000.0")
+        val currentPrice = BigDecimal("30000.0") // Indivisible price
         val tradeAmount = 10000
 
         // Act
@@ -34,9 +34,108 @@ class SimulationServiceTest {
         assertTrue(nextState.isHolding)
         assertEquals(currentPrice, nextState.buyPrice)
         val expectedAmount = BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
+        val actualBuyAmount = expectedAmount * currentPrice
         assertEquals(expectedAmount, nextState.holdingAmount)
-        assertEquals(BigDecimal("10000"), nextState.cashBalance) // 20000 - 10000
+        assertEquals(0, BigDecimal("20000").subtract(actualBuyAmount).compareTo(nextState.cashBalance))
         assertNotEquals(currentState.lastUpdatedAt, nextState.lastUpdatedAt)
+    }
+
+    @Test
+    fun `BUY時の資金計算テスト_実際の購入金額のみが引かれること`() {
+        // Arrange
+        val currentState = SimulationState(
+            cashBalance = BigDecimal("10000"),
+            isHolding = false,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
+            lastUpdatedAt = "2023-01-01T00:00:00"
+        )
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val currentPrice = BigDecimal("30000.0") // Indivisible price
+        val tradeAmount = 1000
+
+        // Act
+        val nextState = simulationService.updateState(currentState, decision, currentPrice, tradeAmount)
+
+        // Assert
+        val expectedAmount = BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
+        val actualBuyAmount = expectedAmount * currentPrice
+        assertEquals(0, BigDecimal("10000").subtract(actualBuyAmount).compareTo(nextState.cashBalance))
+
+        // Ensure cashBalance + actualBuyAmount equals initial cashBalance
+        val estimatedHoldingValue = expectedAmount * currentPrice
+        assertEquals(0, BigDecimal("10000").compareTo(nextState.cashBalance + estimatedHoldingValue))
+    }
+
+    @Test
+    fun `BUYからSELL後の整合性テスト_総資産と初期資金プラス確定損益が一致すること`() {
+        // Arrange
+        val initialCapital = BigDecimal("10000")
+        val currentState = SimulationState(
+            cashBalance = initialCapital,
+            isHolding = false,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
+            lastUpdatedAt = "2023-01-01T00:00:00"
+        )
+        val buyDecision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val buyPrice = BigDecimal("30000.0") // Indivisible price
+        val tradeAmount = 1000
+
+        // Act (Buy)
+        val stateAfterBuy = simulationService.updateState(currentState, buyDecision, buyPrice, tradeAmount)
+
+        // Act (Sell)
+        val sellDecision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
+        val sellPrice = BigDecimal("33000.0")
+        val finalState = simulationService.updateState(stateAfterBuy, sellDecision, sellPrice, tradeAmount)
+
+        // Assert
+        assertFalse(finalState.isHolding)
+        val expectedAmount = BigDecimal(tradeAmount).divide(buyPrice, 8, RoundingMode.DOWN)
+        val expectedBuyAmount = expectedAmount * buyPrice
+        val expectedSellAmount = expectedAmount * sellPrice
+        val expectedProfit = expectedSellAmount - expectedBuyAmount
+
+        assertEquals(0, expectedProfit.compareTo(finalState.realizedProfitAndLoss))
+        assertEquals(0, (initialCapital + finalState.realizedProfitAndLoss).compareTo(finalState.cashBalance))
+    }
+
+    @Test
+    fun `複数回売買時の累積誤差テスト_総資産と確定損益が乖離しないこと`() {
+        // Arrange
+        val initialCapital = BigDecimal("10000")
+        var state = SimulationState(
+            cashBalance = initialCapital,
+            isHolding = false,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
+            lastUpdatedAt = "2023-01-01T00:00:00"
+        )
+        val tradeAmount = 1000
+        val prices = listOf(
+            BigDecimal("30000.0"), BigDecimal("31000.0"), // Buy, Sell
+            BigDecimal("31000.0"), BigDecimal("29000.0"), // Buy, Sell (Loss)
+            BigDecimal("25000.0"), BigDecimal("26000.0")  // Buy, Sell
+        )
+
+        // Act
+        for (i in prices.indices step 2) {
+            val buyPrice = prices[i]
+            val sellPrice = prices[i+1]
+
+            // Buy
+            val buyDecision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+            state = simulationService.updateState(state, buyDecision, buyPrice, tradeAmount)
+
+            // Sell
+            val sellDecision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
+            state = simulationService.updateState(state, sellDecision, sellPrice, tradeAmount)
+        }
+
+        // Assert
+        assertFalse(state.isHolding)
+        assertEquals(0, (initialCapital + state.realizedProfitAndLoss).compareTo(state.cashBalance))
     }
 
     @Test
