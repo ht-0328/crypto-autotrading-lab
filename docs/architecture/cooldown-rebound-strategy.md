@@ -77,12 +77,32 @@
 ### 判定の扱いまとめ
 
 - **保有中の売却判定:**
-  - 利確ライン到達時 ➔ `売る（利確）`
-  - 損切りライン到達時 ➔ `売る（損切り）` ➔ **クールダウン開始**
+  - 利確ライン到達時 ➔ `SELL_CANDIDATE`
+  - 損切りライン到達時 ➔ `SELL_CANDIDATE` ＋ **クールダウン開始**
+  - 利確・損切りライン未到達時 ➔ `HOLDING`
 - **非保有時の買い判定:**
-  - クールダウン期間中の場合 ➔ `見送り`
-  - クールダウン期間外 ＋ 買い条件成立 ➔ `買う`
-  - クールダウン期間外 ＋ 買い条件不成立 ➔ `見送り`
+  - クールダウン期間中の場合 ➔ `SKIP`
+  - クールダウン期間外 ＋ 買い条件成立 ➔ `BUY_CANDIDATE`
+  - クールダウン期間外 ＋ 買い条件不成立 ➔ `SKIP`
+
+### 判断フロー
+
+```mermaid
+flowchart TD
+    Start[開始] --> IsHolding{今持っているか?}
+
+    IsHolding -- はい --> CheckTakeProfit{利確ライン到達?}
+    CheckTakeProfit -- はい --> SellProfit[SELL_CANDIDATE]
+    CheckTakeProfit -- いいえ --> CheckStopLoss{損切りライン到達?}
+    CheckStopLoss -- はい --> SellLoss[SELL_CANDIDATE + クールダウン開始]
+    CheckStopLoss -- いいえ --> Holding[HOLDING]
+
+    IsHolding -- いいえ --> CheckCooldown{クールダウン中か?}
+    CheckCooldown -- はい --> SkipBuyCooldown[SKIP]
+    CheckCooldown -- いいえ --> CheckBuyCondition{買い条件を満たしたか?}
+    CheckBuyCondition -- はい --> DoBuy[BUY_CANDIDATE]
+    CheckBuyCondition -- いいえ --> SkipBuyCondition[SKIP]
+```
 
 ## 4. バックテストでの比較観点
 
