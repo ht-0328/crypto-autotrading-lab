@@ -55,6 +55,122 @@
                 "cwd": "${workspaceFolder}"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Backtest: export K-lines CSV",
+            "type": "shell",
+            "command": "./gradlew exportKlinesCsv",
+            "options": {
+                "cwd": "${workspaceFolder}/projects/crypto-autotrading-app",
+                "env": {
+                    "APP_CONFIG_PATH": "/workspace/config/application-gmo.yaml",
+                    "APP_DATA_DIR": "/workspace/data",
+                    "KLINE_EXPORT_SYMBOL": "${input:symbol}",
+                    "KLINE_EXPORT_INTERVAL": "${input:interval}",
+                    "KLINE_EXPORT_START_DATE": "${input:startDate}",
+                    "KLINE_EXPORT_END_DATE": "${input:endDate}",
+                    "KLINE_EXPORT_OUTPUT_PATH": "${input:exportOutputPath}"
+                }
+            },
+            "problemMatcher": [
+                "$gradle"
+            ]
+        },
+        {
+            "label": "Backtest: run",
+            "type": "shell",
+            "command": "./gradlew runBacktest",
+            "options": {
+                "cwd": "${workspaceFolder}/projects/crypto-autotrading-app",
+                "env": {
+                    "APP_CONFIG_PATH": "/workspace/config/application-gmo.yaml",
+                    "APP_DATA_DIR": "/workspace/data",
+                    "BACKTEST_KLINE_CSV_PATH": "${input:klineCsvPath}",
+                    "BACKTEST_STRATEGY_NAME": "${input:strategyName}",
+                    "BACKTEST_INITIAL_CAPITAL": "${input:initialCapital}",
+                    "BACKTEST_SUMMARY_OUTPUT_PATH": "${input:summaryOutputPath}",
+                    "BACKTEST_STEPS_OUTPUT_PATH": "${input:stepsOutputPath}"
+                }
+            },
+            "problemMatcher": [
+                "$gradle"
+            ]
+        },
+        {
+            "label": "Backtest: export and run",
+            "dependsOn": [
+                "Backtest: export K-lines CSV",
+                "Backtest: run"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "strategyName",
+            "type": "pickString",
+            "description": "バックテストで利用する戦略を選択",
+            "options": [
+                "SafeReboundStrategy",
+                "CooldownReboundStrategy",
+                "SimpleContrarianStrategy"
+            ],
+            "default": "SafeReboundStrategy"
+        },
+        {
+            "id": "symbol",
+            "type": "promptString",
+            "description": "取得するシンボル",
+            "default": "BTC"
+        },
+        {
+            "id": "interval",
+            "type": "promptString",
+            "description": "K線の間隔",
+            "default": "5min"
+        },
+        {
+            "id": "startDate",
+            "type": "promptString",
+            "description": "開始日 (例: 20260101)",
+            "default": "20260101"
+        },
+        {
+            "id": "endDate",
+            "type": "promptString",
+            "description": "終了日 (例: 20260505)",
+            "default": "20260505"
+        },
+        {
+            "id": "initialCapital",
+            "type": "promptString",
+            "description": "初期資金",
+            "default": "10000"
+        },
+        {
+            "id": "klineCsvPath",
+            "type": "promptString",
+            "description": "読み込むK線CSVのパス",
+            "default": "/workspace/data/backtest/input/btc_5min_20260101_20260505.csv"
+        },
+        {
+            "id": "exportOutputPath",
+            "type": "promptString",
+            "description": "K線CSVの出力先パス",
+            "default": "backtest/input/btc_5min_20260101_20260505.csv"
+        },
+        {
+            "id": "summaryOutputPath",
+            "type": "promptString",
+            "description": "サマリー結果の出力先パス",
+            "default": "/workspace/data/backtest/output/summary_${input:strategyName}_btc_5min_20260101_20260505.csv"
+        },
+        {
+            "id": "stepsOutputPath",
+            "type": "promptString",
+            "description": "ステップ詳細の出力先パス",
+            "default": "/workspace/data/backtest/output/steps_${input:strategyName}_btc_5min_20260101_20260505.csv"
         }
     ]
 }
