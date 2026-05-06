@@ -6,6 +6,12 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+    inputs:
+      use_public_api:
+        description: "Use Public API (GMO)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   backtest:
@@ -21,6 +27,35 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
+      - name: Start WireMock
+        if: ${{ inputs.use_public_api != true }}
+        run: |
+          docker run -d --name wiremock -p 8080:8080 -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
+          # Wait for WireMock to be healthy
+          for i in {1..10}; do
+            if curl -s http://localhost:8080/__admin/ > /dev/null; then
+              echo "WireMock is up"
+              break
+            fi
+            echo "Waiting for WireMock..."
+            sleep 2
+            if [ $i -eq 10 ]; then
+              echo "Failed to start WireMock"
+              exit 1
+            fi
+          done
+
+      - name: Prepare CI Config
+        run: |
+          mkdir -p build/ci-config
+          if [ "${{ inputs.use_public_api }}" == "true" ]; then
+            echo "APP_CONFIG_PATH=../../config/application-gmo.yaml" >> $GITHUB_ENV
+          else
+            # Create a temporary config that points to the WireMock container on localhost port 8080
+            cp config/application-ci.yaml build/ci-config/application-ci-local.yaml
+            echo "APP_CONFIG_PATH=../../build/ci-config/application-ci-local.yaml" >> $GITHUB_ENV
+          fi
+
       - name: Setup Data Directory
         run: |
           mkdir -p data/backtest/input
@@ -29,7 +64,6 @@ jobs:
       - name: Export K-lines CSV
         run: |
           cd projects/crypto-autotrading-app
-          export APP_CONFIG_PATH=../../config/application-gmo.yaml
           export APP_DATA_DIR=../../data
           export KLINE_EXPORT_SYMBOL=BTC
           export KLINE_EXPORT_INTERVAL=5min
@@ -59,7 +93,6 @@ jobs:
       - name: Run Backtest
         run: |
           cd projects/crypto-autotrading-app
-          export APP_CONFIG_PATH=../../config/application-gmo.yaml
           export APP_DATA_DIR=../../data
           export BACKTEST_KLINE_CSV_PATH=../../data/backtest/input/ci_btc_5min_20240101.csv
           export BACKTEST_STRATEGY_NAME=SafeReboundStrategy
@@ -118,3 +151,9 @@ jobs:
             data/app.log
             data/backtest/input/*.csv
             data/backtest/output/*.csv
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop wiremock || true
+          docker rm wiremock || true
