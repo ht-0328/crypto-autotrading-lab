@@ -34,15 +34,15 @@ class CooldownReboundStrategy(
             return createDecision(if (isHolding) TradeAction.HOLDING else TradeAction.SKIP, "データ不足（12本未満）")
         }
 
-        return if (!isHolding) {
-            if (isCooldownPeriod(klines, currentState.lastStopLossTime)) {
-                createDecision(TradeAction.SKIP, "クールダウン期間中")
-            } else {
-                judgeEntry(recentKlines)
-            }
-        } else {
-            judgeExit(recentKlines.last().close.toBigDecimal(), buyPrice)
+        if (isHolding) {
+            return judgeExit(recentKlines.last().close.toBigDecimal(), buyPrice)
         }
+
+        if (isCooldownPeriod(klines, currentState.lastStopLossTime)) {
+            return createDecision(TradeAction.SKIP, "クールダウン期間中")
+        }
+
+        return judgeEntry(recentKlines)
     }
 
     /**
