@@ -67,13 +67,16 @@ class CooldownReboundStrategy(
             return false
         }
 
-        val currentSize = sortedKlines.size
-        val klinesSinceStopLoss = currentSize - stopLossIndex
+        val currentIndex = sortedKlines.lastIndex
+        val elapsedKlineCount = currentIndex - stopLossIndex
 
-        // 現在のK線を含めて判定するため、<= config.cooldownLength で判定
-        // 例：損切り直後の足（klinesSinceStopLoss=1）はクールダウン中。
-        // 設定値が12なら、klinesSinceStopLoss が 12 以下の間はクールダウン期間とする。
-        return klinesSinceStopLoss <= config.cooldownLength
+        // The current kline might have the exact same time as the stop loss
+        // e.g. if we are evaluating during the same K-line period where the sell happened.
+        // Or it might be missing from the list.
+        if (elapsedKlineCount < 0) return false
+
+        // 損切りした次の足(差分1)〜指定本数(差分12)まではクールダウン期間とする
+        return elapsedKlineCount <= config.cooldownLength
     }
 
     /**
