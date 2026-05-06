@@ -6,6 +6,11 @@
 
 作業開始直後に、必ず以下を実行すること。
 
+- **基本の制約と期待動作**
+  - 読込対象: [`AGENTS.md`](AGENTS.md)
+  - 読込対象: [`docs/ai/agents-guidelines.md`](docs/ai/agents-guidelines.md) （絶対禁止事項とチェック項目）
+  - 読込対象: [`docs/ai/prompt-template.md`](docs/ai/prompt-template.md) （出力フォーマット）
+
 ```bash
 cat AGENTS.md
 cat docs/ai/agents-guidelines.md
@@ -14,12 +19,20 @@ cat docs/ai/prompt-template.md
 
 Pull Requestを作成・更新・レビューする場合は、追加で以下を実行すること。
 
+- **Pull Requestを作成・レビューする場合**
+  - 読込対象: [`.github/pull_request_template.md`](.github/pull_request_template.md)
+  - 読込対象: [`docs/ai/review-checklist.md`](docs/ai/review-checklist.md)
+
 ```bash
 cat .github/pull_request_template.md
 cat docs/ai/review-checklist.md
 ```
 
 Kotlinコードを追加・変更する場合は、追加で以下を実行すること。
+
+- **Kotlinコードを追加・変更する場合**
+  - 読込対象: [`docs/ai/kotlin-boundary-rules.md`](docs/ai/kotlin-boundary-rules.md)
+  - 読込対象: [`docs/ai/skills/kotlin-readable-code.SKILL.md`](docs/ai/skills/kotlin-readable-code.SKILL.md)
 
 ```bash
 cat docs/ai/kotlin-boundary-rules.md
@@ -30,6 +43,10 @@ cat docs/ai/skills/kotlin-readable-code.SKILL.md
 
 コード変更の粒度やレイヤー境界を扱う場合は、追加で以下を実行すること。
 
+- **コード変更の粒度やレイヤー境界を扱う場合**
+  - 読込対象: [`docs/ai/change-granularity.md`](docs/ai/change-granularity.md)
+  - 読込対象: [`docs/ai/kotlin-boundary-rules.md`](docs/ai/kotlin-boundary-rules.md)
+
 ```bash
 cat docs/ai/change-granularity.md
 cat docs/ai/kotlin-boundary-rules.md
@@ -37,13 +54,18 @@ cat docs/ai/kotlin-boundary-rules.md
 
 AIスキルを使う必要がある場合は、追加で以下を実行すること。
 
+- **AIスキルの適用が必要な場合**
+  - 読込対象: [`docs/ai/skills-catalog.md`](docs/ai/skills-catalog.md)
+
 ```bash
 cat docs/ai/skills-catalog.md
 ```
 
-必要なスキル定義ファイルがある場合は、そのファイルも `cat` で読むこと。
+さらに、必要なスキル定義ファイルがある場合は、そのファイルも `cat` で読むこと。
 
 例:
+
+- 読込対象: [`docs/ai/skills/spec-writer.SKILL.md`](docs/ai/skills/spec-writer.SKILL.md)
 
 ```bash
 cat docs/ai/skills/spec-writer.SKILL.md
