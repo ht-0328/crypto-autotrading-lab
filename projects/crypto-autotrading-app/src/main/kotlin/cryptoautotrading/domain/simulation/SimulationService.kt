@@ -45,8 +45,9 @@ class SimulationService {
                 if (!currentState.isHolding && currentState.cashBalance >= tradeAmountBd) {
                     // 購入する
                     val amount = tradeAmountBd.divide(currentPrice, 8, RoundingMode.DOWN)
+                    val actualBuyAmount = amount * currentPrice
                     SimulationState(
-                        cashBalance = currentState.cashBalance - tradeAmountBd,
+                        cashBalance = currentState.cashBalance - actualBuyAmount,
                         isHolding = true,
                         buyPrice = currentPrice,
                         holdingAmount = amount,
