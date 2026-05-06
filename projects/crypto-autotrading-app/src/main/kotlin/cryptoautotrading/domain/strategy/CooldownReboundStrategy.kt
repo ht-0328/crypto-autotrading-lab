@@ -102,16 +102,13 @@ class CooldownReboundStrategy(
         val stopLossIndex = sortedKlines.indexOfLast { it.openTime == lastStopLossTime }
 
         if (stopLossIndex == -1) {
-            // 損切りした時刻のK線が見つからない場合はクールダウン期間外とする（仕様に依存するが安全側に倒す）
+            // 損切りした時刻のK線が見つからない場合は、位置を特定できないためクールダウン期間外とする
             return false
         }
 
         val currentIndex = sortedKlines.lastIndex
         val elapsedKlineCount = currentIndex - stopLossIndex
 
-        // The current kline might have the exact same time as the stop loss
-        // e.g. if we are evaluating during the same K-line period where the sell happened.
-        // Or it might be missing from the list.
         if (elapsedKlineCount < 0) return false
 
         // 損切りした次の足(差分1)〜指定本数(差分12)まではクールダウン期間とする
