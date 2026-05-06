@@ -84,7 +84,8 @@ object ConfigLoader {
                 buyThreshold = 0.005,
                 sellThreshold = 0.005,
                 volatilityThreshold = 0.003,
-                sharpChangeThreshold = 0.01
+                sharpChangeThreshold = 0.01,
+                cooldownLength = 12
             ),
             api = ApiConfig(
                 retryCount = 3,
@@ -114,6 +115,7 @@ object ConfigLoader {
         val envSellThreshold = System.getenv("TRADING_SELL_THRESHOLD")
         val envVolatilityThreshold = System.getenv("TRADING_VOLATILITY_THRESHOLD")
         val envSharpChangeThreshold = System.getenv("TRADING_SHARP_CHANGE_THRESHOLD")
+        val envCooldownLength = System.getenv("TRADING_COOLDOWN_LENGTH")
         val envRetryCount = System.getenv("API_RETRY_COUNT")
         val envBaseUrl = System.getenv("API_BASE_URL")
         val envOutputPath = System.getenv("OUTPUT_PATH")
@@ -131,7 +133,8 @@ object ConfigLoader {
                 buyThreshold = envBuyThreshold?.toDoubleOrNull() ?: base.trading.buyThreshold,
                 sellThreshold = envSellThreshold?.toDoubleOrNull() ?: base.trading.sellThreshold,
                 volatilityThreshold = envVolatilityThreshold?.toDoubleOrNull() ?: base.trading.volatilityThreshold,
-                sharpChangeThreshold = envSharpChangeThreshold?.toDoubleOrNull() ?: base.trading.sharpChangeThreshold
+                sharpChangeThreshold = envSharpChangeThreshold?.toDoubleOrNull() ?: base.trading.sharpChangeThreshold,
+                cooldownLength = envCooldownLength?.toIntOrNull() ?: base.trading.cooldownLength
             ),
             api = ApiConfig(
                 retryCount = envRetryCount?.toIntOrNull() ?: base.api.retryCount,

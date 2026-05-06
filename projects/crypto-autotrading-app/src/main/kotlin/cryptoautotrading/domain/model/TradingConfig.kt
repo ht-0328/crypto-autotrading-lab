@@ -28,5 +28,7 @@ data class TradingConfig(
     @JsonProperty("volatility_threshold")
     val volatilityThreshold: Double,
     @JsonProperty("sharp_change_threshold")
-    val sharpChangeThreshold: Double
+    val sharpChangeThreshold: Double,
+    @JsonProperty("cooldown_length")
+    val cooldownLength: Int = 12
 )

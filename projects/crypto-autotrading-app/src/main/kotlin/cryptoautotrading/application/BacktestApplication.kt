@@ -4,6 +4,7 @@ import cryptoautotrading.domain.backtest.BacktestEngine
 import cryptoautotrading.domain.model.TradingConfig
 import cryptoautotrading.domain.repository.BacktestResultOutputPort
 import cryptoautotrading.domain.repository.KlineCsvReader
+import cryptoautotrading.domain.strategy.CooldownReboundStrategy
 import cryptoautotrading.domain.strategy.SafeReboundStrategy
 import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
@@ -83,6 +84,7 @@ class BacktestApplication(
     private fun createStrategy(config: TradingConfig): TradingStrategy {
         return when (config.strategyName) {
             "SafeReboundStrategy" -> SafeReboundStrategy(config)
+            "CooldownReboundStrategy" -> CooldownReboundStrategy(config)
             "SimpleContrarianStrategy" -> SimpleContrarianStrategy(config)
             else -> throw IllegalArgumentException("対応していない売買戦略名が指定されました: ${config.strategyName}")
         }

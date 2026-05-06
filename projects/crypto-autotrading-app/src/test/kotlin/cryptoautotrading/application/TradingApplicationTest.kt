@@ -5,6 +5,7 @@ import cryptoautotrading.domain.model.AppSettings
 import cryptoautotrading.domain.model.ApiConfig
 import cryptoautotrading.domain.model.OutputConfig
 import cryptoautotrading.domain.model.TradingConfig
+import cryptoautotrading.domain.strategy.CooldownReboundStrategy
 import cryptoautotrading.domain.strategy.SafeReboundStrategy
 import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import io.mockk.mockk
@@ -55,6 +56,21 @@ class TradingApplicationTest {
     }
 
     @Test
+    fun `strategyName = CooldownReboundStrategy で CooldownReboundStrategy が作られること`() {
+        val config = createAppConfig("CooldownReboundStrategy")
+        val app = TradingApplication(
+            config = config,
+            marketDataClient = mockk(),
+            stateRepository = mockk(),
+            tradeHistoryRepository = mockk(),
+            resultOutputPort = mockk()
+        )
+
+        val strategy = invokeCreateStrategy(app, config.trading)
+        assertTrue(strategy is CooldownReboundStrategy)
+    }
+
+    @Test
     fun `strategyName = SimpleContrarianStrategy で SimpleContrarianStrategy が作られること`() {
         val config = createAppConfig("SimpleContrarianStrategy")
         val app = TradingApplication(
@@ -85,7 +101,7 @@ class TradingApplicationTest {
         }
 
         val cause = exception.cause ?: exception
-        assertTrue(cause.message!!.contains("Unknown strategyName: UnknownStrategy. Supported strategies: SafeReboundStrategy, SimpleContrarianStrategy"))
+        assertTrue(cause.message!!.contains("Unknown strategyName: UnknownStrategy. Supported strategies: SafeReboundStrategy, CooldownReboundStrategy, SimpleContrarianStrategy"))
     }
 
     @Test
