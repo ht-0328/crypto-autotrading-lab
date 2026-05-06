@@ -68,7 +68,8 @@ class BacktestEngine {
                 currentState = currentState,
                 decision = decision,
                 currentPrice = currentPrice,
-                tradeAmount = tradeAmount
+                tradeAmount = tradeAmount,
+                eventTime = kline.openTime
             )
 
             val previousRealizedProfitAndLoss = if (processedKlines.size == 1) {

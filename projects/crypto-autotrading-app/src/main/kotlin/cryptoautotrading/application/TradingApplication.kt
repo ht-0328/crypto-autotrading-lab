@@ -10,6 +10,7 @@ import cryptoautotrading.domain.repository.SimulationStateRepository
 import cryptoautotrading.domain.repository.TradeHistoryRepository
 import cryptoautotrading.domain.simulation.ProfitAndLossCalculator
 import cryptoautotrading.domain.simulation.SimulationService
+import cryptoautotrading.domain.strategy.CooldownReboundStrategy
 import cryptoautotrading.domain.strategy.SafeReboundStrategy
 import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
@@ -90,7 +91,8 @@ class TradingApplication(
                 logger.warn { "Klines data is empty. Skipping this run." }
                 return
             }
-            val currentPrice = klineData.sortedBy { it.openTime }.last().close.toBigDecimal()
+            val latestKline = klineData.sortedBy { it.openTime }.last()
+            val currentPrice = latestKline.close.toBigDecimal()
 
             // 損益と想定損益の計算
             val pnl = pnlCalculator.calculate(
@@ -106,7 +108,8 @@ class TradingApplication(
                 currentState = currentState,
                 decision = decision,
                 currentPrice = currentPrice,
-                tradeAmount = config.trading.tradeAmount
+                tradeAmount = config.trading.tradeAmount,
+                eventTime = latestKline.openTime
             )
             logger.info { "Next Simulation State: $nextState" }
 
@@ -214,8 +217,9 @@ class TradingApplication(
     private fun createStrategy(config: TradingConfig): TradingStrategy {
         return when (config.strategyName) {
             "SafeReboundStrategy" -> SafeReboundStrategy(config)
+            "CooldownReboundStrategy" -> CooldownReboundStrategy(config)
             "SimpleContrarianStrategy" -> SimpleContrarianStrategy(config)
-            else -> error("Unknown strategyName: ${config.strategyName}. Supported strategies: SafeReboundStrategy, SimpleContrarianStrategy")
+            else -> error("Unknown strategyName: ${config.strategyName}. Supported strategies: SafeReboundStrategy, CooldownReboundStrategy, SimpleContrarianStrategy")
         }
     }
 

@@ -118,6 +118,35 @@ class SimulationServiceTest {
         assertEquals(BigDecimal("3000.00"), nextState.realizedProfitAndLoss.setScale(2))
 
         assertNotEquals(currentState.lastUpdatedAt, nextState.lastUpdatedAt)
+        assertEquals("", nextState.lastStopLossTime) // Profit >= 0, so no stop loss time update
+    }
+
+    @Test
+    fun `判定がSELL_CANDIDATEで損切りの場合、lastStopLossTimeが更新されること`() {
+        // Arrange
+        val currentState = SimulationState(
+            cashBalance = BigDecimal("10000"),
+            isHolding = true,
+            buyPrice = BigDecimal("50000.0"),
+            holdingAmount = BigDecimal("0.25"),
+            realizedProfitAndLoss = BigDecimal.ZERO,
+            lastUpdatedAt = "2023-01-01T00:00:00",
+            lastStopLossTime = ""
+        )
+        val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
+        val currentPrice = BigDecimal("40000.0") // Price dropped
+        val tradeAmount = 10000
+
+        // Act
+        val nextState = simulationService.updateState(currentState, decision, currentPrice, tradeAmount, "2023-01-01T01:00:00")
+
+        // Assert
+        assertFalse(nextState.isHolding)
+        // sellAmount = 0.25 * 40000 = 10000
+        // buyAmount = 0.25 * 50000 = 12500
+        // profitAndLoss = -2500
+        assertEquals(BigDecimal("-2500.00"), nextState.realizedProfitAndLoss.setScale(2))
+        assertEquals("2023-01-01T01:00:00", nextState.lastStopLossTime)
     }
 
     @Test

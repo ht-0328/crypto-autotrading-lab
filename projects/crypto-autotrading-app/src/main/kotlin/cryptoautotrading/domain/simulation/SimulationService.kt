@@ -23,18 +23,21 @@ class SimulationService {
      * @param decision 売買判定結果
      * @param currentPrice 現在の価格
      * @param tradeAmount 1回の取引額
+     * @param eventTime イベント発生時刻（K線の時刻など）。指定がない場合は現在時刻が使用される。
      * @return 更新後のシミュレーション状態
      */
     fun updateState(
         currentState: SimulationState,
         decision: TradeDecision,
         currentPrice: BigDecimal,
-        tradeAmount: Int
+        tradeAmount: Int,
+        eventTime: String = ""
     ): SimulationState {
         logger.debug { "シミュレーション状態の更新処理を開始します" }
-        logger.debug { "更新前状態: $currentState, 判定結果: ${decision.action}, 現在価格: $currentPrice, 取引額: $tradeAmount" }
+        logger.debug { "更新前状態: $currentState, 判定結果: ${decision.action}, 現在価格: $currentPrice, 取引額: $tradeAmount, イベント時刻: $eventTime" }
 
         val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        val timeToRecord = if (eventTime.isNotBlank()) eventTime else nowStr
 
         val nextState = when (decision.action) {
             TradeAction.BUY_CANDIDATE -> {
@@ -48,7 +51,8 @@ class SimulationService {
                         buyPrice = currentPrice,
                         holdingAmount = amount,
                         realizedProfitAndLoss = currentState.realizedProfitAndLoss,
-                        lastUpdatedAt = nowStr
+                        lastUpdatedAt = nowStr,
+                        lastStopLossTime = currentState.lastStopLossTime
                     )
                 } else {
                     // すでに保有している、または残金不足の場合は状態を維持
@@ -62,13 +66,17 @@ class SimulationService {
                     val buyAmount = currentState.holdingAmount * currentState.buyPrice
                     val profitAndLoss = sellAmount - buyAmount
 
+                    val isStopLoss = profitAndLoss < BigDecimal.ZERO
+                    val newStopLossTime = if (isStopLoss) timeToRecord else currentState.lastStopLossTime
+
                     SimulationState(
                         cashBalance = currentState.cashBalance + sellAmount,
                         isHolding = false,
                         buyPrice = BigDecimal.ZERO,
                         holdingAmount = BigDecimal.ZERO,
                         realizedProfitAndLoss = currentState.realizedProfitAndLoss + profitAndLoss,
-                        lastUpdatedAt = nowStr
+                        lastUpdatedAt = nowStr,
+                        lastStopLossTime = newStopLossTime
                     )
                 } else {
                     // 保有していない、または売却に必要なデータがない場合は状態を維持

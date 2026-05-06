@@ -29,5 +29,7 @@ data class SimulationState(
     @Serializable(with = BigDecimalSerializer::class)
     val realizedProfitAndLoss: BigDecimal = BigDecimal.ZERO,
 
-    val lastUpdatedAt: String = ""
+    val lastUpdatedAt: String = "",
+
+    val lastStopLossTime: String = ""
 )
