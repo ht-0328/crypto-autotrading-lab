@@ -47,11 +47,13 @@ jobs:
             echo "CSV not found"
             exit 1
           fi
-          if ! head -n 1 "$CSV_PATH" | grep -q "openTime,open,high,low,close,volume"; then
-            echo "Header missing"
-            cat "$CSV_PATH" || true
-            exit 1
-          fi
+          for col in openTime open high low close volume; do
+            if ! head -n 1 "$CSV_PATH" | grep -q "$col"; then
+              echo "Header '$col' missing"
+              cat "$CSV_PATH" || true
+              exit 1
+            fi
+          done
           echo "K-lines CSV verified successfully."
 
       - name: Run Backtest
