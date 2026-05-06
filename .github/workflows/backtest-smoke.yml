@@ -27,9 +27,6 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
-      - name: Setup Network
-        run: docker network create crypto-ci-net
-
       - name: Start WireMock
         if: ${{ inputs.use_public_api != true }}
         run: |
@@ -55,8 +52,7 @@ jobs:
             echo "APP_CONFIG_PATH=../../config/application-gmo.yaml" >> $GITHUB_ENV
           else
             # Create a temporary config that points to the WireMock container on localhost port 8080
-            # (Note: Backtest runs natively on runner, not inside docker network, so localhost is correct)
-            sed "s|http://localhost:8080|http://localhost:8080|g" config/application-ci.yaml > build/ci-config/application-ci-local.yaml
+            cp config/application-ci.yaml build/ci-config/application-ci-local.yaml
             echo "APP_CONFIG_PATH=../../build/ci-config/application-ci-local.yaml" >> $GITHUB_ENV
           fi
 
@@ -161,4 +157,3 @@ jobs:
         run: |
           docker stop wiremock || true
           docker rm wiremock || true
-          docker network rm crypto-ci-net || true
