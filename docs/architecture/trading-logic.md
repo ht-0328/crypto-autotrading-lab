@@ -18,12 +18,13 @@
 - [phase1-overview.md](phase1-overview.md)
 - [cooldown-rebound-strategy.md](cooldown-rebound-strategy.md)
 - [trend-confirm-rebound-strategy.md](trend-confirm-rebound-strategy.md)
+- [atr-trend-confirm-rebound-strategy.md](atr-trend-confirm-rebound-strategy.md)
 
 ## 現在の採用戦略
 
 - 現在のデフォルト設定（売買ルール）は **`SafeReboundStrategy`** です。
 - `SafeReboundStrategy` は、**買った価格（buyPrice）を基準**に売るかどうかを判断します。
-- その他の派生戦略として、損切り後の再エントリーを制限する **`CooldownReboundStrategy`** や、さらに短期トレンド上向きを確認する **`TrendConfirmReboundStrategy`** などがあります（各詳細仕様は個別ドキュメントを参照）。
+- その他の派生戦略として、損切り後の再エントリーを制限する **`CooldownReboundStrategy`** や、さらに短期トレンド上向きを確認する **`TrendConfirmReboundStrategy`** 、ATRを用いた変動幅で利確・損切りを行う **`AtrTrendConfirmReboundStrategy`** などがあります（各詳細仕様は個別ドキュメントを参照）。
 - **Phase1 では実際の取引所に注文を出しません**。シミュレーション上の状態更新だけを行います。
 
 ## 用語補足
