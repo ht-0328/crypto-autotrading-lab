@@ -114,7 +114,8 @@
             "options": [
                 "SafeReboundStrategy",
                 "CooldownReboundStrategy",
-                "SimpleContrarianStrategy"
+                "SimpleContrarianStrategy",
+                "TrendConfirmReboundStrategy"
             ],
             "default": "SafeReboundStrategy"
         },
