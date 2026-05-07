@@ -97,4 +97,83 @@ class TrendConfirmReboundStrategyTest {
         assertEquals(TradeAction.SKIP, decision.action)
         assertTrue(decision.reason.contains("クールダウン期間中"))
     }
+
+    @Test
+    fun `急変動時は SKIP になること`() {
+        val strategy = TrendConfirmReboundStrategy(defaultConfig)
+        val klines = (1..12).map { i ->
+            when (i) {
+                1 -> createKline(String.format("%02d", i), "100", "100", "100", "100")
+                12 -> createKline(String.format("%02d", i), "90", "150", "90", "100") // high が 150 となり急変動の閾値を超える
+                else -> createKline(String.format("%02d", i), "90", "90", "90", "90")
+            }
+        }
+
+        val decision = strategy.judge(klines, SimulationState(isHolding = false, lastStopLossTime = ""))
+
+        assertEquals(TradeAction.SKIP, decision.action)
+        assertTrue(decision.reason.contains("急変動"))
+    }
+
+    @Test
+    fun `1時間下落条件を満たさない場合は SKIP になること`() {
+        val strategy = TrendConfirmReboundStrategy(defaultConfig)
+        val klines = (1..12).map { i ->
+            when (i) {
+                1 -> createKline(String.format("%02d", i), "100", "100", "100", "100")
+                // 下落率が buyThreshold (0.05 = 5%) 未満になるように価格を設定
+                12 -> createKline(String.format("%02d", i), "96", "98", "96", "98")
+                else -> createKline(String.format("%02d", i), "98", "98", "98", "98")
+            }
+        }
+
+        val decision = strategy.judge(klines, SimulationState(isHolding = false, lastStopLossTime = ""))
+
+        assertEquals(TradeAction.SKIP, decision.action)
+        assertTrue(decision.reason.contains("条件に合致せず（1時間下落不足）"))
+    }
+
+    @Test
+    fun `反発K線条件を満たさない場合は SKIP になること`() {
+        val strategy = TrendConfirmReboundStrategy(defaultConfig)
+        val klines = (1..12).map { i ->
+            when (i) {
+                1 -> createKline(String.format("%02d", i), "100", "100", "100", "100")
+                // 陰線かつ下ヒゲがない（反発ではない）状態
+                12 -> createKline(String.format("%02d", i), "90", "90", "85", "85")
+                else -> createKline(String.format("%02d", i), "92", "92", "92", "92")
+            }
+        }
+
+        val decision = strategy.judge(klines, SimulationState(isHolding = false, lastStopLossTime = ""))
+
+        assertEquals(TradeAction.SKIP, decision.action)
+        assertTrue(decision.reason.contains("反発未確認"))
+    }
+
+    @Test
+    fun `保有中の利確判定が CooldownReboundStrategy と同じであること`() {
+        val strategy = TrendConfirmReboundStrategy(defaultConfig)
+        val klines = (1..12).map { i ->
+            createKline(String.format("%02d", i), "100", "110", "100", "106") // 利確ライン 100 * 1.05 = 105 を超える
+        }
+
+        val decision = strategy.judge(klines, SimulationState(isHolding = true, buyPrice = BigDecimal("100")))
+
+        assertEquals(TradeAction.SELL_CANDIDATE, decision.action)
+        assertTrue(decision.reason.contains("利確"))
+    }
+
+    @Test
+    fun `保有中の損切り判定が CooldownReboundStrategy と同じであること`() {
+        val strategy = TrendConfirmReboundStrategy(defaultConfig)
+        val klines = (1..12).map { i ->
+            createKline(String.format("%02d", i), "100", "100", "90", "94") // 損切りライン 100 * 0.95 = 95 を下回る
+        }
+
+        val decision = strategy.judge(klines, SimulationState(isHolding = true, buyPrice = BigDecimal("100")))
+
+        assertEquals(TradeAction.SELL_CANDIDATE, decision.action)
+        assertTrue(decision.reason.contains("損切り"))
+    }
 }
