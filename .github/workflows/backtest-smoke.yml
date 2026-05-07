@@ -12,6 +12,16 @@ on:
         required: false
         type: boolean
         default: false
+      strategy_name:
+        description: "Trading strategy to use"
+        required: false
+        type: choice
+        options:
+          - SafeReboundStrategy
+          - CooldownReboundStrategy
+          - TrendConfirmReboundStrategy
+          - SimpleContrarianStrategy
+        default: SafeReboundStrategy
 
 jobs:
   backtest:
@@ -95,7 +105,7 @@ jobs:
           cd projects/crypto-autotrading-app
           export APP_DATA_DIR=../../data
           export BACKTEST_KLINE_CSV_PATH=../../data/backtest/input/ci_btc_5min_20240101.csv
-          export BACKTEST_STRATEGY_NAME=SafeReboundStrategy
+          export BACKTEST_STRATEGY_NAME=${{ inputs.strategy_name || 'SafeReboundStrategy' }}
           export BACKTEST_INITIAL_CAPITAL=10000
           export BACKTEST_SUMMARY_OUTPUT_PATH=../../data/backtest/output/ci_summary_btc_5min_20240101.csv
           export BACKTEST_STEPS_OUTPUT_PATH=../../data/backtest/output/ci_steps_btc_5min_20240101.csv
