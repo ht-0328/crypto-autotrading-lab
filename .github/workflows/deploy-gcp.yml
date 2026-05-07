@@ -14,6 +14,8 @@ on:
         type: choice
         options:
           - SafeReboundStrategy
+          - CooldownReboundStrategy
+          - TrendConfirmReboundStrategy
           - SimpleContrarianStrategy
         default: SafeReboundStrategy
 
