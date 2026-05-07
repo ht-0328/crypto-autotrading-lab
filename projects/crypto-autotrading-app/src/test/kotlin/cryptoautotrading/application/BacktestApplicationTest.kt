@@ -58,6 +58,43 @@ class BacktestApplicationTest {
     }
 
     @Test
+    fun `TrendConfirmReboundStrategyを指定して実行できること`() {
+        // Arrange
+        val mockReader = mockk<KlineCsvReader>()
+        val mockOutputPort = mockk<BacktestResultOutputPort>(relaxed = true)
+        val dummyConfig = cryptoautotrading.domain.model.TradingConfig(
+            strategyName = "TestStrategy",
+            symbol = "BTC",
+            initialCapital = 10000,
+            tradeAmount = 1000,
+            buyThreshold = 0.01,
+            sellThreshold = 0.01,
+            volatilityThreshold = 0.01,
+            sharpChangeThreshold = 0.01,
+            cooldownLength = 12
+        )
+
+        every { mockReader.read(any()) } returns listOf(
+            Kline("202605010000", "100", "110", "90", "105", "10")
+        )
+
+        val application = BacktestApplication(mockReader, mockOutputPort, dummyConfig)
+
+        // Act
+        application.run(
+            klineCsvPath = "dummy.csv",
+            strategyName = "TrendConfirmReboundStrategy",
+            initialCapitalStr = "10000",
+            summaryOutputPath = "summary.csv",
+            stepsOutputPath = "steps.csv"
+        )
+
+        // Assert
+        verify { mockReader.read("dummy.csv") }
+        verify { mockOutputPort.output(any(), "summary.csv", "steps.csv") }
+    }
+
+    @Test
     fun `CooldownReboundStrategyを指定して実行できること`() {
         // Arrange
         val mockReader = mockk<KlineCsvReader>()
