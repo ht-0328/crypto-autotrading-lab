@@ -85,7 +85,10 @@ object ConfigLoader {
                 sellThreshold = 0.005,
                 volatilityThreshold = 0.003,
                 sharpChangeThreshold = 0.01,
-                cooldownLength = 12
+                cooldownLength = 12,
+                atrLength = 14,
+                atrProfitMultiplier = 2.0,
+                atrLossMultiplier = 2.0
             ),
             api = ApiConfig(
                 retryCount = 3,
@@ -116,6 +119,9 @@ object ConfigLoader {
         val envVolatilityThreshold = System.getenv("TRADING_VOLATILITY_THRESHOLD")
         val envSharpChangeThreshold = System.getenv("TRADING_SHARP_CHANGE_THRESHOLD")
         val envCooldownLength = System.getenv("TRADING_COOLDOWN_LENGTH")
+        val envAtrLength = System.getenv("TRADING_ATR_LENGTH")
+        val envAtrProfitMultiplier = System.getenv("TRADING_ATR_PROFIT_MULTIPLIER")
+        val envAtrLossMultiplier = System.getenv("TRADING_ATR_LOSS_MULTIPLIER")
         val envRetryCount = System.getenv("API_RETRY_COUNT")
         val envBaseUrl = System.getenv("API_BASE_URL")
         val envOutputPath = System.getenv("OUTPUT_PATH")
@@ -134,7 +140,10 @@ object ConfigLoader {
                 sellThreshold = envSellThreshold?.toDoubleOrNull() ?: base.trading.sellThreshold,
                 volatilityThreshold = envVolatilityThreshold?.toDoubleOrNull() ?: base.trading.volatilityThreshold,
                 sharpChangeThreshold = envSharpChangeThreshold?.toDoubleOrNull() ?: base.trading.sharpChangeThreshold,
-                cooldownLength = envCooldownLength?.toIntOrNull() ?: base.trading.cooldownLength
+                cooldownLength = envCooldownLength?.toIntOrNull() ?: base.trading.cooldownLength,
+                atrLength = envAtrLength?.toIntOrNull() ?: base.trading.atrLength,
+                atrProfitMultiplier = envAtrProfitMultiplier?.toDoubleOrNull() ?: base.trading.atrProfitMultiplier,
+                atrLossMultiplier = envAtrLossMultiplier?.toDoubleOrNull() ?: base.trading.atrLossMultiplier
             ),
             api = ApiConfig(
                 retryCount = envRetryCount?.toIntOrNull() ?: base.api.retryCount,

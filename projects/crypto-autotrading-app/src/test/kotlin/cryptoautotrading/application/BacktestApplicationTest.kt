@@ -58,6 +58,22 @@ class BacktestApplicationTest {
     }
 
     @Test
+    fun `AtrTrendConfirmReboundStrategyを指定して実行できること`() {
+        val dummyConfig = cryptoautotrading.domain.model.TradingConfig(strategyName = "AtrTrendConfirmReboundStrategy", symbol = "BTC", initialCapital = 10000, tradeAmount = 1000, buyThreshold = 0.01, sellThreshold = 0.01, volatilityThreshold = 0.01, sharpChangeThreshold = 0.01)
+        val app = BacktestApplication(mockk(relaxed = true), mockk(relaxed = true), dummyConfig)
+
+        org.junit.jupiter.api.assertDoesNotThrow {
+            app.run(
+                klineCsvPath = "dummy.csv",
+                strategyName = "AtrTrendConfirmReboundStrategy",
+                initialCapitalStr = "10000",
+                summaryOutputPath = "summary.csv",
+                stepsOutputPath = "steps.csv"
+            )
+        }
+    }
+
+    @Test
     fun `TrendConfirmReboundStrategyを指定して実行できること`() {
         // Arrange
         val mockReader = mockk<KlineCsvReader>()
