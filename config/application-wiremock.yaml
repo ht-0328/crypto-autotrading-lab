@@ -5,6 +5,12 @@ app:
 
 # 取引関連の設定
 trading:
+  # ATR計算に使用するK線の数
+  atr_length: 14
+  # ATR利確倍率
+  atr_profit_multiplier: 2.0
+  # ATR損切り倍率
+  atr_loss_multiplier: 2.0
   strategy_name: "SafeReboundStrategy"
   # 取引する通貨ペア（例: BTC, ETH）
   symbol: "BTC"

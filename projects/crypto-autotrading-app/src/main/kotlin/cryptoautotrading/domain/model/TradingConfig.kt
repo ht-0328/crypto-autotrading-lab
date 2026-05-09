@@ -12,6 +12,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * @property sellThreshold 売り注文を出す閾値
  * @property volatilityThreshold ボラティリティの閾値
  * @property sharpChangeThreshold 急変動の閾値
+ * @property atrLength ATR計算に使用するK線の数
+ * @property atrProfitMultiplier ATR利確倍率
+ * @property atrLossMultiplier ATR損切り倍率
  */
 data class TradingConfig(
     @JsonProperty("strategy_name")
@@ -30,5 +33,11 @@ data class TradingConfig(
     @JsonProperty("sharp_change_threshold")
     val sharpChangeThreshold: Double,
     @JsonProperty("cooldown_length")
-    val cooldownLength: Int = 12
+    val cooldownLength: Int = 12,
+    @JsonProperty("atr_length")
+    val atrLength: Int = 14,
+    @JsonProperty("atr_profit_multiplier")
+    val atrProfitMultiplier: Double = 2.0,
+    @JsonProperty("atr_loss_multiplier")
+    val atrLossMultiplier: Double = 2.0
 )

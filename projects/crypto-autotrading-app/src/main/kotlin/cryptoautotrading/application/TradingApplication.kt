@@ -14,6 +14,7 @@ import cryptoautotrading.domain.strategy.CooldownReboundStrategy
 import cryptoautotrading.domain.strategy.SafeReboundStrategy
 import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
+import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
@@ -220,8 +221,9 @@ class TradingApplication(
             "SafeReboundStrategy" -> SafeReboundStrategy(config)
             "CooldownReboundStrategy" -> CooldownReboundStrategy(config)
             "TrendConfirmReboundStrategy" -> TrendConfirmReboundStrategy(config)
+            "AtrTrendConfirmReboundStrategy" -> AtrTrendConfirmReboundStrategy(config)
             "SimpleContrarianStrategy" -> SimpleContrarianStrategy(config)
-            else -> error("Unknown strategyName: ${config.strategyName}. Supported strategies: SafeReboundStrategy, CooldownReboundStrategy, TrendConfirmReboundStrategy, SimpleContrarianStrategy")
+            else -> error("Unknown strategyName: ${config.strategyName}. Supported strategies: SafeReboundStrategy, CooldownReboundStrategy, TrendConfirmReboundStrategy, AtrTrendConfirmReboundStrategy, SimpleContrarianStrategy")
         }
     }
 

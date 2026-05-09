@@ -9,6 +9,7 @@ import cryptoautotrading.domain.strategy.CooldownReboundStrategy
 import cryptoautotrading.domain.strategy.SafeReboundStrategy
 import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
+import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -72,6 +73,21 @@ class TradingApplicationTest {
     }
 
     @Test
+    fun `strategyName = AtrTrendConfirmReboundStrategy で AtrTrendConfirmReboundStrategy が作られること`() {
+        val config = createAppConfig("AtrTrendConfirmReboundStrategy")
+        val app = TradingApplication(
+            config = config,
+            marketDataClient = mockk(),
+            stateRepository = mockk(),
+            tradeHistoryRepository = mockk(),
+            resultOutputPort = mockk()
+        )
+
+        val strategy = invokeCreateStrategy(app, config.trading)
+        assertTrue(strategy is AtrTrendConfirmReboundStrategy)
+    }
+
+    @Test
     fun `strategyName = TrendConfirmReboundStrategy で TrendConfirmReboundStrategy が作られること`() {
         val config = createAppConfig("TrendConfirmReboundStrategy")
         val app = TradingApplication(
@@ -117,7 +133,7 @@ class TradingApplicationTest {
         }
 
         val cause = exception.cause ?: exception
-        assertTrue(cause.message!!.contains("Unknown strategyName: UnknownStrategy. Supported strategies: SafeReboundStrategy, CooldownReboundStrategy, TrendConfirmReboundStrategy, SimpleContrarianStrategy"))
+        assertTrue(cause.message!!.contains("Unknown strategyName: UnknownStrategy. Supported strategies: SafeReboundStrategy, CooldownReboundStrategy, TrendConfirmReboundStrategy, AtrTrendConfirmReboundStrategy, SimpleContrarianStrategy"))
     }
 
     @Test

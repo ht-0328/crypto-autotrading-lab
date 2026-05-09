@@ -53,7 +53,8 @@ class SimulationService {
                         holdingAmount = amount,
                         realizedProfitAndLoss = currentState.realizedProfitAndLoss,
                         lastUpdatedAt = nowStr,
-                        lastStopLossTime = currentState.lastStopLossTime
+                        lastStopLossTime = currentState.lastStopLossTime,
+                        entryAtr = decision.atr
                     )
                 } else {
                     // すでに保有している、または残金不足の場合は状態を維持
@@ -77,7 +78,8 @@ class SimulationService {
                         holdingAmount = BigDecimal.ZERO,
                         realizedProfitAndLoss = currentState.realizedProfitAndLoss + profitAndLoss,
                         lastUpdatedAt = nowStr,
-                        lastStopLossTime = newStopLossTime
+                        lastStopLossTime = newStopLossTime,
+                        entryAtr = null
                     )
                 } else {
                     // 保有していない、または売却に必要なデータがない場合は状態を維持
