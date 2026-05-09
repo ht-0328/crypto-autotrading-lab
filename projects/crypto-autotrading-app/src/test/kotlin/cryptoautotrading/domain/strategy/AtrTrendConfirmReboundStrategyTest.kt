@@ -35,40 +35,19 @@ class AtrTrendConfirmReboundStrategyTest {
     fun `買い条件を満たす場合、BUY_CANDIDATEとなりATRが算出されること`() {
         val strategy = AtrTrendConfirmReboundStrategy(defaultConfig)
 
+        // 1時間下落条件(5%以上)と反発、MA5上抜けをすべて満たすK線を生成
         val klines = (1..15).map { i ->
             when (i) {
-                1 -> createKline(String.format("%02d", i), "100", "100", "100", "100")
-                in 2..10 -> createKline(String.format("%02d", i), "90", "90", "90", "90")
-                11 -> createKline(String.format("%02d", i), "90", "90", "90", "90")
-                12 -> createKline(String.format("%02d", i), "90", "90", "90", "90")
-                13 -> createKline(String.format("%02d", i), "90", "90", "90", "90")
-                14 -> createKline(String.format("%02d", i), "90", "90", "90", "90")
-                15 -> createKline(String.format("%02d", i), "90", "95", "90", "91")
-                else -> createKline(String.format("%02d", i), "90", "90", "90", "90")
-            }
-        }
-
-        // Klines from index 4 to 15 are the "recentKlines"
-        // oldestOpen (index 4) = 90
-        // latestClose (index 15) = 91
-        // hourChange = (91 - 90)/90 = 1/90 = +0.011...
-        // buyThresholdBD is 0.05. Is 0.011 > -0.05 ? YES.
-        // Thus it will skip due to "条件に合致せず（1時間下落不足）"
-
-        // Let's fix the test so hourChange <= -0.05.
-        // oldestOpen needs to be high enough.
-        val klinesFixed = (1..15).map { i ->
-            when (i) {
                 1, 2, 3 -> createKline(String.format("%02d", i), "100", "100", "100", "100")
-                4 -> createKline(String.format("%02d", i), "100", "100", "100", "100") // index 3 (oldest) is 100
+                4 -> createKline(String.format("%02d", i), "100", "100", "100", "100") // 直近12本の古い始値 = 100
                 in 5..10 -> createKline(String.format("%02d", i), "90", "90", "90", "90")
                 11, 12, 13, 14 -> createKline(String.format("%02d", i), "90", "90", "90", "90")
-                15 -> createKline(String.format("%02d", i), "90", "95", "90", "91") // latest close = 91
+                15 -> createKline(String.format("%02d", i), "90", "95", "90", "91") // 最新終値 = 91 (下落率9%で条件クリア、かつ反発およびMA5上抜け)
                 else -> createKline(String.format("%02d", i), "90", "90", "90", "90")
             }
         }
 
-        val decision = strategy.judge(klinesFixed, SimulationState(isHolding = false, lastStopLossTime = ""))
+        val decision = strategy.judge(klines, SimulationState(isHolding = false, lastStopLossTime = ""))
 
         assertEquals(TradeAction.BUY_CANDIDATE, decision.action, decision.reason)
         assertNotNull(decision.atr)
@@ -99,5 +78,24 @@ class AtrTrendConfirmReboundStrategyTest {
         val state = SimulationState(isHolding = true, buyPrice = BigDecimal("100"), entryAtr = BigDecimal("10.0"))
         val decision = strategy.judge(klines, state)
         assertEquals(TradeAction.HOLDING, decision.action)
+    }
+
+    @Test
+    fun `保有中だがentryAtrが未設定の場合は安全のためHOLDINGとなること`() {
+        val strategy = AtrTrendConfirmReboundStrategy(defaultConfig)
+
+        // どんなに価格が変動しても（例: 大幅下落）、entryAtrが存在しない場合は判定をスキップして保有継続する
+        val klines = (1..15).map { createKline(String.format("%02d", it), "100", "100", "10", "10") }
+
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("100"),
+            entryAtr = null // ATRが未設定
+        )
+
+        val decision = strategy.judge(klines, state)
+
+        assertEquals(TradeAction.HOLDING, decision.action)
+        assertTrue(decision.reason.contains("エントリー時のATRが未設定または不正"))
     }
 }
