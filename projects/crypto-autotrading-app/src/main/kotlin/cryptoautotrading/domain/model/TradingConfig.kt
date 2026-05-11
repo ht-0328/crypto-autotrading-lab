@@ -39,5 +39,31 @@ data class TradingConfig(
     @JsonProperty("atr_profit_multiplier")
     val atrProfitMultiplier: Double = 2.0,
     @JsonProperty("atr_loss_multiplier")
-    val atrLossMultiplier: Double = 2.0
+    val atrLossMultiplier: Double = 2.0,
+
+    // 実注文用設定
+    @JsonProperty("real_trade_enabled")
+    val realTradeEnabled: Boolean = false,
+    @JsonProperty("dry_run")
+    val dryRun: Boolean = true,
+    @JsonProperty("max_order_jpy")
+    val maxOrderJpy: Int = 1000,
+    @JsonProperty("max_daily_order_jpy")
+    val maxDailyOrderJpy: Int = 1000,
+    @JsonProperty("max_position_jpy")
+    val maxPositionJpy: Int = 10000,
+    @JsonProperty("gmo_api_key_secret_name")
+    val gmoApiKeySecretName: String = "",
+    @JsonProperty("gmo_api_secret_secret_name")
+    val gmoApiSecretSecretName: String = "",
+    @JsonProperty("order_symbol")
+    val orderSymbol: String = "BTC_JPY",
+    @JsonProperty("order_execution_type")
+    val orderExecutionType: String = "LIMIT",
+    @JsonProperty("order_time_in_force")
+    val orderTimeInForce: String = "FAS",
+    @JsonProperty("stop_on_order_error")
+    val stopOnOrderError: Boolean = true,
+    @JsonProperty("stop_on_unconfirmed_order")
+    val stopOnUnconfirmedOrder: Boolean = true
 )

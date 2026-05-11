@@ -27,6 +27,20 @@ trading:
   # 急変動の閾値（例: 0.01 は 1.0%）
   sharp_change_threshold: 0.01
 
+  # 実注文用設定
+  real_trade_enabled: false
+  dry_run: true
+  max_order_jpy: 1000
+  max_daily_order_jpy: 1000
+  max_position_jpy: 10000
+  gmo_api_key_secret_name: "gmo-api-key"
+  gmo_api_secret_secret_name: "gmo-api-secret"
+  order_symbol: "BTC_JPY"
+  order_execution_type: "LIMIT"
+  order_time_in_force: "FAS"
+  stop_on_order_error: true
+  stop_on_unconfirmed_order: true
+
 # 外部API関連の設定
 api:
   # APIリクエスト失敗時の再試行回数

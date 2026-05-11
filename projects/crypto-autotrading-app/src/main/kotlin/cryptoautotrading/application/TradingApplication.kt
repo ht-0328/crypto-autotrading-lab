@@ -6,6 +6,8 @@ import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.repository.MarketDataClient
 import cryptoautotrading.domain.repository.ResultOutputPort
 import cryptoautotrading.domain.model.TradingConfig
+import cryptoautotrading.domain.repository.PrivateTradingClient
+import cryptoautotrading.domain.repository.OrderSide
 import cryptoautotrading.domain.repository.SimulationStateRepository
 import cryptoautotrading.domain.repository.TradeHistoryRepository
 import cryptoautotrading.domain.simulation.ProfitAndLossCalculator
@@ -17,6 +19,8 @@ import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -36,7 +40,8 @@ class TradingApplication(
     private val marketDataClient: MarketDataClient,
     private val stateRepository: SimulationStateRepository,
     private val tradeHistoryRepository: TradeHistoryRepository,
-    private val resultOutputPort: ResultOutputPort
+    private val resultOutputPort: ResultOutputPort,
+    private val privateTradingClient: PrivateTradingClient? = null
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -87,7 +92,6 @@ class TradingApplication(
             val decision = strategy.judge(klineData, currentState)
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
 
-            // 4. 状態の更新
             // 最新のK線の終値を現在価格とする。データが空の場合は終了する
             if (klineData.isEmpty()) {
                 logger.warn { "Klines data is empty. Skipping this run." }
@@ -96,23 +100,32 @@ class TradingApplication(
             val latestKline = klineData.sortedBy { it.openTime }.last()
             val currentPrice = latestKline.close.toBigDecimal()
 
+            // 実注文のハンドリング
+            var stateAfterOrder = currentState
+            if (decision.action == TradeAction.BUY_CANDIDATE) {
+                stateAfterOrder = handleRealOrder(currentState, currentPrice)
+            } else if (decision.action == TradeAction.SELL_CANDIDATE) {
+                // 売りの実注文はPhase2以降で実装
+            }
+
+            // 4. 状態の更新
             // 損益と想定損益の計算
             val pnl = pnlCalculator.calculate(
-                isHolding = currentState.isHolding,
+                isHolding = stateAfterOrder.isHolding,
                 currentPrice = currentPrice,
-                buyPrice = currentState.buyPrice,
-                holdingAmount = currentState.holdingAmount,
+                buyPrice = stateAfterOrder.buyPrice,
+                holdingAmount = stateAfterOrder.holdingAmount,
                 shouldSell = decision.action == TradeAction.SELL_CANDIDATE
             )
             val fee = java.math.BigDecimal.ZERO // Phase1 では手数料ゼロとする
 
             val nextState = simulationService.updateState(
-                currentState = currentState,
+                currentState = stateAfterOrder,
                 decision = decision,
                 currentPrice = currentPrice,
                 tradeAmount = config.trading.tradeAmount,
                 eventTime = latestKline.openTime
-            )
+            ).copy(isErrorStopped = stateAfterOrder.isErrorStopped, orderId = stateAfterOrder.orderId)
             logger.info { "Next Simulation State: $nextState" }
 
             val estimatedHoldingValue = nextState.holdingAmount * currentPrice
@@ -172,6 +185,90 @@ class TradingApplication(
         } catch (e: Exception) {
             logger.error(e) { "TradingApplication の実行中にエラーが発生しました: ${e.message}" }
             throw e
+        }
+    }
+
+    private suspend fun handleRealOrder(
+        currentState: cryptoautotrading.domain.model.SimulationState,
+        currentPrice: BigDecimal
+    ): cryptoautotrading.domain.model.SimulationState {
+        val tc = config.trading
+        val tradeAmountBd = BigDecimal(tc.tradeAmount)
+
+        if (currentState.isErrorStopped) {
+            logger.warn { "isErrorStopped が true のため、実注文をスキップします。" }
+            return currentState
+        }
+
+        if (tc.dryRun) {
+            logger.info { "[DRY RUN] 注文予定: 金額=${tc.tradeAmount}円, 価格=$currentPrice, 通貨=${tc.orderSymbol}" }
+            return currentState
+        }
+
+        if (!tc.realTradeEnabled) {
+            logger.info { "実注文は無効化されています (realTradeEnabled=false)" }
+            return currentState
+        }
+
+        if (privateTradingClient == null) {
+            logger.warn { "privateTradingClient が注入されていません。実注文をスキップします。" }
+            return currentState
+        }
+
+        logger.info { "=== 実注文プロセスを開始します ===" }
+
+        return try {
+            val jpyBalance = privateTradingClient.getAvailableBalance("JPY")
+            logger.info { "現在のJPY残高: $jpyBalance" }
+
+            if (jpyBalance < tradeAmountBd) {
+                logger.warn { "残高不足です。必要額: ${tc.tradeAmount}, 残高: $jpyBalance" }
+                return currentState
+            }
+
+            if (tradeAmountBd > BigDecimal(tc.maxOrderJpy)) {
+                logger.warn { "注文予定金額 (${tc.tradeAmount}) が最大注文金額 (${tc.maxOrderJpy}) を超えています。" }
+                return currentState
+            }
+
+            val estimatedHoldingValue = currentState.holdingAmount * currentPrice
+            val newTotalPosition = estimatedHoldingValue + tradeAmountBd
+            if (newTotalPosition > BigDecimal(tc.maxPositionJpy)) {
+                logger.warn { "注文後の予想保有金額 ($newTotalPosition) が最大保有金額 (${tc.maxPositionJpy}) を超えています。" }
+                return currentState
+            }
+
+            val activeOrders = privateTradingClient.getActiveOrders(tc.orderSymbol)
+            if (activeOrders.isNotEmpty()) {
+                logger.warn { "未約定の注文が存在するため、二重注文を防ぐためにスキップします。未約定件数: ${activeOrders.size}" }
+                return currentState
+            }
+
+            val size = tradeAmountBd.divide(currentPrice, 4, RoundingMode.DOWN)
+            // MARKETの場合はpriceは不要だが、LIMITの場合はpriceが必須
+            val orderPrice = if (tc.orderExecutionType == "LIMIT") currentPrice else null
+
+            logger.info { "注文を発注します: symbol=${tc.orderSymbol}, side=BUY, type=${tc.orderExecutionType}, size=$size, price=$orderPrice" }
+
+            val orderId = privateTradingClient.placeOrder(
+                symbol = tc.orderSymbol,
+                side = OrderSide.BUY,
+                executionType = tc.orderExecutionType,
+                timeInForce = tc.orderTimeInForce,
+                price = orderPrice,
+                size = size
+            )
+
+            logger.info { "注文の発注に成功しました。orderId: $orderId" }
+            currentState.copy(orderId = orderId)
+        } catch (e: Exception) {
+            logger.error(e) { "実注文プロセス中にエラーが発生しました: ${e.message}" }
+            if (tc.stopOnOrderError) {
+                logger.error { "stopOnOrderError が有効なため、実注文を強制停止します。" }
+                currentState.copy(isErrorStopped = true)
+            } else {
+                currentState
+            }
         }
     }
 

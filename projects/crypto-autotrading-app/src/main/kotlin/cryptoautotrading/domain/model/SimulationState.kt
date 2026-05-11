@@ -36,5 +36,9 @@ data class SimulationState(
     val lastStopLossTime: String = "",
 
     @Serializable(with = BigDecimalSerializer::class)
-    val entryAtr: BigDecimal? = null
+    val entryAtr: BigDecimal? = null,
+
+    val isErrorStopped: Boolean = false,
+
+    val orderId: String? = null
 )

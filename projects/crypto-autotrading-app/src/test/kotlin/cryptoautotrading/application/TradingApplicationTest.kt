@@ -50,7 +50,7 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(), privateTradingClient = mockk()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -65,7 +65,7 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(), privateTradingClient = mockk()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -80,7 +80,7 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(), privateTradingClient = mockk()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -95,7 +95,7 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(), privateTradingClient = mockk()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -110,7 +110,7 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(), privateTradingClient = mockk()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -125,7 +125,7 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(), privateTradingClient = mockk()
         )
 
         val exception = assertThrows<Exception> {
@@ -162,7 +162,7 @@ class TradingApplicationTest {
             marketDataClient = marketDataClient,
             stateRepository = mockStateRepository,
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(), privateTradingClient = mockk()
         )
 
         // Act

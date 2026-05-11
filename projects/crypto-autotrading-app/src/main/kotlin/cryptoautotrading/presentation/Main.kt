@@ -2,10 +2,12 @@ package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
 import cryptoautotrading.infrastructure.config.ConfigLoader
+import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClient
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import cryptoautotrading.infrastructure.output.ConsoleOutput
 import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
+import cryptoautotrading.infrastructure.secret.EnvVarSecretManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -52,18 +54,29 @@ fun main() = runBlocking {
         val retryCount = config.api.retryCount
         logger.info { "最終的に採用したAPIベースURL: $baseUrl, リトライ回数: $retryCount" }
 
-        GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
-            val app = TradingApplication(
-                config = config,
-                marketDataClient = apiClient,
-                stateRepository = stateRepository,
-                tradeHistoryRepository = csvRepository,
-                resultOutputPort = resultOutputPort
-            )
+        val secretManager = EnvVarSecretManager()
 
-            logger.info { "TradingApplication の実行を開始します" }
-            app.run()
-            logger.info { "TradingApplication の実行が終了しました" }
+        GmoPublicApiClient(baseUrl, retryCount).use { publicApiClient ->
+            GmoPrivateApiClient(
+                baseUrl = baseUrl,
+                retryCount = retryCount,
+                secretManager = secretManager,
+                apiKeySecretName = config.trading.gmoApiKeySecretName,
+                apiSecretSecretName = config.trading.gmoApiSecretSecretName
+            ).use { privateApiClient ->
+                val app = TradingApplication(
+                    config = config,
+                    marketDataClient = publicApiClient,
+                    stateRepository = stateRepository,
+                    tradeHistoryRepository = csvRepository,
+                    resultOutputPort = resultOutputPort,
+                    privateTradingClient = privateApiClient
+                )
+
+                logger.info { "TradingApplication の実行を開始します" }
+                app.run()
+                logger.info { "TradingApplication の実行が終了しました" }
+            }
         }
     } catch (e: Exception) {
         logger.error(e) { "アプリケーションの起動・実行中に予期せぬエラーが発生しました: ${e.message}" }
