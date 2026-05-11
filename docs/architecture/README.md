@@ -12,3 +12,4 @@
 - [kline-csv-export.md](kline-csv-export.md): 過去K線CSV作成機能の仕様書。
 - [kline-csv-import.md](kline-csv-import.md): 過去K線CSV読み込み機能の仕様書。
 - [backtest.md](backtest.md): バックテスト本体の仕様書。
+- [real-trading-gmo-order-design.md](real-trading-gmo-order-design.md): GMOコインのPrivate APIを利用したリアル購入処理の設計方針仕様書。
