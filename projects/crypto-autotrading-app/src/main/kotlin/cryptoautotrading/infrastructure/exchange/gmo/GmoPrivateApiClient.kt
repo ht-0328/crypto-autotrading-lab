@@ -86,6 +86,11 @@ class GmoPrivateApiClient(
         }
     }
 
+    /**
+     * 現在の資産情報一覧を取得します。
+     *
+     * @return 資産情報のリスト
+     */
     override suspend fun getAssets(): List<GmoAsset> {
         val path = "/private/v1/account/assets"
         val url = "$baseUrl$path"
@@ -113,6 +118,12 @@ class GmoPrivateApiClient(
         }
     }
 
+    /**
+     * 有効な注文一覧を取得します。
+     *
+     * @param symbol 検索対象のシンボル（例: BTC_JPY）
+     * @return 有効注文情報のリスト
+     */
     override suspend fun getActiveOrders(symbol: String): List<ActiveOrder> {
         val path = "/private/v1/activeOrders"
         val url = "$baseUrl$path"
@@ -151,6 +162,17 @@ class GmoPrivateApiClient(
         }
     }
 
+    /**
+     * 新規注文を発注します。
+     *
+     * @param symbol 注文対象のシンボル
+     * @param side 買い/売りの別
+     * @param executionType 執行条件（LIMIT, MARKET等）
+     * @param timeInForce 有効期間条件
+     * @param price 注文価格
+     * @param size 注文数量
+     * @return 発注された注文のID
+     */
     override suspend fun order(
         symbol: String,
         side: OrderSide,
@@ -197,6 +219,12 @@ class GmoPrivateApiClient(
         }
     }
 
+    /**
+     * 指定された注文IDの現在のステータスを取得します。
+     *
+     * @param orderId 検索対象の注文ID
+     * @return 注文ステータス情報（見つからない場合はnull）
+     */
     override suspend fun getOrders(orderId: Long): OrderStatusInfo? {
         val path = "/private/v1/orders"
         val url = "$baseUrl$path"
@@ -230,6 +258,9 @@ class GmoPrivateApiClient(
         }
     }
 
+    /**
+     * HTTPクライアント等のリソースを解放します。
+     */
     override fun close() {
         client.close()
     }

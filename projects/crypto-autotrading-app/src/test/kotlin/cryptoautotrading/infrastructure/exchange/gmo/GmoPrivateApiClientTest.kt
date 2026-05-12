@@ -41,7 +41,7 @@ class GmoPrivateApiClientTest {
     }
 
     @Test
-    fun `getAssets should return JPY balance successfully`() = runTest {
+    fun `getAssets - JPYの残高が正しく取得できること`() = runTest {
         val mockResponse = """
             {
               "status": 0,
@@ -76,7 +76,7 @@ class GmoPrivateApiClientTest {
     }
 
     @Test
-    fun `placeOrder should submit order and return orderId`() = runTest {
+    fun `order - 注文が送信され、注文IDが正しく返却されること`() = runTest {
         val mockResponse = """
             {
               "status": 0,
@@ -159,7 +159,7 @@ class GmoPrivateApiClientTest {
     }
 
     @Test
-    fun `API errors should throw RuntimeException`() = runTest {
+    fun `API呼び出しでエラーのステータスが返った場合、RuntimeExceptionがスローされること`() = runTest {
         val mockResponse = """
             {
               "status": 1,
