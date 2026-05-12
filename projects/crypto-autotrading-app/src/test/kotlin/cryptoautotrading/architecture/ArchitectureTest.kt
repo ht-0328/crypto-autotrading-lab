@@ -3,6 +3,8 @@ package cryptoautotrading.architecture
 import com.lemonappdev.konsist.api.Konsist
 import com.lemonappdev.konsist.api.architecture.KoArchitectureCreator.assertArchitecture
 import com.lemonappdev.konsist.api.architecture.Layer
+import com.lemonappdev.konsist.api.ext.list.withPrimaryConstructor
+import com.lemonappdev.konsist.api.verify.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -35,5 +37,48 @@ class ArchitectureTest {
                 infrastructure.dependsOn(domain, application)
                 presentation.dependsOn(domain, application, infrastructure)
             }
+    }
+
+    @Test
+    fun `domain の interface に infrastructure の型が漏れていないこと`() {
+        Konsist.scopeFromPackage("cryptoautotrading.domain..")
+            .interfaces()
+            .assertTrue { koInterface ->
+                // interface の関数の引数と戻り値に infrastructure パッケージの型が含まれていないかチェック
+                val hasNoInfrastructureImports = koInterface.containingFile.imports.none {
+                    it.name.startsWith("cryptoautotrading.infrastructure")
+                }
+                hasNoInfrastructureImports
+            }
+    }
+
+    @Test
+    fun `1つの Kotlin ファイルに data class が複数定義されていないこと`() {
+        Konsist.scopeFromProject()
+            .files
+            .assertTrue { file ->
+                val dataClasses = file.classes().filter { it.hasDataModifier }
+                dataClasses.size <= 1
+            }
+    }
+
+    @Test
+    fun `class, data class, interface, enum class に KDoc があること`() {
+        // プロダクションコードのみを対象にする (テストコードは除外)
+        Konsist.scopeFromProduction()
+            .classes()
+            .assertTrue { it.hasKDoc }
+
+        Konsist.scopeFromProduction()
+            .interfaces()
+            .assertTrue { it.hasKDoc }
+    }
+
+    @Test
+    fun `すべての関数(private含む)に KDoc があること`() {
+        // プロダクションコードのみを対象にする (テストコードは除外)
+        Konsist.scopeFromProduction()
+            .functions()
+            .assertTrue { it.hasKDoc }
     }
 }

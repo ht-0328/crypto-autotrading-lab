@@ -40,6 +40,11 @@ jobs:
           cd projects/crypto-autotrading-app
           ./gradlew build
 
+      - name: Run Architecture Rule Tests
+        run: |
+          cd projects/crypto-autotrading-app
+          ./gradlew test --tests "*Architecture*"
+
       - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4

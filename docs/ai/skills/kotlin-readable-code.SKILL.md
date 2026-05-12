@@ -171,3 +171,40 @@ AIエージェントがKotlinコードを変更した場合、完了報告に必
 - 追加・変更した拡張関数と、その配置理由
 - 読みやすさの観点で改善した点
 - 実行した検証コマンドと結果
+
+## 9. data class の配置ルール
+
+- `data class` は原則として1ファイルに1つだけ定義してください。
+- 複数の `data class` を1ファイルにまとめないでください。
+- 例外を作る場合は、理由をKDocとPR本文に明記してください。
+- GMO API レスポンスモデルのように似た型が多い場合でも、基本は1ファイル1 `data class` にしてください。
+
+## 10. KDoc必須ルール
+
+- `public` / `internal` / `private` を問わず、追加・変更した関数にはKDocを書いてください。
+- `private` 関数でもKDocを書いてください。
+- `class` / `data class` / `enum class` / `interface` にもKDocを書いてください。
+- 関数のKDocには、引数がある場合は `@param` を書いてください。
+- 戻り値がある場合は `@return` を書いてください。
+- `class` / `data class` のKDocには、プロパティごとに `@property` を書いてください。
+- KDocは実際の処理内容に合わせて書いてください。
+- 別メソッドの説明をコピーしないでください。
+
+## 11. デフォルト値のルール
+
+- 初期資金、注文金額、最大注文額、最大保有額、APIキー名、Secret名など、運用やお金に関係する値に安易なデフォルト値を入れないでください。
+- 特に `initialCapital`, `tradeAmount`, `maxOrderJpy`, `maxDailyOrderJpy`, `maxPositionJpy` などは、設定ファイルや環境変数から明示的に与える方針にしてください。
+- デフォルト値を入れる場合は、安全上の理由をKDoc、テスト、PR本文に書いてください。
+- 安全フラグのデフォルトは例外として許可します。
+  - `real_trade_enabled=false`
+  - `dry_run=true`
+  - `stop_on_order_error=true`
+  - `stop_on_unconfirmed_order=true`
+
+## 12. 依存関係チェックのルール
+
+- `domain` 層が `infrastructure` 層に依存しないことをテストで確認してください。
+- `domain` 層が `presentation` 層に依存しないことをテストで確認してください。
+- `domain` の `interface` に `infrastructure.exchange.gmo.model` の型を出さないでください。
+- GMO API レスポンスモデルは `infrastructure` 層に閉じ込めてください。
+- レイヤー依存ルールは目視だけでなく、Konsistテストで検査してください。

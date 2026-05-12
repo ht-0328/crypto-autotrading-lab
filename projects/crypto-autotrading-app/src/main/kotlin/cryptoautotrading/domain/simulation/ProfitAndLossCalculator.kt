@@ -2,6 +2,11 @@ package cryptoautotrading.domain.simulation
 
 import java.math.BigDecimal
 
+/**
+ * 損益計算の戻り値
+ * @property profitAndLoss 確定損益
+ * @property estimatedProfitAndLoss 想定損益
+ */
 data class ProfitAndLossResult(
     val profitAndLoss: BigDecimal = BigDecimal.ZERO,
     val estimatedProfitAndLoss: BigDecimal = BigDecimal.ZERO
