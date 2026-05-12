@@ -179,4 +179,63 @@ class TradingApplicationTest {
         // A deeper test would require verifying the arguments passed to save(),
         // which requires mock setup for Klines and OutputPorts.
     }
+
+    @Test
+    fun `handleRealOrder - ドライランの場合はスキップされること`() = kotlinx.coroutines.test.runTest {
+        val config = createAppConfig("SafeReboundStrategy")
+        val app = TradingApplication(
+            config = config,
+            marketDataClient = mockk(),
+            stateRepository = mockk(),
+            tradeHistoryRepository = mockk(),
+            resultOutputPort = mockk(),
+            privateTradingClient = mockk()
+        )
+        val state = cryptoautotrading.domain.model.SimulationState(
+            cashBalance = java.math.BigDecimal.ZERO,
+            buyPrice = java.math.BigDecimal.ZERO,
+            holdingAmount = java.math.BigDecimal.ZERO,
+            realizedProfitAndLoss = java.math.BigDecimal.ZERO,
+            lastUpdatedAt = ""
+        )
+        val newState = app.handleRealOrder(state, java.math.BigDecimal.ZERO)
+        assertTrue(newState === state) // ドライランなので状態変更なし
+    }
+
+    @Test
+    fun `handleRealOrder - 条件を満たした場合に買い注文が実行されること`() = kotlinx.coroutines.test.runTest {
+        val config = createAppConfig("SafeReboundStrategy").copy(
+            trading = createAppConfig("SafeReboundStrategy").trading.copy(
+                realTradeEnabled = true,
+                dryRun = false,
+                maxOrderJpy = 2000,
+                maxPositionJpy = 10000
+            )
+        )
+        val privateClient = mockk<cryptoautotrading.domain.repository.PrivateTradingClient>()
+
+        io.mockk.coEvery { privateClient.getActiveOrders(any()) } returns emptyList()
+        io.mockk.coEvery { privateClient.getAssets() } returns listOf(
+            cryptoautotrading.infrastructure.exchange.gmo.model.GmoAsset("5000", "5000", "1", "JPY")
+        )
+        io.mockk.coEvery { privateClient.order(any(), any(), any(), any(), any(), any()) } returns 12345L
+
+        val app = TradingApplication(
+            config = config,
+            marketDataClient = mockk(),
+            stateRepository = mockk(),
+            tradeHistoryRepository = mockk(),
+            resultOutputPort = mockk(),
+            privateTradingClient = privateClient
+        )
+        val state = cryptoautotrading.domain.model.SimulationState(
+            cashBalance = java.math.BigDecimal.ZERO,
+            buyPrice = java.math.BigDecimal.ZERO,
+            holdingAmount = java.math.BigDecimal.ZERO,
+            realizedProfitAndLoss = java.math.BigDecimal.ZERO,
+            lastUpdatedAt = ""
+        )
+        val newState = app.handleRealOrder(state, java.math.BigDecimal("1000000"))
+        assertTrue(newState.orderId == "12345")
+    }
 }

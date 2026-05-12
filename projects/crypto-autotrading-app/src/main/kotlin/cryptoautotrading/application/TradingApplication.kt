@@ -49,7 +49,14 @@ class TradingApplication(
     private val pnlCalculator = ProfitAndLossCalculator()
 
     /**
-     * アプリケーションの実行を開始する
+     * リアル口座での注文処理を試みます。
+     * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
+     * 有効な注文の有無、および資金上限をチェックし、
+     * 条件を満たした場合にのみ実際の注文を発注します。
+     *
+     * @param currentState 現在のシミュレーション（および実注文）状態
+     * @param currentPrice 現在の価格
+     * @return 更新された状態（エラー停止時など）または現在の状態
      */
     suspend fun run() {
         try {
@@ -188,13 +195,6 @@ class TradingApplication(
         }
     }
 
-    private suspend     /**
-     * リアル口座での実際の注文処理を行います。
-     *
-     * @param signal 買いまたは売りのシグナル
-     * @param targetPrice 注文価格。成行注文の場合はnull
-     * @param amount 注文数量
-     */
     /**
      * リアル口座での注文処理を試みます。
      * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
@@ -205,17 +205,7 @@ class TradingApplication(
      * @param currentPrice 現在の価格
      * @return 更新された状態（エラー停止時など）または現在の状態
      */
-    /**
-     * リアル口座での注文処理を試みます。
-     * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
-     * 有効な注文の有無、および資金上限をチェックし、
-     * 条件を満たした場合にのみ実際の注文を発注します。
-     *
-     * @param currentState 現在のシミュレーション（および実注文）状態
-     * @param currentPrice 現在の価格
-     * @return 更新された状態（エラー停止時など）または現在の状態
-     */
-    fun handleRealOrder(
+    internal suspend fun handleRealOrder(
         currentState: cryptoautotrading.domain.model.SimulationState,
         currentPrice: BigDecimal
     ): cryptoautotrading.domain.model.SimulationState {
@@ -310,9 +300,14 @@ class TradingApplication(
     }
 
     /**
-     * 取引所のAPIから最新のティッカー情報とK線（ローソク足）データを取得する。
+     * リアル口座での注文処理を試みます。
+     * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
+     * 有効な注文の有無、および資金上限をチェックし、
+     * 条件を満たした場合にのみ実際の注文を発注します。
      *
-     * @return 取得したK線データのリスト
+     * @param currentState 現在のシミュレーション（および実注文）状態
+     * @param currentPrice 現在の価格
+     * @return 更新された状態（エラー停止時など）または現在の状態
      */
     private suspend fun fetchKlineData(): List<Kline> {
         val tickerResponse = marketDataClient.getTicker(config.trading.symbol)
@@ -326,11 +321,14 @@ class TradingApplication(
     }
 
     /**
-     * K線データを取得するための対象日付を決定する。
-     * GMOコイン等の取引所の仕様（営業日は朝6時切り替え）を考慮し、
-     * 午前6時前の場合は前日の日付を返す。
+     * リアル口座での注文処理を試みます。
+     * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
+     * 有効な注文の有無、および資金上限をチェックし、
+     * 条件を満たした場合にのみ実際の注文を発注します。
      *
-     * @return 対象日付の文字列（形式: yyyyMMdd）
+     * @param currentState 現在のシミュレーション（および実注文）状態
+     * @param currentPrice 現在の価格
+     * @return 更新された状態（エラー停止時など）または現在の状態
      */
     private fun resolveKlineTargetDate(): String {
         val nowJst = ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
@@ -343,12 +341,14 @@ class TradingApplication(
     }
 
     /**
-     * 設定値に指定されたStrategy名から、実際に使用する売買戦略を生成する。
+     * リアル口座での注文処理を試みます。
+     * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
+     * 有効な注文の有無、および資金上限をチェックし、
+     * 条件を満たした場合にのみ実際の注文を発注します。
      *
-     * 未対応のStrategy名が指定された場合は、誤った戦略で実行されないように例外を投げる。
-     *
-     * @param config 取引関連の設定
-     * @return 使用する売買戦略
+     * @param currentState 現在のシミュレーション（および実注文）状態
+     * @param currentPrice 現在の価格
+     * @return 更新された状態（エラー停止時など）または現在の状態
      */
     private fun createStrategy(config: TradingConfig): TradingStrategy {
         return when (config.strategyName) {
