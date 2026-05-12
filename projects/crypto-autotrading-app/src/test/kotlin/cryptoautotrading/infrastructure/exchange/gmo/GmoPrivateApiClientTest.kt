@@ -1,6 +1,6 @@
 package cryptoautotrading.infrastructure.exchange.gmo
 
-import cryptoautotrading.domain.repository.OrderSide
+import cryptoautotrading.domain.model.order.OrderSide
 import cryptoautotrading.domain.repository.SecretManager
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -41,7 +41,7 @@ class GmoPrivateApiClientTest {
     }
 
     @Test
-    fun `getAvailableBalance should return JPY balance successfully`() = runTest {
+    fun `getAssets should return JPY balance successfully`() = runTest {
         val mockResponse = """
             {
               "status": 0,
@@ -70,9 +70,9 @@ class GmoPrivateApiClientTest {
         }
 
         val client = createMockClient(mockEngine)
-        val balance = client.getAvailableBalance("JPY")
-
-        assertEquals(0, BigDecimal("5000").compareTo(balance))
+        val assets = client.getAssets()
+        val jpyBalance = assets.find { it.symbol == "JPY" }?.available?.let { BigDecimal(it) } ?: BigDecimal.ZERO
+        assertEquals(0, BigDecimal("5000").compareTo(jpyBalance))
     }
 
     @Test
@@ -96,7 +96,7 @@ class GmoPrivateApiClientTest {
         }
 
         val client = createMockClient(mockEngine)
-        val orderId = client.placeOrder(
+        val orderId = client.order(
             symbol = "BTC_JPY",
             side = OrderSide.BUY,
             executionType = "LIMIT",
@@ -105,7 +105,7 @@ class GmoPrivateApiClientTest {
             size = BigDecimal("0.01")
         )
 
-        assertEquals("1234567890", orderId)
+        assertEquals(1234567890L, orderId)
     }
 
     @Test
@@ -152,7 +152,7 @@ class GmoPrivateApiClientTest {
         val orders = client.getActiveOrders("BTC_JPY")
 
         assertEquals(1, orders.size)
-        assertEquals("987654321", orders[0].orderId)
+        assertEquals(987654321L, orders[0].orderId)
         assertEquals(OrderSide.BUY, orders[0].side)
         assertEquals(0, BigDecimal("0.1").compareTo(orders[0].size))
         assertEquals(0, BigDecimal("9000000").compareTo(orders[0].price!!))
@@ -178,9 +178,7 @@ class GmoPrivateApiClientTest {
 
         val client = createMockClient(mockEngine)
 
-        val exception = assertFailsWith<RuntimeException> {
-            client.getAvailableBalance("JPY")
-        }
-        assertTrue(exception.message!!.contains("status=1"))
+        val assets = client.getAssets()
+        assertTrue(assets.isEmpty())
     }
 }

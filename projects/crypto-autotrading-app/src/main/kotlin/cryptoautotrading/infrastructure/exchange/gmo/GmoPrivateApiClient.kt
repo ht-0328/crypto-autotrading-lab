@@ -1,10 +1,11 @@
 package cryptoautotrading.infrastructure.exchange.gmo
 
-import cryptoautotrading.domain.repository.ActiveOrder
-import cryptoautotrading.domain.repository.OrderSide
-import cryptoautotrading.domain.repository.OrderStatusInfo
+import cryptoautotrading.domain.model.order.ActiveOrder
+import cryptoautotrading.domain.model.order.OrderSide
+import cryptoautotrading.domain.model.order.OrderStatusInfo
 import cryptoautotrading.domain.repository.PrivateTradingClient
 import cryptoautotrading.domain.repository.SecretManager
+import cryptoautotrading.infrastructure.exchange.gmo.model.*
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -23,6 +24,10 @@ import java.time.Instant
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+/**
+ * GMOコインのプライベートAPIクライアント実装。
+ * HMAC-SHA256署名を用いた認証を行い、各種エンドポイントを呼び出します。
+ */
 class GmoPrivateApiClient(
     private val baseUrl: String,
     private val retryCount: Int = 0,
@@ -45,6 +50,15 @@ class GmoPrivateApiClient(
         return Pair(apiKey, apiSecret)
     }
 
+    /**
+     * リクエストヘッダーに付与するHMAC-SHA256署名を生成します。
+     *
+     * @param timestamp リクエストのタイムスタンプ（ミリ秒）
+     * @param method HTTPメソッド
+     * @param path APIエンドポイントのパス
+     * @param body リクエストボディ（存在する場合）
+     * @return 16進数文字列形式の署名
+     */
     private fun generateSign(timestamp: String, method: String, path: String, body: String, secret: String): String {
         val text = timestamp + method + path + body
         val mac = Mac.getInstance("HmacSHA256")
@@ -72,7 +86,7 @@ class GmoPrivateApiClient(
         }
     }
 
-    override suspend fun getAvailableBalance(symbol: String): BigDecimal {
+    override suspend fun getAssets(): List<GmoAsset> {
         val path = "/private/v1/account/assets"
         val url = "$baseUrl$path"
 
@@ -91,13 +105,11 @@ class GmoPrivateApiClient(
             val decoded = json.decodeFromString<GmoAssetsResponse>(rawBody)
 
             if (decoded.status != 0) {
-                throw RuntimeException("GMO API Error: status=${decoded.status}, response=$rawBody")
+                logger.warn { "資産情報の取得に失敗しました。ステータス: ${decoded.status}" }
+                return@withRetry emptyList()
             }
 
-            val asset = decoded.data.find { it.symbol == symbol }
-                ?: throw RuntimeException("Asset $symbol not found in account assets.")
-
-            BigDecimal(asset.available)
+            decoded.data
         }
     }
 
@@ -108,7 +120,6 @@ class GmoPrivateApiClient(
         return withRetry {
             val (apiKey, apiSecret) = getCredentials()
             val timestamp = Instant.now().toEpochMilli().toString()
-            // symbol をパラメータに含める場合の署名
             val queryParams = "?symbol=$symbol"
             val sign = generateSign(timestamp, "GET", path + queryParams, "", apiSecret)
 
@@ -126,27 +137,28 @@ class GmoPrivateApiClient(
                 throw RuntimeException("GMO API Error: status=${decoded.status}, response=$rawBody")
             }
 
-            val list = decoded.data?.list ?: emptyList()
+            val list = decoded.data.list ?: emptyList()
             list.map {
                 ActiveOrder(
-                    orderId = it.orderId.toString(),
+                    orderId = it.orderId,
                     symbol = it.symbol,
                     side = if (it.side == "BUY") OrderSide.BUY else OrderSide.SELL,
                     size = BigDecimal(it.size),
-                    price = it.price.takeIf { p -> p.isNotEmpty() }?.let { p -> BigDecimal(p) }
+                    price = it.price.takeIf { p -> p.isNotEmpty() }?.let { p -> BigDecimal(p) },
+                    status = it.status
                 )
             }
         }
     }
 
-    override suspend fun placeOrder(
+    override suspend fun order(
         symbol: String,
         side: OrderSide,
         executionType: String,
         timeInForce: String,
         price: BigDecimal?,
         size: BigDecimal
-    ): String {
+    ): Long {
         val path = "/private/v1/order"
         val url = "$baseUrl$path"
 
@@ -158,7 +170,7 @@ class GmoPrivateApiClient(
                 symbol = symbol,
                 side = side.name,
                 executionType = executionType,
-                timeInForce = timeInForce.takeIf { it.isNotBlank() },
+                timeInForce = timeInForce.takeIf { it.isNotBlank() } ?: "FAS",
                 price = price?.stripTrailingZeros()?.toPlainString(),
                 size = size.stripTrailingZeros().toPlainString()
             )
@@ -181,11 +193,11 @@ class GmoPrivateApiClient(
                 throw RuntimeException("GMO API Order Error: status=${decoded.status}, response=$rawBody")
             }
 
-            decoded.data
+            decoded.data.toLong()
         }
     }
 
-    override suspend fun getOrderStatus(orderId: String): OrderStatusInfo {
+    override suspend fun getOrders(orderId: Long): OrderStatusInfo? {
         val path = "/private/v1/orders"
         val url = "$baseUrl$path"
 
@@ -199,24 +211,21 @@ class GmoPrivateApiClient(
                 header("API-KEY", apiKey)
                 header("API-TIMESTAMP", timestamp)
                 header("API-SIGN", sign)
-                parameter("orderId", orderId)
+                parameter("orderId", orderId.toString())
             }
 
             val rawBody = response.bodyAsText()
             val decoded = json.decodeFromString<GmoOrdersResponse>(rawBody)
 
-            if (decoded.status != 0) {
-                throw RuntimeException("GMO API Error: status=${decoded.status}, response=$rawBody")
+            if (decoded.status != 0 || decoded.data.list.isEmpty()) {
+                return@withRetry null
             }
 
-            val order = decoded.data?.list?.find { it.orderId.toString() == orderId }
-                ?: throw RuntimeException("Order $orderId not found in orders response.")
-
+            val order = decoded.data.list.first()
             OrderStatusInfo(
-                orderId = order.orderId.toString(),
-                status = order.status, // EXECUTED, CANCELED, WAITING, etc
-                executedSize = BigDecimal(order.executedSize.ifBlank { "0" }),
-                executedPrice = order.price.takeIf { it.isNotBlank() }?.let { BigDecimal(it) }
+                orderId = order.orderId,
+                status = order.status,
+                cancelType = order.cancelType
             )
         }
     }

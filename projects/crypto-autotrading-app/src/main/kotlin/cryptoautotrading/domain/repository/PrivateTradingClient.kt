@@ -1,58 +1,54 @@
 package cryptoautotrading.domain.repository
 
+import cryptoautotrading.domain.model.order.ActiveOrder
+import cryptoautotrading.domain.model.order.OrderSide
+import cryptoautotrading.domain.model.order.OrderStatusInfo
 import java.math.BigDecimal
 
 /**
- * 取引所のプライベートAPIへアクセスするインターフェース
+ * 取引所ごとのプライベートAPI（認証が必要なAPI）を呼び出すクライアントのインターフェース
  */
 interface PrivateTradingClient {
     /**
-     * 指定された通貨の取引余力（残高）を取得する。
-     * 例: GMOコインの現物取引の場合は /private/v1/account/assets で "JPY" などを取得
+     * 現在の資産情報を取得します。
+     *
+     * @return 資産情報のリスト
      */
-    suspend fun getAvailableBalance(symbol: String): BigDecimal
+    suspend fun getAssets(): List<cryptoautotrading.infrastructure.exchange.gmo.model.GmoAsset>
 
     /**
-     * 指定された通貨ペアの未約定注文一覧を取得する。
-     * 二重注文の防止などに用いる。
+     * 有効な注文一覧を取得します。
+     *
+     * @param symbol 対象のシンボル
+     * @return 有効な注文のリスト
      */
     suspend fun getActiveOrders(symbol: String): List<ActiveOrder>
 
     /**
-     * 新規注文を発注する。
-     * @return 発注に成功した場合の注文ID
+     * 新規注文を発注します。
+     *
+     * @param symbol シンボル
+     * @param side 売買区分
+     * @param executionType 執行数量条件
+     * @param timeInForce 有効期間条件
+     * @param price 注文価格（成行の場合はnull）
+     * @param size 注文数量
+     * @return 注文ID
      */
-    suspend fun placeOrder(
+    suspend fun order(
         symbol: String,
         side: OrderSide,
         executionType: String,
         timeInForce: String,
         price: BigDecimal?,
         size: BigDecimal
-    ): String
+    ): Long
 
     /**
-     * 指定された注文IDのステータスを取得する。
+     * 指定した注文IDのステータスを取得します。
+     *
+     * @param orderId 注文ID
+     * @return 注文ステータス情報。存在しない場合はnull
      */
-    suspend fun getOrderStatus(orderId: String): OrderStatusInfo
+    suspend fun getOrders(orderId: Long): OrderStatusInfo?
 }
-
-enum class OrderSide {
-    BUY,
-    SELL
-}
-
-data class ActiveOrder(
-    val orderId: String,
-    val symbol: String,
-    val side: OrderSide,
-    val size: BigDecimal,
-    val price: BigDecimal?
-)
-
-data class OrderStatusInfo(
-    val orderId: String,
-    val status: String,
-    val executedSize: BigDecimal,
-    val executedPrice: BigDecimal?
-)

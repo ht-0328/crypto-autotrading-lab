@@ -7,7 +7,7 @@ import cryptoautotrading.domain.repository.MarketDataClient
 import cryptoautotrading.domain.repository.ResultOutputPort
 import cryptoautotrading.domain.model.TradingConfig
 import cryptoautotrading.domain.repository.PrivateTradingClient
-import cryptoautotrading.domain.repository.OrderSide
+import cryptoautotrading.domain.model.order.OrderSide
 import cryptoautotrading.domain.repository.SimulationStateRepository
 import cryptoautotrading.domain.repository.TradeHistoryRepository
 import cryptoautotrading.domain.simulation.ProfitAndLossCalculator
@@ -188,23 +188,56 @@ class TradingApplication(
         }
     }
 
-    private suspend fun handleRealOrder(
+    private suspend     /**
+     * リアル口座での実際の注文処理を行います。
+     *
+     * @param signal 買いまたは売りのシグナル
+     * @param targetPrice 注文価格。成行注文の場合はnull
+     * @param amount 注文数量
+     */
+    /**
+     * リアル口座での注文処理を試みます。
+     * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
+     * 有効な注文の有無、および資金上限をチェックし、
+     * 条件を満たした場合にのみ実際の注文を発注します。
+     *
+     * @param currentState 現在のシミュレーション（および実注文）状態
+     * @param currentPrice 現在の価格
+     * @return 更新された状態（エラー停止時など）または現在の状態
+     */
+    /**
+     * リアル口座での注文処理を試みます。
+     * 設定(dryRun, realTradeEnabled)や、エラー停止状態、
+     * 有効な注文の有無、および資金上限をチェックし、
+     * 条件を満たした場合にのみ実際の注文を発注します。
+     *
+     * @param currentState 現在のシミュレーション（および実注文）状態
+     * @param currentPrice 現在の価格
+     * @return 更新された状態（エラー停止時など）または現在の状態
+     */
+    fun handleRealOrder(
         currentState: cryptoautotrading.domain.model.SimulationState,
         currentPrice: BigDecimal
     ): cryptoautotrading.domain.model.SimulationState {
         val tc = config.trading
         val tradeAmountBd = BigDecimal(tc.tradeAmount)
 
+        // エラーによる停止フラグが立っている場合は注文を行わない
+        // エラーによる停止フラグが立っている場合は注文を行わない
         if (currentState.isErrorStopped) {
             logger.warn { "isErrorStopped が true のため、実注文をスキップします。" }
             return currentState
         }
 
+        // ドライランモードの場合は実際の注文は行わずログ出力のみ
+        // ドライランモードの場合は実際の注文は行わずログ出力のみ
         if (tc.dryRun) {
             logger.info { "[DRY RUN] 注文予定: 金額=${tc.tradeAmount}円, 価格=$currentPrice, 通貨=${tc.orderSymbol}" }
             return currentState
         }
 
+        // リアル取引が無効な場合は注文を行わない
+        // リアル取引が無効な場合は注文を行わない
         if (!tc.realTradeEnabled) {
             logger.info { "実注文は無効化されています (realTradeEnabled=false)" }
             return currentState
@@ -218,7 +251,8 @@ class TradingApplication(
         logger.info { "=== 実注文プロセスを開始します ===" }
 
         return try {
-            val jpyBalance = privateTradingClient.getAvailableBalance("JPY")
+            val assets = privateTradingClient.getAssets()
+            val jpyBalance = assets.find { it.symbol == "JPY" }?.available?.toBigDecimalOrNull() ?: BigDecimal.ZERO
             logger.info { "現在のJPY残高: $jpyBalance" }
 
             if (jpyBalance < tradeAmountBd) {
@@ -238,8 +272,11 @@ class TradingApplication(
                 return currentState
             }
 
-            val activeOrders = privateTradingClient.getActiveOrders(tc.orderSymbol)
-            if (activeOrders.isNotEmpty()) {
+            // すでに有効な注文が存在する場合は重複注文を防ぐためにスキップ
+        // すでに有効な注文が存在する場合は重複注文を防ぐためにスキップ
+        val activeOrders = privateTradingClient.getActiveOrders(tc.orderSymbol)
+            // すでに有効な注文が存在する場合は、重複注文を防ぐためにスキップする
+        if (activeOrders.isNotEmpty()) {
                 logger.warn { "未約定の注文が存在するため、二重注文を防ぐためにスキップします。未約定件数: ${activeOrders.size}" }
                 return currentState
             }
@@ -250,7 +287,7 @@ class TradingApplication(
 
             logger.info { "注文を発注します: symbol=${tc.orderSymbol}, side=BUY, type=${tc.orderExecutionType}, size=$size, price=$orderPrice" }
 
-            val orderId = privateTradingClient.placeOrder(
+            val orderId = privateTradingClient.order(
                 symbol = tc.orderSymbol,
                 side = OrderSide.BUY,
                 executionType = tc.orderExecutionType,
@@ -260,7 +297,7 @@ class TradingApplication(
             )
 
             logger.info { "注文の発注に成功しました。orderId: $orderId" }
-            currentState.copy(orderId = orderId)
+            currentState.copy(orderId = orderId.toString())
         } catch (e: Exception) {
             logger.error(e) { "実注文プロセス中にエラーが発生しました: ${e.message}" }
             if (tc.stopOnOrderError) {
