@@ -20,6 +20,13 @@ class SafeReboundStrategy(
 
     private val logger = KotlinLogging.logger {}
 
+    /**
+     * 取引の判定を行う
+     * @param currentKline 現在のKline
+     * @param previousKlines 過去のKlineリスト
+     * @param state 現在のシミュレーション状態
+     * @return 売買シグナル
+     */
     override fun judge(klines: List<Kline>, currentState: SimulationState): TradeDecision {
         val isHolding = currentState.isHolding
         val buyPrice = currentState.buyPrice
@@ -41,7 +48,7 @@ class SafeReboundStrategy(
         }
     }
 
-    /**
+/**
      * 新規購入（エントリー）の判定を行う。
      * 直近の価格下落と反発のサインをもとに、購入すべきかを決定する。
      *
@@ -71,7 +78,7 @@ class SafeReboundStrategy(
         return createDecision(TradeAction.BUY_CANDIDATE, "1時間下落後の反発確認")
     }
 
-    /**
+/**
      * 売却（エグジット）の判定を行う。
      * 購入価格と現在の価格を比較し、利確または損切りのラインに達しているかを確認する。
      *
@@ -101,7 +108,7 @@ class SafeReboundStrategy(
         return createDecision(TradeAction.HOLDING, "条件に合致せず（保有継続）")
     }
 
-    /**
+/**
      * 直近15分（K線3本分）で価格が急変動しているかを判定する。
      * 急激な変動時はリスクが高いため、取引を見送る判断材料とする。
      *
@@ -122,7 +129,7 @@ class SafeReboundStrategy(
         return sharpChangeRate >= sharpChangeThresholdBD
     }
 
-    /**
+/**
      * 直近1時間での価格の変動率を計算する。
      * 1時間前の始値から最新の終値への変化割合を算出する。
      *
@@ -138,7 +145,7 @@ class SafeReboundStrategy(
         }
     }
 
-    /**
+/**
      * 最新のK線が反発のサインを示しているか判定する。
      * 陽線であるか、または下ヒゲが実体よりも長い場合に反発とみなす。
      *
@@ -161,7 +168,7 @@ class SafeReboundStrategy(
         return isYang || hasLongLowerWick
     }
 
-    /**
+/**
      * 売買アクションとその理由をもとに、判定結果のオブジェクトを生成する。
      * 判定結果はログにも出力する。
      *

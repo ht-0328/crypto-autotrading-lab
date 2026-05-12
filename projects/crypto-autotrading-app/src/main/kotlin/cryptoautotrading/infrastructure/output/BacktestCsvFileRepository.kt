@@ -14,6 +14,12 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
 
     private val logger = KotlinLogging.logger {}
 
+    /**
+     * バックテスト結果を出力する
+     * @param result バックテスト結果
+     * @param summaryOutputPath サマリーの保存先
+     * @param stepsOutputPath ステップごとの保存先
+     */
     override fun output(
         result: BacktestResult,
         summaryOutputPath: String,
@@ -32,6 +38,11 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
         }
     }
 
+    /**
+     * バックテストのサマリーを出力する
+     * @param result バックテスト結果
+     * @param outputPath 保存先パス
+     */
     private fun outputSummary(summary: cryptoautotrading.domain.backtest.BacktestSummary, path: String) {
         val file = File(path)
         file.parentFile?.mkdirs()
@@ -88,6 +99,11 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
         logger.info { "サマリー結果を保存しました: $path" }
     }
 
+    /**
+     * バックテストの各ステップの詳細を出力する
+     * @param steps ステップごとのデータ
+     * @param outputPath 保存先パス
+     */
     private fun outputSteps(steps: List<cryptoautotrading.domain.backtest.BacktestStepResult>, path: String) {
         val file = File(path)
         file.parentFile?.mkdirs()

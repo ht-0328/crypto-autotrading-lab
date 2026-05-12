@@ -14,6 +14,11 @@ class KlineCsvFileRepository : KlineCsvRepository {
 
     private val logger = KotlinLogging.logger {}
 
+    /**
+     * KlineリストをCSVに保存する
+     * @param klines Klineのリスト
+     * @param outputPath 保存先パス
+     */
     override fun save(klines: List<Kline>, outputPath: String) {
         logger.info { "過去K線データのCSV保存処理を開始します: $outputPath" }
 

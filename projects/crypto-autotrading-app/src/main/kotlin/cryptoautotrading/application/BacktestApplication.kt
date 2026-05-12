@@ -24,7 +24,7 @@ class BacktestApplication(
     private val logger = KotlinLogging.logger {}
     private val engine = BacktestEngine()
 
-    /**
+/**
      * バックテストを実行する
      *
      * @param klineCsvPath 入力となる過去K線CSVのパス
@@ -83,6 +83,12 @@ class BacktestApplication(
         logger.info { "バックテストアプリケーションが正常に完了しました" }
     }
 
+    /**
+     * 指定された名前の戦略を作成する
+     * @param strategyName 戦略名
+     * @param config 設定
+     * @return 取引戦略
+     */
     private fun createStrategy(config: TradingConfig): TradingStrategy {
         return when (config.strategyName) {
             "SafeReboundStrategy" -> SafeReboundStrategy(config)

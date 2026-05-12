@@ -14,25 +14,36 @@ PR作成・レビューを行うAIエージェント
 
 AIエージェントがコード変更を提出する前、およびレビューする際に必ず確認すべき厳格な基準。
 
-## 1. レイヤ依存制約 (Layer Boundaries)
+## 1. Kotlin実装ルール確認 (Kotlin Implementation Rules)
+
+- `data class` が1ファイルに複数定義されていないか。
+- `private` 関数にもKDocが書かれているか。
+- KDoc に必要な `@param` / `@return` / `@property` が書かれているか。
+- 設定値・初期資金・注文金額などに安易なデフォルト値が入っていないか。
+
+## 2. レイヤ依存制約 (Layer Boundaries)
 
 - `domain` レイヤ内にI/O処理（HTTPクライアント、ファイル操作、DB、環境変数アクセス）が含まれていないか。
 - `infrastructure` 実装の詳細が `domain` を汚染していないか。
 - `presentation` -> `application/infrastructure` -> `domain` の依存方向が厳守されているか。
+- `domain` が `infrastructure` に依存していないか。
+- `infrastructure` のレスポンス型が `domain interface` に漏れていないか。
+- 依存関係チェック用のKonsistテストが追加・更新されているか。
+- CIでそのテストが実行されるか。
 
-## 2. 設定・互換性 (Configuration & Compatibility)
+## 3. 設定・互換性 (Configuration & Compatibility)
 
 - `config/application-*.yaml` の既存キーや意味を破壊していないか。
 - 新規追加された設定値が未定義の環境でも安全にフォールバック、または明示的に失敗するか。
 - 環境の差異（GMO API / WireMock / local Docker）を考慮した実装になっているか。
 
-## 3. 監視・ロギング (Observability)
+## 4. 監視・ロギング (Observability)
 
 - 処理の追跡に必要な重要イベント（起動、判定結果、保存、エラー）が適切なレベルでログ出力されているか。
 - エラーログは原因究明に十分な文脈（対象入力、例外種別）を含んでいるか。
 - **機密情報（APIキー、シークレット等）が絶対にログ出力されていないか（マスクされているか）。**
 
-## 4. 異常系・例外処理 (Error Handling)
+## 5. 異常系・例外処理 (Error Handling)
 
 - 例外の握りつぶし（空のcatchブロックなど）が存在しないか。
 - リトライ処理がある場合、無限ループに陥らない適切な中断条件が設定されているか。

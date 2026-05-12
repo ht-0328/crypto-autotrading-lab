@@ -43,7 +43,7 @@ class TradingApplication(
     private val simulationService = SimulationService()
     private val pnlCalculator = ProfitAndLossCalculator()
 
-    /**
+/**
      * アプリケーションの実行を開始する
      */
     suspend fun run() {
@@ -175,7 +175,7 @@ class TradingApplication(
         }
     }
 
-    /**
+/**
      * 取引所のAPIから最新のティッカー情報とK線（ローソク足）データを取得する。
      *
      * @return 取得したK線データのリスト
@@ -191,7 +191,7 @@ class TradingApplication(
         return klineResponse.data
     }
 
-    /**
+/**
      * K線データを取得するための対象日付を決定する。
      * GMOコイン等の取引所の仕様（営業日は朝6時切り替え）を考慮し、
      * 午前6時前の場合は前日の日付を返す。
@@ -208,7 +208,7 @@ class TradingApplication(
         return date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
     }
 
-    /**
+/**
      * 設定値に指定されたStrategy名から、実際に使用する売買戦略を生成する。
      *
      * 未対応のStrategy名が指定された場合は、誤った戦略で実行されないように例外を投げる。
@@ -227,6 +227,11 @@ class TradingApplication(
         }
     }
 
+    /**
+     * シミュレーションのサマリーをログ出力する
+     * @param state シミュレーション状態
+     * @param currentPrice 現在の価格
+     */
     private fun logSimulationSummary(
         currentState: cryptoautotrading.domain.model.SimulationState,
         nextState: cryptoautotrading.domain.model.SimulationState,

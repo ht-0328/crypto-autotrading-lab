@@ -17,16 +17,20 @@ Kotlinコードの変更を行うAIエージェント
 
 ## レイヤ責務
 
-- `domain`: ビジネスルールとドメインモデル。
-- `application`: ユースケースのオーケストレーションのみを担当。
+- `domain`: ビジネスルールとドメインモデル。`infrastructure`, `presentation`, `application` へ依存していないこと。
+- `application`: ユースケースのオーケストレーションのみを担当。全体の流れの制御に留めること。
 - `infrastructure`: 外部I/O（API、設定、永続化、出力など）の実装を担当。
 
 ## 変更時の境界ルール
 
-1. **`domain` 変更時は `infrastructure` の同時変更を禁止する。**
+1. **レイヤ依存ルールはKonsistテストで検査すること。**
+   - PRでKotlinコードを変更した場合、依存関係チェックテストを追加または更新すること。
+2. **`infrastructure` のGMOレスポンス型を `domain` に漏らさないこと。**
+   - 新しい `domain` interfaceを追加した場合、その戻り値や引数が `infrastructure` 型になっていないことを確認すること。
+3. **`domain` 変更時は `infrastructure` の同時変更を禁止する。**
    - `infrastructure` 変更が必要な場合は、別PRとして分離する。
    - **例外（設定連携）**: `TradingConfig` のような設定モデルを追加・変更する場合、`ConfigLoader` や GitHub Actions の環境変数設定も同時変更が必要になることがあります。その場合は、ビジネスロジックの追加を `infrastructure` に入れないことを条件に、同一PRでの変更を許容します。
-2. **`application` はオーケストレーションのみとし、ビジネスロジックを実装しない。**
+4. **`application` はオーケストレーションのみとし、ビジネスロジックを実装しない。**
    - 計算・判定などのドメイン知識は `domain` に配置する。
    - `application` は依存オブジェクトの接続、処理順序制御、入出力境界の調停に限定する。
 
