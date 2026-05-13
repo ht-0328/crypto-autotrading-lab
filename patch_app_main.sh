@@ -1,3 +1,18 @@
+#!/bin/bash
+cd /app/projects/crypto-autotrading-app
+
+# 1. TradingApplication.kt: Insert RealTradeService correctly and handle the call.
+sed -i 's/import cryptoautotrading.domain.simulation.SimulationService/import cryptoautotrading.domain.simulation.SimulationService\nimport cryptoautotrading.domain.simulation.RealTradeService\nimport cryptoautotrading.domain.model.TradeAction/' src/main/kotlin/cryptoautotrading/application/TradingApplication.kt
+
+sed -i 's/private val simulationService: SimulationService,/private val simulationService: SimulationService,\n    private val realTradeService: RealTradeService,/' src/main/kotlin/cryptoautotrading/application/TradingApplication.kt
+
+sed -i '/stateRepository.save(nextState)/i\
+            if (decision.action == TradeAction.BUY_CANDIDATE) {\
+                realTradeService.processRealOrder(nextState, currentPrice)\
+            }' src/main/kotlin/cryptoautotrading/application/TradingApplication.kt
+
+# 2. Main.kt: Supply the right arguments, import missing stuff.
+cat << 'KOTLIN' > src/main/kotlin/cryptoautotrading/presentation/Main.kt
 package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
@@ -50,3 +65,7 @@ fun main(): Unit = runBlocking {
         logger.error(e) { "エラー" }
     }
 }
+KOTLIN
+
+# 3. GmoPrivateApiClient missing jackson import
+sed -i 's/import io.ktor.serialization.jackson.\*/import io.ktor.serialization.jackson.*\nimport io.ktor.serialization.jackson.jackson/' src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClient.kt

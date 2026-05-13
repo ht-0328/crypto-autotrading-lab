@@ -10,6 +10,8 @@ import cryptoautotrading.domain.repository.SimulationStateRepository
 import cryptoautotrading.domain.repository.TradeHistoryRepository
 import cryptoautotrading.domain.simulation.ProfitAndLossCalculator
 import cryptoautotrading.domain.simulation.SimulationService
+import cryptoautotrading.domain.simulation.RealTradeService
+import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.strategy.CooldownReboundStrategy
 import cryptoautotrading.domain.strategy.SafeReboundStrategy
 import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
@@ -165,6 +167,9 @@ class TradingApplication(
             )
 
             // 6. 状態の保存
+            if (decision.action == TradeAction.BUY_CANDIDATE) {
+                realTradeService.processRealOrder(nextState, currentPrice)
+            }
             stateRepository.save(nextState)
 
             logger.info { "TradingApplication のメイン処理が正常に完了しました" }
