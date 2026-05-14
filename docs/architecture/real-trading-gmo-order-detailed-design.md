@@ -62,45 +62,82 @@
 
 | 処理 | GMO API | HTTP Method | Request DTO | Response DTO | アプリ内モデル | 利用箇所 | 備考 |
 |---|---|---|---|---|---|---|---|
-| 残高確認 | `/private/v1/account/assets` | GET | なし | `GmoAccountAssetsResponse` | `ExchangeAsset` | `BUY_CANDIDATE`時の残高チェック | 利用可能残高(available)を確認 |
-| 未約定注文確認 | `/private/v1/activeOrders` | GET | `GmoActiveOrdersRequest` | `GmoActiveOrdersResponse` | `ExchangeActiveOrder` | `BUY_CANDIDATE`時の二重注文防止チェック | 処理中の注文がないか確認 |
-| 買い注文送信 | `/private/v1/order` | POST | `GmoOrderRequest` | `GmoOrderResponse` | `AcceptedOrder` | 安全チェック通過後の注文発注 | 戻り値の orderId を取得 |
-| 注文状態確認 | `/private/v1/orders` | GET | `GmoOrdersStatusRequest` | `GmoOrdersStatusResponse` | `ExchangeOrderStatus` | 注文送信直後または次回起動時の状態確認 | status (EXECUTED/CANCELED等) を確認 |
-| 約定確認 | `/private/v1/executions` | GET | `GmoExecutionsRequest` | `GmoExecutionsResponse` | `ExecutedOrder` | `ExchangeOrderStatus`が約定済みの場合の詳細確認 | 実約定価格・実約定数量の取得 |
+| 残高確認 | `/private/v1/account/assets` | GET | なし | `GmoAccountAssetsResponseDto` | `ExchangeAsset` | `BUY_CANDIDATE`時の残高チェック | 利用可能残高(available)を確認 |
+| 未約定注文確認 | `/private/v1/activeOrders` | GET | `GmoActiveOrdersRequestDto` | `GmoActiveOrdersResponseDto` | `ExchangeActiveOrder` | `BUY_CANDIDATE`時の二重注文防止チェック | 処理中の注文がないか確認 |
+| 買い注文送信 | `/private/v1/order` | POST | `GmoPlaceOrderRequestDto` | `GmoPlaceOrderResponseDto` | `AcceptedOrder` | 安全チェック通過後の注文発注 | 戻り値の orderId を取得 |
+| 注文状態確認 | `/private/v1/orders` | GET | `GmoOrdersRequestDto` | `GmoOrdersResponseDto` | `ExchangeOrderStatus` | 注文送信直後または次回起動時の状態確認 | status (EXECUTED/CANCELED等) を確認 |
+| 約定確認 | `/private/v1/executions` | GET | `GmoExecutionsRequestDto` | `GmoExecutionsResponseDto` | `ExecutedOrder` | `ExchangeOrderStatus`が約定済みの場合の詳細確認 | 実約定価格・実約定数量の取得 |
 
 **各APIの詳細:**
+
 - **残高確認 (`GET /private/v1/account/assets`)**
+  - **Path:** `/private/v1/account/assets`
+  - **Method:** `GET`
   - **目的:** 注文予定額以上の JPY 利用可能残高（`available`）があるか確認する。
   - **タイミング:** `BUY_CANDIDATE` 判定後、注文前安全チェック時。
-  - **エラー時:** 以降の注文処理を中止。
+  - **Query Parameter:** なし
+  - **Request Body:** なし
+  - **対応するRequest DTO:** なし
+  - **レスポンスから使う項目:** `data` の配列内から `symbol` と `available`
+  - **対応するResponse DTO:** `GmoAccountAssetsResponseDto`, `GmoAccountAssetDto`
+  - **変換後のアプリ内モデル:** `ExchangeAsset`
+  - **エラー時:** エラーログを出力し、以降の注文処理を中止する。
   - **dry-run:** 呼び出さない。
+
 - **未約定注文確認 (`GET /private/v1/activeOrders`)**
+  - **Path:** `/private/v1/activeOrders`
+  - **Method:** `GET`
   - **目的:** 既存の未約定注文が存在しないか確認し、二重注文を防止する。
   - **タイミング:** `BUY_CANDIDATE` 判定後、注文前安全チェック時。
-  - **リクエスト項目:** `symbol`
-  - **レスポンスから使う項目:** `list` (未約定注文のリスト)
-  - **エラー時:** 以降の注文処理を中止。
+  - **Query Parameter:** `symbol`, `page`, `count`
+  - **Request Body:** なし
+  - **対応するRequest DTO:** `GmoActiveOrdersRequestDto`
+  - **レスポンスから使う項目:** `data.list` (未約定注文のリスト) 内の `orderId`, `symbol`, `side`, `size`, `price`, `status`
+  - **対応するResponse DTO:** `GmoActiveOrdersResponseDto`, `GmoActiveOrderDto`
+  - **変換後のアプリ内モデル:** `ExchangeActiveOrder`
+  - **エラー時:** エラーログを出力し、以降の注文処理を中止する。
   - **dry-run:** 呼び出さない。
+
 - **買い注文送信 (`POST /private/v1/order`)**
-  - **目的:** 実際にGMOへ買い注文を送信する。
+  - **Path:** `/private/v1/order`
+  - **Method:** `POST`
+  - **目的:** 実際にGMOへ買い注文を送信する。初期対応では成行(MARKET)注文で実装する。MARKET注文の場合 `price` の指定は不要。
   - **タイミング:** 安全条件をすべてクリアした後。
-  - **リクエスト項目:** `symbol`, `side` (BUY), `executionType` (MARKET), `size`
+  - **Query Parameter:** なし
+  - **Request Body:** `symbol`, `side` (BUY), `executionType` (MARKET), `size`
+  - **対応するRequest DTO:** `GmoPlaceOrderRequestDto`
   - **レスポンスから使う項目:** `data` (orderId)
-  - **エラー時:** 未確認注文として扱い、以降の注文を強制停止。
+  - **対応するResponse DTO:** `GmoPlaceOrderResponseDto`
+  - **変換後のアプリ内モデル:** `AcceptedOrder`
+  - **エラー時:** 未確認注文として扱い、以降の注文を強制停止する。
   - **dry-run:** 呼び出さない。
+
 - **注文状態確認 (`GET /private/v1/orders`)**
+  - **Path:** `/private/v1/orders`
+  - **Method:** `GET`
   - **目的:** 発注した注文が約定(EXECUTED)したか、キャンセルされたか確認する。
   - **タイミング:** 買い注文送信後（または次回起動時）。
-  - **リクエスト項目:** `orderId`
-  - **レスポンスから使う項目:** `list` 内の `status`
-  - **エラー時:** 未確認注文として扱い、状態不整合を防ぐため次回以降の実注文を停止。
+  - **Query Parameter:** `orderId`
+  - **Request Body:** なし
+  - **対応するRequest DTO:** `GmoOrdersRequestDto`
+  - **レスポンスから使う項目:** `data.list` 内の `orderId`, `status`, `cancelType`
+  - **対応するResponse DTO:** `GmoOrdersResponseDto`, `GmoOrderDto`
+  - **変換後のアプリ内モデル:** `ExchangeOrderStatus`
+  - **エラー時:** 未確認注文として扱い、状態不整合を防ぐため次回以降の実注文を停止する。
   - **dry-run:** 呼び出さない。
+
 - **約定確認 (`GET /private/v1/executions`)**
+  - **Path:** `/private/v1/executions`
+  - **Method:** `GET`
   - **目的:** 約定済み注文の実際の約定価格や約定数量を取得する。
   - **タイミング:** 注文状態確認で `EXECUTED` が確認できた場合。
-  - **リクエスト項目:** `orderId`
-  - **レスポンスから使う項目:** `list` 内の `executionPrice`, `executionSize`
-  - **エラー時:** 未確認注文として扱い、次回以降の実注文を停止。
+  - **Query Parameter:** `orderId`
+  - **Request Body:** なし
+  - **対応するRequest DTO:** `GmoExecutionsRequestDto`
+  - **レスポンスから使う項目:** `data.list` 内の `executionId`, `orderId`, `executionPrice`, `executionSize`, `fee`, `lossGain`
+  - **対応するResponse DTO:** `GmoExecutionsResponseDto`, `GmoExecutionDto`
+  - **変換後のアプリ内モデル:** `ExecutedOrder`
+  - **エラー時:** 未確認注文として扱い、状態不整合を防ぐため次回以降の実注文を停止する。
   - **dry-run:** 呼び出さない。
 
 ## 10. 注文送信と約定確認の流れ
@@ -135,15 +172,19 @@
 
 ## 13. 追加・変更するクラス一覧
 - **Infrastructure DTO (1クラス1ファイル)**
-  - `GmoAccountAssetsResponse`
-  - `GmoActiveOrdersRequest`
-  - `GmoActiveOrdersResponse`
-  - `GmoOrderRequest`
-  - `GmoOrderResponse`
-  - `GmoOrdersStatusRequest`
-  - `GmoOrdersStatusResponse`
-  - `GmoExecutionsRequest`
-  - `GmoExecutionsResponse`
+  - `GmoAccountAssetsResponseDto`
+  - `GmoAccountAssetDto`
+  - `GmoActiveOrdersRequestDto`
+  - `GmoActiveOrdersResponseDto`
+  - `GmoActiveOrderDto`
+  - `GmoPlaceOrderRequestDto`
+  - `GmoPlaceOrderResponseDto`
+  - `GmoOrdersRequestDto`
+  - `GmoOrdersResponseDto`
+  - `GmoOrderDto`
+  - `GmoExecutionsRequestDto`
+  - `GmoExecutionsResponseDto`
+  - `GmoExecutionDto`
 - **Application/Domain Model**
   - `ExchangeAsset`
   - `ExchangeActiveOrder`
@@ -155,30 +196,469 @@
   - `RealTradeOrderUseCase` または相当する責務を持つService
 
 ## 14. 追加・変更するファイル一覧
-（1ファイルにつき1つのDTO、モデルの原則に従う）
-- `infrastructure/exchange/gmo/model/GmoAccountAssetsResponse.kt`
-- `infrastructure/exchange/gmo/model/GmoActiveOrdersRequest.kt`
-- `infrastructure/exchange/gmo/model/GmoActiveOrdersResponse.kt`
-- `infrastructure/exchange/gmo/model/GmoOrderRequest.kt`
-- `infrastructure/exchange/gmo/model/GmoOrderResponse.kt`
-- `infrastructure/exchange/gmo/model/GmoOrdersStatusRequest.kt`
-- `infrastructure/exchange/gmo/model/GmoOrdersStatusResponse.kt`
-- `infrastructure/exchange/gmo/model/GmoExecutionsRequest.kt`
-- `infrastructure/exchange/gmo/model/GmoExecutionsResponse.kt`
-- `domain/model/order/ExchangeAsset.kt`
-- `domain/model/order/ExchangeActiveOrder.kt`
-- `domain/model/order/AcceptedOrder.kt`
-- `domain/model/order/ExchangeOrderStatus.kt`
-- `domain/model/order/ExecutedOrder.kt`
-- その他、設定ロードクラスや設定YAMLの変更、およびApiClientクラス。
+（1ファイルにつき1つのDTO、モデルの原則に従う。DTOは必ず `infrastructure/exchange/gmo/dto/` 配下に置く）
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoAccountAssetsResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoAccountAssetDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersRequestDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrderDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoPlaceOrderRequestDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoPlaceOrderResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersRequestDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrderDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsRequestDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeAsset.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeActiveOrder.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/AcceptedOrder.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeOrderStatus.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExecutedOrder.kt`
 
-## 15. DTOとアプリ内モデルの対応
-DTOはあくまで GMO API との通信仕様を反映したデータ構造（業務ロジックなし）とし、それを `GmoPrivateApiClient` 等のインフラ層内部でドメイン/アプリケーション層で利用するモデルに変換する。
-- `GmoAccountAssetsResponse` → `ExchangeAsset` (必要な `symbol` と `available` などを抽出)
-- `GmoActiveOrdersResponse` → `ExchangeActiveOrder`
-- `GmoOrderResponse` → `AcceptedOrder` (発注成功時の `orderId`)
-- `GmoOrdersStatusResponse` → `ExchangeOrderStatus` (ステータス等)
-- `GmoExecutionsResponse` → `ExecutedOrder` (実約定価格、数量など)
+## 15. DTO設計とKotlinコード雛形
+
+DTOは GMO API との通信仕様を反映したデータ構造として定義する。
+業務ロジックやドメイン独自のデフォルト値を持たせず、レスポンスに必要な項目を定義する。
+
+### 15.1. 残高確認 (GET /private/v1/account/assets)
+
+用途:
+- `GET /private/v1/account/assets` のレスポンスを受け取る。
+- JPY の `available` を確認する。
+
+**GmoAccountAssetsResponseDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 資産残高取得APIのレスポンスDTO。
+ *
+ * @property status レスポンスステータス（0が正常）
+ * @property data 資産残高リスト
+ * @property responsetime レスポンス時刻
+ */
+@Serializable
+data class GmoAccountAssetsResponseDto(
+    val status: Int,
+    val data: List<GmoAccountAssetDto>,
+    val responsetime: String
+)
+```
+
+**GmoAccountAssetDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 資産残高リスト内の個別の資産情報DTO。
+ *
+ * @property amount 残高
+ * @property available 利用可能金額（残高 - 出金予定額）
+ * @property conversionRate 円転レート
+ * @property symbol 資産残高銘柄
+ */
+@Serializable
+data class GmoAccountAssetDto(
+    val amount: String,
+    val available: String,
+    val conversionRate: String,
+    val symbol: String
+)
+```
+
+### 15.2. 未約定注文確認 (GET /private/v1/activeOrders)
+
+用途:
+- `GET /private/v1/activeOrders` のリクエスト・レスポンスを表す。
+- 同じ銘柄に未約定注文がないか確認する。
+
+**GmoActiveOrdersRequestDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 有効注文一覧取得APIのリクエストDTO。
+ *
+ * @property symbol 取扱銘柄
+ * @property page 取得対象ページ
+ * @property count 1ページ当りの取得件数
+ */
+@Serializable
+data class GmoActiveOrdersRequestDto(
+    val symbol: String,
+    val page: Int? = null,
+    val count: Int? = null
+)
+```
+
+**GmoActiveOrdersResponseDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 有効注文一覧取得APIのレスポンスDTO。
+ *
+ * @property status レスポンスステータス
+ * @property data ページネーションおよび有効注文のリスト
+ * @property responsetime レスポンス時刻
+ */
+@Serializable
+data class GmoActiveOrdersResponseDto(
+    val status: Int,
+    val data: GmoActiveOrdersDataDto,
+    val responsetime: String
+)
+```
+
+**GmoActiveOrdersDataDto.kt** (1クラス1ファイルの原則により別途用意)
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 有効注文一覧取得APIのdata項目DTO。
+ *
+ * @property list 有効注文のリスト
+ */
+@Serializable
+data class GmoActiveOrdersDataDto(
+    val list: List<GmoActiveOrderDto>
+)
+```
+
+**GmoActiveOrderDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 有効注文リスト内の個別の注文情報DTO。
+ *
+ * @property rootOrderId 親注文ID
+ * @property orderId 注文ID
+ * @property symbol 取扱銘柄
+ * @property side 売買区分 (BUY/SELL)
+ * @property orderType 取引区分
+ * @property executionType 注文タイプ (MARKET/LIMIT/STOP)
+ * @property settleType 決済区分
+ * @property size 発注数量
+ * @property executedSize 約定数量
+ * @property price 注文価格
+ * @property losscutPrice ロスカットレート
+ * @property status 注文ステータス
+ * @property timeInForce 執行数量条件
+ * @property timestamp 注文日時
+ */
+@Serializable
+data class GmoActiveOrderDto(
+    val rootOrderId: Long,
+    val orderId: Long,
+    val symbol: String,
+    val side: String,
+    val orderType: String,
+    val executionType: String,
+    val settleType: String,
+    val size: String,
+    val executedSize: String,
+    val price: String,
+    val losscutPrice: String,
+    val status: String,
+    val timeInForce: String,
+    val timestamp: String
+)
+```
+
+### 15.3. 注文送信 (POST /private/v1/order)
+
+用途:
+- `POST /private/v1/order` のリクエスト・レスポンスを表す。
+- 買い注文を送信し、`orderId` を取得する。
+- *注意点*: 初期対応は成行(`MARKET`)注文とする。GMO仕様上、`executionType`が`MARKET`の場合、`price`は不要（null許容とするか送信プロパティから省く）。`LIMIT`注文を行う際は`price`と`timeInForce`が必要。また、`size`はJPY金額ではなくBTC等の暗号資産数量を指定する。
+
+**GmoPlaceOrderRequestDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 新規注文APIのリクエストDTO。
+ *
+ * @property symbol 取扱銘柄
+ * @property side 売買区分 (BUY/SELL)
+ * @property executionType 注文タイプ (MARKET/LIMIT/STOP)
+ * @property timeInForce 執行数量条件 (任意、LIMITの場合設定可能)
+ * @property price 注文価格 (MARKETの場合は不要)
+ * @property losscutPrice ロスカットレート (任意)
+ * @property size 注文数量 (BTC等の数量)
+ * @property cancelBefore 有効注文取消フラグ (任意)
+ */
+@Serializable
+data class GmoPlaceOrderRequestDto(
+    val symbol: String,
+    val side: String,
+    val executionType: String,
+    val timeInForce: String? = null,
+    val price: String? = null,
+    val losscutPrice: String? = null,
+    val size: String,
+    val cancelBefore: Boolean? = null
+)
+```
+
+**GmoPlaceOrderResponseDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 新規注文APIのレスポンスDTO。
+ *
+ * @property status レスポンスステータス
+ * @property data 注文受付されたorderId
+ * @property responsetime レスポンス時刻
+ */
+@Serializable
+data class GmoPlaceOrderResponseDto(
+    val status: Int,
+    val data: String,
+    val responsetime: String
+)
+```
+
+### 15.4. 注文状態確認 (GET /private/v1/orders)
+
+用途:
+- `GET /private/v1/orders` のリクエスト・レスポンスを表す。
+- `orderId` に対応する注文状態が `EXECUTED` になったかなどを確認する。
+
+**GmoOrdersRequestDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 注文情報取得APIのリクエストDTO。
+ *
+ * @property orderId 注文ID (カンマ区切りで複数指定可能)
+ */
+@Serializable
+data class GmoOrdersRequestDto(
+    val orderId: String
+)
+```
+
+**GmoOrdersResponseDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 注文情報取得APIのレスポンスDTO。
+ *
+ * @property status レスポンスステータス
+ * @property data 注文情報のリストを含むオブジェクト
+ * @property responsetime レスポンス時刻
+ */
+@Serializable
+data class GmoOrdersResponseDto(
+    val status: Int,
+    val data: GmoOrdersDataDto,
+    val responsetime: String
+)
+```
+
+**GmoOrdersDataDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 注文情報取得APIのdata項目DTO。
+ *
+ * @property list 注文情報のリスト
+ */
+@Serializable
+data class GmoOrdersDataDto(
+    val list: List<GmoOrderDto>
+)
+```
+
+**GmoOrderDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 注文リスト内の個別の注文情報DTO。
+ *
+ * @property rootOrderId 親注文ID
+ * @property orderId 注文ID
+ * @property symbol 取扱銘柄
+ * @property side 売買区分
+ * @property orderType 取引区分
+ * @property executionType 注文タイプ
+ * @property settleType 決済区分
+ * @property size 発注数量
+ * @property executedSize 約定数量
+ * @property price 注文価格
+ * @property losscutPrice ロスカットレート
+ * @property status 注文ステータス
+ * @property cancelType 取消区分 (キャンセル時のみ)
+ * @property timeInForce 執行数量条件
+ * @property timestamp 注文日時
+ */
+@Serializable
+data class GmoOrderDto(
+    val rootOrderId: Long,
+    val orderId: Long,
+    val symbol: String,
+    val side: String,
+    val orderType: String,
+    val executionType: String,
+    val settleType: String,
+    val size: String,
+    val executedSize: String,
+    val price: String,
+    val losscutPrice: String,
+    val status: String,
+    val cancelType: String? = null,
+    val timeInForce: String,
+    val timestamp: String
+)
+```
+
+### 15.5. 約定確認 (GET /private/v1/executions)
+
+用途:
+- `GET /private/v1/executions` のリクエスト・レスポンスを表す。
+- 注文が約定した際の、実際の約定価格(`executionPrice`)と約定数量(`executionSize`)を取得する。
+
+**GmoExecutionsRequestDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 約定情報取得APIのリクエストDTO。
+ *
+ * @property orderId 注文ID (orderIdまたはexecutionIdのいずれかが必須)
+ * @property executionId 約定ID
+ */
+@Serializable
+data class GmoExecutionsRequestDto(
+    val orderId: Long? = null,
+    val executionId: String? = null
+)
+```
+
+**GmoExecutionsResponseDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 約定情報取得APIのレスポンスDTO。
+ *
+ * @property status レスポンスステータス
+ * @property data 約定情報のリストを含むオブジェクト
+ * @property responsetime レスポンス時刻
+ */
+@Serializable
+data class GmoExecutionsResponseDto(
+    val status: Int,
+    val data: GmoExecutionsDataDto,
+    val responsetime: String
+)
+```
+
+**GmoExecutionsDataDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 約定情報取得APIのdata項目DTO。
+ *
+ * @property list 約定情報のリスト
+ */
+@Serializable
+data class GmoExecutionsDataDto(
+    val list: List<GmoExecutionDto>
+)
+```
+
+**GmoExecutionDto.kt**
+```kotlin
+package cryptoautotrading.infrastructure.exchange.gmo.dto
+
+import kotlinx.serialization.Serializable
+
+/**
+ * GMO API 約定リスト内の個別の約定情報DTO。
+ *
+ * @property executionId 約定ID
+ * @property orderId 注文ID
+ * @property positionId 建玉ID (レバレッジのみ)
+ * @property symbol 取扱銘柄
+ * @property side 売買区分
+ * @property settleType 決済区分
+ * @property size 約定数量
+ * @property price 約定レート
+ * @property lossGain 決済損益
+ * @property fee 取引手数料
+ * @property timestamp 約定日時
+ */
+@Serializable
+data class GmoExecutionDto(
+    val executionId: Long,
+    val orderId: Long,
+    val positionId: Long? = null,
+    val symbol: String,
+    val side: String,
+    val settleType: String,
+    val size: String,
+    val price: String,
+    val lossGain: String,
+    val fee: String,
+    val timestamp: String
+)
+```
+
+## 16. DTOとアプリ内モデルの変換
+
+DTOはあくまで GMO API との通信仕様を反映したデータ構造（業務ロジックなし）とし、それを `infrastructure` パッケージ内部の `GmoPrivateApiClient` などで、ドメイン層やアプリケーション層で利用するアプリ内モデルへマッピングする。
+**ドメイン/アプリケーションはDTOを直接扱わず、変換後のモデルのみに依存する設計とする。**
+
+- `GmoAccountAssetDto` → `ExchangeAsset`
+  - DTOから対象の `symbol` に合致するオブジェクトを探し、`available` を `BigDecimal` に変換してドメイン用の `ExchangeAsset` を生成する。
+- `GmoActiveOrderDto` → `ExchangeActiveOrder`
+  - DTOの `orderId`, `symbol`, `side`, `status` などをマッピングし、未約定注文の状態をカプセル化する。
+- `GmoPlaceOrderResponseDto` → `AcceptedOrder`
+  - `data` フィールドの `orderId` を保持する、注文成功を表すドメインモデル `AcceptedOrder` を生成する。
+- `GmoOrderDto` → `ExchangeOrderStatus`
+  - `orderId` や `status` (`WAITING`, `ORDERED`, `EXECUTED`, `CANCELED` など) をマッピングし、ステータスチェック用のモデルとして返す。
+- `GmoExecutionDto` → `ExecutedOrder`
+  - 実際の `price` と `size`、さらに `fee` などを抽出し、真の約定結果を表現する `ExecutedOrder` を生成する。
 
 ## 16. APIキー取得方法
 - **GCP Secret Manager** を使用して取得する。
