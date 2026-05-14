@@ -51,12 +51,18 @@
 ## dry-run と実注文ONの仕様
 
 ### dry-run モード（デフォルト）
+dry-run は、新しい注文予定モードではなく、既存のシミュレーション実行モードとして定義します。
 `dry_run=true` の場合、以下の挙動となります。
-- GMO Private API は**一切呼び出しません**（残高確認や注文APIなど）。
+
+- 既存 Strategy による売買判定は今まで通り行います。
+- `BUY_CANDIDATE` / `SELL_CANDIDATE` / `SKIP` / `HOLDING` の判定結果を今まで通り扱います。
+- dry-run では、既存のシミュレーション処理として `state.json` を更新します。
+- 既存のCSV出力・ログ出力も今まで通り行います。
+- GMO Private API は**一切呼び出しません**。
 - GCP Secret Manager から GMO APIキーや Secret Key を**取得しません**。
-- 実際の `orderId` は存在しないため、`dryRunOrderId-xxxx` のような疑似IDを生成して保存します。
-- 実資金、GMO側残高、GMO側注文状態は一切変化しません。
-- 注文予定や判定理由は、ログおよび `state.json` に保存します。
+- GMO側の残高、注文状態、約定状態は一切変化しません。
+- 実際のお金は動きません。
+- 疑似 orderId は作りません。
 
 ### 実注文ON モード
 `dry_run=false` かつ `real_trade_enabled=true` の場合のみ、以下の挙動となります。
@@ -67,28 +73,80 @@
 
 ## 具体例
 
-### パターン1: dry-run の例
-- **入力**: `AtrTrendConfirmReboundStrategy` が `BUY_CANDIDATE` を返した。
-- **リアル注文処理の挙動**: `BUY_CANDIDATE` を注文候補として受け取る。
-- **判定**: `dry_run=true` のため、GMO Private API は呼ばない。APIキーの取得も行わない。
-- **結果**: 疑似ID（例: `dryRunOrderId-001`）を発行し、注文予定と判定理由をログと `state.json` に保存して終了する。
+### パターン1: dry-run で BUY_CANDIDATE になった場合
+- **起動時刻**: 2026-05-11 10:00
+- **使用 Strategy**: `AtrTrendConfirmReboundStrategy`
+- **Strategy の判定結果**: `BUY_CANDIDATE`
+- `dry_run=true`
+- `real_trade_enabled=false`
+- **現在価格**: 10,000,000円
+- `trading.trade_amount`: 1,000円
+- **シミュレーション上の購入数量**: 0.0001 BTC
 
-### パターン2: 実注文ONの例
-- **入力**: 既存 Strategy が `BUY_CANDIDATE` を返した。
-- **リアル注文処理の挙動**: `BUY_CANDIDATE` を注文候補として受け取り、安全チェックを開始する。
-- **判定**: `dry_run=false` かつ `real_trade_enabled=true`。Secret Manager からキーを取得し、GMO APIで残高確認（利用可能残高 5000円）と未約定注文なしを確認。注文予定額（1000円）は `max_order_jpy`（1000円）以下であり、すべての安全条件をクリア。
-- **結果**: 実注文数量（例: 0.0001 BTC）を計算し、GMO Private API で買い注文を実行。返却された `orderId` を `state.json` とログに保存して終了する。
+**この場合の動作**:
+- GMO Private API は呼ばない
+- APIキーは取得しない
+- 実際のお金は動かない
+- 既存シミュレーションと同じく、`state.json` の残金・保有BTC数量・買値を更新する
+- CSVとログも今まで通り出力する
 
-### パターン3: 注文しない例（安全条件違反）
-- **入力**: 既存 Strategy が `BUY_CANDIDATE` を返した。
-- **リアル注文処理の挙動**: 注文候補として受け取り、安全チェックを開始。
-- **判定**: `dry_run=false` だが、GMO APIで確認した利用可能残高が 500円しかなく、注文予定額（1000円）を下回っていた。
-- **結果**: 注文を見送る。GMO Private API への注文リクエストは送信せず、「残高不足」という理由をログに記録して終了する。
+### パターン2: dry-run で SELL_CANDIDATE になった場合
+- **使用 Strategy が `SELL_CANDIDATE` を返した**
+- `dry_run=true`
 
-### パターン4: SELL_CANDIDATE（初期対応）
-- **入力**: 既存 Strategy が `SELL_CANDIDATE` を返した。
-- **リアル注文処理の挙動**: 初期対応のため、実売却処理は行わない。
-- **結果**: 実注文は送信せず、「初期対応のため売却見送り」としてログに記録して終了する。
+**この場合の動作**:
+- GMO Private API は呼ばない
+- 実際の売却注文は送らない
+- 既存シミュレーションと同じく、`state.json` 上で売却済みとして残金・保有数量・確定損益を更新する
+- CSVとログも今まで通り出力する
+
+### パターン3: 実注文ONの場合
+- `dry_run=false`
+- `real_trade_enabled=true`
+- Strategy の判定結果が `BUY_CANDIDATE`
+- 安全条件をすべて満たす
+
+この場合だけ、GMO Private API を使った実注文処理に進む。
+
+### パターン4: 実注文ONで注文しない例（安全条件違反）
+- `dry_run=false` だが、GMO APIで確認した利用可能残高が 500円しかなく、注文予定額（1000円）を下回っていた。
+- 注文を見送る。GMO Private API への注文リクエストは送信せず、「残高不足」という理由をログに記録して終了する。
+
+## Mermaid による図
+
+```mermaid
+flowchart TD
+    A[Cloud Run Job 起動] --> B[設定読み込み]
+    B --> C[市場データ取得]
+    C --> D[既存 Strategy で売買判定]
+    D --> E{dry_run = true ?}
+
+    E -- Yes --> F[既存シミュレーション処理]
+    F --> G[SimulationService で state.json 更新]
+    G --> H[CSV・ログ出力]
+    H --> Z[終了]
+
+    E -- No --> I{real_trade_enabled = true ?}
+    I -- No --> F
+
+    I -- Yes --> J{判定結果}
+    J -- SKIP --> Z
+    J -- HOLDING --> Z
+    J -- SELL_CANDIDATE --> K[初期対応では実売却せずログ記録]
+    K --> Z
+    J -- BUY_CANDIDATE --> L[実注文前チェック]
+
+    L --> M{残高・未約定注文・上限チェックOK?}
+    M -- No --> N[注文せず理由を記録]
+    N --> Z
+
+    M -- Yes --> O[Secret Manager からAPIキー取得]
+    O --> P[GMO Private API へ買い注文]
+    P --> Q[orderId 保存]
+    Q --> R[注文結果・約定結果確認]
+    R --> S[state.json 更新]
+    S --> Z
+```
 
 ## エラーと異常時の停止条件
 GMO Private API の呼び出し時等に以下の異常が発生した場合は、重大な問題として扱い、**以降の実注文を強制的に停止**します。
@@ -108,7 +166,7 @@ GMO Private API の呼び出し時等に以下の異常が発生した場合は�
 ## state.json に保存する情報
 リアル注文処理において、次回の実行時（状態復元時）に必要な以下の情報を `state.json` に保存します。
 
-- `orderId`（実注文の場合はGMOから返却されたID、dry-runの場合は疑似ID）
+- `orderId`（実注文の場合はGMOから返却されたID）
 - 注文予定額（日本円）と、計算された実際の注文数量（BTC等）
 - 注文実行時点の価格
 - 判定理由や適用した Strategy の記録
