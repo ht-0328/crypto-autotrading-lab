@@ -38,7 +38,10 @@
   - 初期対応は現物の「買い注文」のみ。
   - GMO Private API を呼び出して注文を送信し、APIから `orderId` が返却された時点では「保有状態（isHolding=true）」にはしない。
   - GMO側で約定済み（EXECUTED）であることを確認できた場合のみ、実約定価格および実約定数量で `state.json` の保有状態を更新する。
-  - 約定が確認できない場合は未確認注文として保存し、次回以降の実注文を停止する。
+- 約定が確認できない場合は未確認注文として保存し、次回以降の新規の「実注文」を停止する。
+  - ただし、既存の未確認注文の状態確認だけは次回起動時に引き続き行う。
+  - その状態確認で約定済み（EXECUTED）を確認できた場合のみ、`state.json` の保有状態を更新する。
+  - それ以外の状態（未約定のままなど）の場合は実注文停止状態を維持する。
 
 ## 7. BUY_CANDIDATE の処理
 - **実注文実行条件（安全チェック）:**
@@ -134,7 +137,7 @@
   - **Query Parameter:** `orderId`
   - **Request Body:** なし
   - **対応するRequest DTO:** `GmoExecutionsRequestDto`
-  - **レスポンスから使う項目:** `data.list` 内の `executionId`, `orderId`, `executionPrice`, `executionSize`, `fee`, `lossGain`
+  - **レスレスポンスから使う項目:** `data.list` 内の `executionId`, `orderId`, `price`, `size`, `fee`, `lossGain`
   - **対応するResponse DTO:** `GmoExecutionsResponseDto`, `GmoExecutionDto`
   - **変換後のアプリ内モデル:** `ExecutedOrder`
   - **エラー時:** 未確認注文として扱い、状態不整合を防ぐため次回以降の実注文を停止する。
@@ -149,26 +152,33 @@
 6. `status` が未約定の場合は、`state.json` に未確認注文として保存し、次回実行時に再度状態確認を行う。
 
 ## 11. state.json の拡張内容
-実注文ONで注文を送信した場合、以下の情報を `state.json`（またはそれに準ずる永続化オブジェクト）に追加する。
-- `realOrderId`: 注文ID
-- `realOrderSymbol`: 注文対象銘柄
-- `realOrderSide`: 注文方向
-- `realOrderAmount`: 注文予定額
-- `realOrderSize`: 注文数量
-- `realOrderPrice`: 注文時価格
-- `realOrderStatus`: 注文ステータス
-- `realOrderExecutionConfirmed`: 約定確認結果フラグ
-- `realOrderTimestamp`: 注文実行時刻
+実注文ONで注文を送信した場合、以下の情報を `state.json`（またはそれに準ずる永続化オブジェクト）にネストした `realTrading` ブロックとして追加する。フラットな構造は避けること。
+- `realTrading.isStopped`: 実注文停止状態のフラグ
+- `realTrading.stopReason`: 停止理由（エラーや未確認など）
+- `realTrading.stoppedAt`: 停止日時
+- `realTrading.latestOrder.orderId`: 注文ID
+- `realTrading.latestOrder.symbol`: 注文対象銘柄
+- `realTrading.latestOrder.side`: 注文方向
+- `realTrading.latestOrder.status`: 注文ステータス
+- `realTrading.latestOrder.requestedAmountJpy`: 注文予定額
+- `realTrading.latestOrder.requestedSize`: 注文数量
+- `realTrading.latestOrder.requestedPrice`: 注文時価格
+- `realTrading.latestOrder.executedPrice`: 実約定価格
+- `realTrading.latestOrder.executedSize`: 実約定数量
+- `realTrading.latestOrder.orderedAt`: 注文実行時刻
+- `realTrading.latestOrder.executedAt`: 約定確認時刻
 
 ## 12. 追加・変更する設定項目
-運用・金額に関する値のデフォルト値は設定しないこと（明示的な指定を必須とする）。
+既存のシミュレーション向け設定（`trading`）と分けるため、実注文制御用の設定は `real_trading` 配下に定義する。
+金額上限等は実注文ON時には明示的な設定を必須とするが、安全フラグについては安全側に倒したデフォルト値を持たせてよい。
 | 設定名 | 日本語の意味 | 目的 | デフォルト値ポリシー |
 |---|---|---|---|
-| `trading.real_trade_enabled` | リアル注文有効化 | 実注文処理を許可するためのフラグ | `false` （必須） |
-| `trading.stop_on_unconfirmed_order` | 未確認注文時の停止 | 注文状態が確定できない場合に以降の実注文を停止するか | `true` （必須） |
-| `trading.max_order_jpy` | 1回の最大注文金額 | 誤発注を防ぐための1回あたりの金額上限 | デフォルトなし（明示的指定必須） |
-| `trading.max_daily_order_jpy` | 1日の最大注文金額 | 暴走時の被害を抑えるための1日の累計上限 | デフォルトなし（明示的指定必須） |
-| `trading.max_position_jpy` | 最大保有金額 | 過剰保有を防ぐための上限額 | デフォルトなし（明示的指定必須） |
+| `real_trading.dry_run` | シミュレーションモード | 実際の注文送信を行わないか | `true` |
+| `real_trading.real_trade_enabled` | リアル注文有効化 | 実注文処理を許可するためのフラグ | `false` |
+| `real_trading.stop_on_unconfirmed_order` | 未確認注文時の停止 | 注文状態が確定できない場合に以降の実注文を停止するか | `true` |
+| `real_trading.max_order_jpy` | 1回の最大注文金額 | 誤発注を防ぐための1回あたりの金額上限 | デフォルトなし（明示的指定必須） |
+| `real_trading.max_daily_order_jpy` | 1日の最大注文金額 | 暴走時の被害を抑えるための1日の累計上限 | デフォルトなし（明示的指定必須） |
+| `real_trading.max_position_jpy` | 最大保有金額 | 過剰保有を防ぐための上限額 | デフォルトなし（明示的指定必須） |
 
 ## 13. 追加・変更するクラス一覧
 - **Infrastructure DTO (1クラス1ファイル)**
@@ -176,14 +186,17 @@
   - `GmoAccountAssetDto`
   - `GmoActiveOrdersRequestDto`
   - `GmoActiveOrdersResponseDto`
+  - `GmoActiveOrdersDataDto`
   - `GmoActiveOrderDto`
   - `GmoPlaceOrderRequestDto`
   - `GmoPlaceOrderResponseDto`
   - `GmoOrdersRequestDto`
   - `GmoOrdersResponseDto`
+  - `GmoOrdersDataDto`
   - `GmoOrderDto`
   - `GmoExecutionsRequestDto`
   - `GmoExecutionsResponseDto`
+  - `GmoExecutionsDataDto`
   - `GmoExecutionDto`
 - **Application/Domain Model**
   - `ExchangeAsset`
@@ -201,14 +214,17 @@
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoAccountAssetDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersRequestDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersDataDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrderDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoPlaceOrderRequestDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoPlaceOrderResponseDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersRequestDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersDataDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrderDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsRequestDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsResponseDto.kt`
+- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsDataDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionDto.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeAsset.kt`
 - `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeActiveOrder.kt`
@@ -293,8 +309,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GmoActiveOrdersRequestDto(
     val symbol: String,
-    val page: Int? = null,
-    val count: Int? = null
+    val page: Int?,
+    val count: Int?
 )
 ```
 
@@ -409,11 +425,11 @@ data class GmoPlaceOrderRequestDto(
     val symbol: String,
     val side: String,
     val executionType: String,
-    val timeInForce: String? = null,
-    val price: String? = null,
-    val losscutPrice: String? = null,
+    val timeInForce: String?,
+    val price: String?,
+    val losscutPrice: String?,
     val size: String,
-    val cancelBefore: Boolean? = null
+    val cancelBefore: Boolean?
 )
 ```
 
@@ -538,7 +554,7 @@ data class GmoOrderDto(
     val price: String,
     val losscutPrice: String,
     val status: String,
-    val cancelType: String? = null,
+    val cancelType: String?,
     val timeInForce: String,
     val timestamp: String
 )
@@ -564,8 +580,8 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class GmoExecutionsRequestDto(
-    val orderId: Long? = null,
-    val executionId: String? = null
+    val orderId: Long?,
+    val executionId: String?
 )
 ```
 
@@ -632,7 +648,7 @@ import kotlinx.serialization.Serializable
 data class GmoExecutionDto(
     val executionId: Long,
     val orderId: Long,
-    val positionId: Long? = null,
+    val positionId: Long?,
     val symbol: String,
     val side: String,
     val settleType: String,
@@ -649,16 +665,19 @@ data class GmoExecutionDto(
 DTOはあくまで GMO API との通信仕様を反映したデータ構造（業務ロジックなし）とし、それを `infrastructure` パッケージ内部の `GmoPrivateApiClient` などで、ドメイン層やアプリケーション層で利用するアプリ内モデルへマッピングする。
 **ドメイン/アプリケーションはDTOを直接扱わず、変換後のモデルのみに依存する設計とする。**
 
+**orderId の型変換方針について**
+GMO公式APIにおいて `orderId` が数値(Long等)で返却される場合、DTOではAPIの仕様に合わせて数値型（Longなど）として定義する。ただし、ドメインやアプリケーション層のアプリ内モデル（`ExchangeActiveOrder`、`AcceptedOrder`、`ExchangeOrderStatus` 等）ではすべて一貫して **`String` 型** に統一する。DTOからアプリ内モデルへの変換時にString化を行う。
+
 - `GmoAccountAssetDto` → `ExchangeAsset`
   - DTOから対象の `symbol` に合致するオブジェクトを探し、`available` を `BigDecimal` に変換してドメイン用の `ExchangeAsset` を生成する。
 - `GmoActiveOrderDto` → `ExchangeActiveOrder`
-  - DTOの `orderId`, `symbol`, `side`, `status` などをマッピングし、未約定注文の状態をカプセル化する。
+  - DTOの `orderId` (Long) を String に変換し、`symbol`, `side`, `status` などをマッピングして、未約定注文の状態をカプセル化する。
 - `GmoPlaceOrderResponseDto` → `AcceptedOrder`
-  - `data` フィールドの `orderId` を保持する、注文成功を表すドメインモデル `AcceptedOrder` を生成する。
+  - `data` フィールドの `orderId` (String または Long) を String 型として保持する、注文成功を表すドメインモデル `AcceptedOrder` を生成する。
 - `GmoOrderDto` → `ExchangeOrderStatus`
-  - `orderId` や `status` (`WAITING`, `ORDERED`, `EXECUTED`, `CANCELED` など) をマッピングし、ステータスチェック用のモデルとして返す。
+  - `orderId` (Long) を String に変換し、`status` (`WAITING`, `ORDERED`, `EXECUTED`, `CANCELED` など) と共にマッピングし、ステータスチェック用のモデルとして返す。
 - `GmoExecutionDto` → `ExecutedOrder`
-  - 実際の `price` と `size`、さらに `fee` などを抽出し、真の約定結果を表現する `ExecutedOrder` を生成する。
+  - `orderId` や `executionId` (Long) を String に変換し、実際の `price` と `size`、さらに `fee` などを抽出して真の約定結果を表現する `ExecutedOrder` を生成する。
 
 ## 16. APIキー取得方法
 - **GCP Secret Manager** を使用して取得する。
@@ -672,8 +691,10 @@ DTOはあくまで GMO API との通信仕様を反映したデータ構造（�
   - 注文送信後、約定ステータスが正しく確認できない状態（`stop_on_unconfirmed_order=true` 時）
   - 未定義のシステム例外
 - **動作:**
-  - `state.json` に未確認注文やエラーステータスを記録し、次回起動時以降の実注文処理をスキップ（停止）する。
-  - 復旧は手動によるフラグリセット・状態修正のみとする。
+  - `state.json` の `realTrading.isStopped` を `true` にし、`stopReason` や未確認注文のステータスを記録する。
+  - 以降の新規の「実注文（POST）」はスキップ（停止）する。
+  - **既存未確認注文への対応:** 新規注文は停止するが、次回以降の実行時に、既存の未確認注文に対する状態確認（GET）だけは継続して行う。状態が最終的に `EXECUTED` になったことが確認できた場合のみ、`state.json` の保有状態および約定日時等を更新する。
+  - 復旧（新規注文の再開）は手動によるフラグリセット・状態修正のみとする。
 
 ## 18. Mermaid による処理フロー
 
