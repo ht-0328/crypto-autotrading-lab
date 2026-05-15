@@ -130,10 +130,10 @@ object ConfigLoader {
 
         val envRealTradingDryRun = System.getenv("REAL_TRADING_DRY_RUN")
         val envRealTradingEnabled = System.getenv("REAL_TRADING_ENABLED")
-        val envStopOnUnconfirmedOrder = System.getenv("STOP_ON_UNCONFIRMED_ORDER")
-        val envMaxOrderJpy = System.getenv("MAX_ORDER_JPY")
-        val envMaxDailyOrderJpy = System.getenv("MAX_DAILY_ORDER_JPY")
-        val envMaxPositionJpy = System.getenv("MAX_POSITION_JPY")
+        val envStopOnUnconfirmedOrder = System.getenv("REAL_TRADING_STOP_ON_UNCONFIRMED_ORDER")
+        val envMaxOrderJpy = System.getenv("REAL_TRADING_MAX_ORDER_JPY")
+        val envMaxDailyOrderJpy = System.getenv("REAL_TRADING_MAX_DAILY_ORDER_JPY")
+        val envMaxPositionJpy = System.getenv("REAL_TRADING_MAX_POSITION_JPY")
 
         return AppConfig(
             app = AppSettings(
@@ -161,30 +161,14 @@ object ConfigLoader {
                 outputPath = envOutputPath ?: base.output.outputPath,
                 statePath = envStatePath ?: base.output.statePath
             ),
-            realTrading = base.realTrading?.let {
-                RealTradingConfig(
-                    dryRun = envRealTradingDryRun?.toBooleanStrictOrNull() ?: it.dryRun,
-                    realTradeEnabled = envRealTradingEnabled?.toBooleanStrictOrNull() ?: it.realTradeEnabled,
-                    stopOnUnconfirmedOrder = envStopOnUnconfirmedOrder?.toBooleanStrictOrNull() ?: it.stopOnUnconfirmedOrder,
-                    maxOrderJpy = envMaxOrderJpy?.toIntOrNull() ?: it.maxOrderJpy,
-                    maxDailyOrderJpy = envMaxDailyOrderJpy?.toIntOrNull() ?: it.maxDailyOrderJpy,
-                    maxPositionJpy = envMaxPositionJpy?.toIntOrNull() ?: it.maxPositionJpy
-                )
-            } ?: run {
-                // 環境変数が設定されている場合は、YAMLになくてもインスタンス化する
-                if (envMaxOrderJpy != null || envMaxDailyOrderJpy != null || envMaxPositionJpy != null || envRealTradingDryRun != null || envRealTradingEnabled != null) {
-                    RealTradingConfig(
-                        dryRun = envRealTradingDryRun?.toBooleanStrictOrNull() ?: true,
-                        realTradeEnabled = envRealTradingEnabled?.toBooleanStrictOrNull() ?: false,
-                        stopOnUnconfirmedOrder = envStopOnUnconfirmedOrder?.toBooleanStrictOrNull() ?: true,
-                        maxOrderJpy = envMaxOrderJpy?.toIntOrNull(),
-                        maxDailyOrderJpy = envMaxDailyOrderJpy?.toIntOrNull(),
-                        maxPositionJpy = envMaxPositionJpy?.toIntOrNull()
-                    )
-                } else {
-                    null
-                }
-            }
+            realTrading = RealTradingConfig(
+                dryRun = envRealTradingDryRun?.toBooleanStrictOrNull() ?: base.realTrading.dryRun,
+                realTradeEnabled = envRealTradingEnabled?.toBooleanStrictOrNull() ?: base.realTrading.realTradeEnabled,
+                stopOnUnconfirmedOrder = envStopOnUnconfirmedOrder?.toBooleanStrictOrNull() ?: base.realTrading.stopOnUnconfirmedOrder,
+                maxOrderJpy = envMaxOrderJpy?.toIntOrNull() ?: base.realTrading.maxOrderJpy,
+                maxDailyOrderJpy = envMaxDailyOrderJpy?.toIntOrNull() ?: base.realTrading.maxDailyOrderJpy,
+                maxPositionJpy = envMaxPositionJpy?.toIntOrNull() ?: base.realTrading.maxPositionJpy
+            )
         )
     }
 }

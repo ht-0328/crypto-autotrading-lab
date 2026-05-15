@@ -79,7 +79,7 @@ class ConfigLoaderTest {
     }
 
     @Test
-    fun `リアル取引設定が省略された場合はデフォルト値が適用されるかnullになること`(@TempDir tempDir: Path) {
+    fun `リアル取引設定が省略された場合はデフォルト値が適用されること`(@TempDir tempDir: Path) {
         // Arrange
         val yamlContent = """
             app:
@@ -110,6 +110,13 @@ class ConfigLoaderTest {
         val config = mapper.readValue(configFile, cryptoautotrading.domain.model.AppConfig::class.java)
 
         // Assert
-        org.junit.jupiter.api.Assertions.assertNull(config.realTrading)
+        val realTradingConfig = config.realTrading
+        org.junit.jupiter.api.Assertions.assertNotNull(realTradingConfig)
+        assertEquals(true, realTradingConfig.dryRun)
+        assertEquals(false, realTradingConfig.realTradeEnabled)
+        assertEquals(true, realTradingConfig.stopOnUnconfirmedOrder)
+        org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxOrderJpy)
+        org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxDailyOrderJpy)
+        org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxPositionJpy)
     }
 }

@@ -20,9 +20,9 @@ data class RealTradingConfig(
     @JsonProperty("stop_on_unconfirmed_order")
     val stopOnUnconfirmedOrder: Boolean = true,
     @JsonProperty("max_order_jpy")
-    val maxOrderJpy: Int?,
+    val maxOrderJpy: Int? = null,
     @JsonProperty("max_daily_order_jpy")
-    val maxDailyOrderJpy: Int?,
+    val maxDailyOrderJpy: Int? = null,
     @JsonProperty("max_position_jpy")
-    val maxPositionJpy: Int?
+    val maxPositionJpy: Int? = null
 )

@@ -60,7 +60,8 @@ class StateRepositoryTest {
         assertEquals(BigDecimal("10000000.5"), loadedState.buyPrice)
         assertEquals(BigDecimal("0.0001"), loadedState.holdingAmount)
         assertEquals("2023-01-01T00:00:00", loadedState.lastUpdatedAt)
-        assertNull(loadedState.realTrading)
+        assertNotNull(loadedState.realTrading)
+        assertEquals(false, loadedState.realTrading.isStopped)
     }
 
     @Test
@@ -98,12 +99,12 @@ class StateRepositoryTest {
 
         // Assert
         assertNotNull(loadedState.realTrading)
-        assertTrue(loadedState.realTrading!!.isStopped)
-        assertEquals("API Error", loadedState.realTrading!!.stopReason)
-        assertEquals("2023-01-01T00:00:00", loadedState.realTrading!!.stoppedAt)
-        assertEquals(BigDecimal("15000"), loadedState.realTrading!!.dailyOrderedJpy)
+        assertTrue(loadedState.realTrading.isStopped)
+        assertEquals("API Error", loadedState.realTrading.stopReason)
+        assertEquals("2023-01-01T00:00:00", loadedState.realTrading.stoppedAt)
+        assertEquals(BigDecimal("15000"), loadedState.realTrading.dailyOrderedJpy)
 
-        val latestOrder = loadedState.realTrading!!.latestOrder
+        val latestOrder = loadedState.realTrading.latestOrder
         assertNotNull(latestOrder)
         assertEquals("123456", latestOrder!!.orderId)
         assertEquals("BTC", latestOrder.symbol)

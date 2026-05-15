@@ -36,7 +36,7 @@ class RealTradingSafetyChecker {
     ): SafetyCheckResult {
 
         // 1. 強制停止フラグのチェック
-        if (state.realTrading?.isStopped == true) {
+        if (state.realTrading.isStopped) {
             val reason = "realTrading.isStopped=true"
             logger.warn { "安全チェックNG: $reason" }
             return SafetyCheckResult(passed = false, reason = reason)
@@ -50,7 +50,7 @@ class RealTradingSafetyChecker {
         }
 
         // 3. 未確認・未約定注文チェック
-        val latestOrderStatus = state.realTrading?.latestOrder?.status
+        val latestOrderStatus = state.realTrading.latestOrder?.status
         val hasUnconfirmedOrder = latestOrderStatus == RealOrderStatus.WAITING ||
                                   latestOrderStatus == RealOrderStatus.ORDERED ||
                                   latestOrderStatus == RealOrderStatus.UNCONFIRMED
@@ -79,7 +79,7 @@ class RealTradingSafetyChecker {
             logger.warn { "安全チェックNG: $reason" }
             return SafetyCheckResult(passed = false, reason = reason)
         }
-        val currentDailyOrdered = state.realTrading?.dailyOrderedJpy ?: BigDecimal.ZERO
+        val currentDailyOrdered = state.realTrading.dailyOrderedJpy
         val newDailyTotal = currentDailyOrdered.add(BigDecimal(tradeAmount))
         if (newDailyTotal > BigDecimal(config.maxDailyOrderJpy)) {
             val reason = "1日の注文限度額超過"

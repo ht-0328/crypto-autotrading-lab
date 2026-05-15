@@ -40,5 +40,5 @@ data class SimulationState(
     @Serializable(with = BigDecimalSerializer::class)
     val entryAtr: BigDecimal? = null,
 
-    val realTrading: RealTradingState? = null
+    val realTrading: RealTradingState = RealTradingState()
 )

@@ -18,5 +18,5 @@ data class AppConfig(
     val api: ApiConfig,
     val output: OutputConfig,
     @JsonProperty("real_trading")
-    val realTrading: RealTradingConfig? = null
+    val realTrading: RealTradingConfig = RealTradingConfig()
 )
