@@ -13,7 +13,7 @@ class GmoPrivateApiDtoConversionTest {
     private val client = GmoPrivateApiClient()
 
     @Test
-    fun `mapToExchangeAssets converts GmoAccountAssetDto to ExchangeAsset correctly`() {
+    fun `GmoAccountAssetDto を ExchangeAsset に正しく変換できること`() {
         val dtoList = listOf(
             GmoAccountAssetDto(
                 amount = "10000",
@@ -34,7 +34,7 @@ class GmoPrivateApiDtoConversionTest {
     }
 
     @Test
-    fun `mapToExchangeActiveOrders converts GmoActiveOrderDto to ExchangeActiveOrder correctly`() {
+    fun `GmoActiveOrderDto を ExchangeActiveOrder に正しく変換できること`() {
         val dtoList = listOf(
             GmoActiveOrderDto(
                 rootOrderId = 12345L,
@@ -67,7 +67,7 @@ class GmoPrivateApiDtoConversionTest {
     }
 
     @Test
-    fun `mapToAcceptedOrder converts GmoPlaceOrderResponseDto to AcceptedOrder correctly`() {
+    fun `GmoPlaceOrderResponseDto を AcceptedOrder に正しく変換できること`() {
         val dto = GmoPlaceOrderResponseDto(
             status = 0,
             data = "98765",
@@ -80,7 +80,7 @@ class GmoPrivateApiDtoConversionTest {
     }
 
     @Test
-    fun `mapToExchangeOrderStatuses converts GmoOrderDto to ExchangeOrderStatus correctly`() {
+    fun `GmoOrderDto を ExchangeOrderStatus に正しく変換できること`() {
         val dtoList = listOf(
             GmoOrderDto(
                 rootOrderId = 111L,
@@ -111,7 +111,7 @@ class GmoPrivateApiDtoConversionTest {
     }
 
     @Test
-    fun `mapToExecutedOrders converts GmoExecutionDto to ExecutedOrder correctly`() {
+    fun `GmoExecutionDto を ExecutedOrder に正しく変換できること`() {
         val dtoList = listOf(
             GmoExecutionDto(
                 executionId = 333L,
