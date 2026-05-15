@@ -171,7 +171,7 @@ object ConfigLoader {
                     maxPositionJpy = envMaxPositionJpy?.toIntOrNull() ?: it.maxPositionJpy
                 )
             } ?: run {
-                // If the environment variables are set, instantiate it even if not in yaml
+                // 環境変数が設定されている場合は、YAMLになくてもインスタンス化する
                 if (envMaxOrderJpy != null || envMaxDailyOrderJpy != null || envMaxPositionJpy != null || envRealTradingDryRun != null || envRealTradingEnabled != null) {
                     RealTradingConfig(
                         dryRun = envRealTradingDryRun?.toBooleanStrictOrNull() ?: true,

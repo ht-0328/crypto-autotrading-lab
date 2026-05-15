@@ -9,14 +9,6 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
 
 /**
- * リアル注文前安全チェックの結果を表すデータクラス
- *
- * @property passed チェックを通過したかどうか
- * @property reason 通過しなかった場合の理由
- */
-data class SafetyCheckResult(val passed: Boolean, val reason: String? = null)
-
-/**
  * リアル注文前の安全確認を行うサービスクラス
  */
 class RealTradingSafetyChecker {
