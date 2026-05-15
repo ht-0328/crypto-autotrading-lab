@@ -15,7 +15,7 @@ import java.math.BigDecimal
  * 今回のフェーズ（第一段階）では、DTOとドメインモデル間の変換方針を示す
  * インターフェースやスケルトン実装のみを提供する。
  */
-class GmoPrivateApiClient {
+class GmoPrivateApiDtoMapper {
 
     /**
      * GmoAccountAssetDto のリストを ExchangeAsset のリストに変換する。

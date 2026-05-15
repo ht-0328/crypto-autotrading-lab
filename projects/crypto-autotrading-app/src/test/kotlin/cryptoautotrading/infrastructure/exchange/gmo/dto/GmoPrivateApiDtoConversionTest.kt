@@ -1,6 +1,6 @@
 package cryptoautotrading.infrastructure.exchange.gmo.dto
 
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClient
+import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiDtoMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -10,7 +10,7 @@ import java.math.BigDecimal
  */
 class GmoPrivateApiDtoConversionTest {
 
-    private val client = GmoPrivateApiClient()
+    private val client = GmoPrivateApiDtoMapper()
 
     @Test
     fun `GmoAccountAssetDto を ExchangeAsset に正しく変換できること`() {

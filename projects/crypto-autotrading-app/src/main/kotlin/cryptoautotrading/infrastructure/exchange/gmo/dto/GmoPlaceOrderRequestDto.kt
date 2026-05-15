@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
  * GMO API 新規注文APIのリクエストDTO。
  * 今回の初期対応は現物の成行注文（買い）のみのため、不要なレバレッジ専用項目（losscutPrice）などは省いています。
  *
- * 公式レスポンス例：
+ * 公式リクエスト例：
  * {
  *   "symbol": "BTC",
  *   "side": "BUY",
