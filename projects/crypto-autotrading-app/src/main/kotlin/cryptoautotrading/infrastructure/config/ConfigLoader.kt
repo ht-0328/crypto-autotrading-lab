@@ -8,6 +8,7 @@ import cryptoautotrading.domain.model.AppConfig
 import cryptoautotrading.domain.model.AppSettings
 import cryptoautotrading.domain.model.OutputConfig
 import cryptoautotrading.domain.model.TradingConfig
+import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 
@@ -127,6 +128,13 @@ object ConfigLoader {
         val envOutputPath = System.getenv("OUTPUT_PATH")
         val envStatePath = System.getenv("STATE_PATH")
 
+        val envRealTradingDryRun = System.getenv("REAL_TRADING_DRY_RUN")
+        val envRealTradingEnabled = System.getenv("REAL_TRADING_ENABLED")
+        val envStopOnUnconfirmedOrder = System.getenv("STOP_ON_UNCONFIRMED_ORDER")
+        val envMaxOrderJpy = System.getenv("MAX_ORDER_JPY")
+        val envMaxDailyOrderJpy = System.getenv("MAX_DAILY_ORDER_JPY")
+        val envMaxPositionJpy = System.getenv("MAX_POSITION_JPY")
+
         return AppConfig(
             app = AppSettings(
                 interval = envInterval ?: base.app.interval
@@ -152,7 +160,31 @@ object ConfigLoader {
             output = OutputConfig(
                 outputPath = envOutputPath ?: base.output.outputPath,
                 statePath = envStatePath ?: base.output.statePath
-            )
+            ),
+            realTrading = base.realTrading?.let {
+                RealTradingConfig(
+                    dryRun = envRealTradingDryRun?.toBooleanStrictOrNull() ?: it.dryRun,
+                    realTradeEnabled = envRealTradingEnabled?.toBooleanStrictOrNull() ?: it.realTradeEnabled,
+                    stopOnUnconfirmedOrder = envStopOnUnconfirmedOrder?.toBooleanStrictOrNull() ?: it.stopOnUnconfirmedOrder,
+                    maxOrderJpy = envMaxOrderJpy?.toIntOrNull() ?: it.maxOrderJpy,
+                    maxDailyOrderJpy = envMaxDailyOrderJpy?.toIntOrNull() ?: it.maxDailyOrderJpy,
+                    maxPositionJpy = envMaxPositionJpy?.toIntOrNull() ?: it.maxPositionJpy
+                )
+            } ?: run {
+                // If the environment variables are set, instantiate it even if not in yaml
+                if (envMaxOrderJpy != null || envMaxDailyOrderJpy != null || envMaxPositionJpy != null || envRealTradingDryRun != null || envRealTradingEnabled != null) {
+                    RealTradingConfig(
+                        dryRun = envRealTradingDryRun?.toBooleanStrictOrNull() ?: true,
+                        realTradeEnabled = envRealTradingEnabled?.toBooleanStrictOrNull() ?: false,
+                        stopOnUnconfirmedOrder = envStopOnUnconfirmedOrder?.toBooleanStrictOrNull() ?: true,
+                        maxOrderJpy = envMaxOrderJpy?.toIntOrNull(),
+                        maxDailyOrderJpy = envMaxDailyOrderJpy?.toIntOrNull(),
+                        maxPositionJpy = envMaxPositionJpy?.toIntOrNull()
+                    )
+                } else {
+                    null
+                }
+            }
         )
     }
 }

@@ -1,5 +1,6 @@
 package cryptoautotrading.domain.model
 
+import cryptoautotrading.domain.model.realtrading.RealTradingState
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
@@ -14,6 +15,7 @@ import java.math.BigDecimal
  * @property lastUpdatedAt 最後に状態が更新された日時（ISO 8601形式の文字列など）
  * @property lastStopLossTime 最後に損切りしたK線の時間
  * @property entryAtr エントリー時に算出されたATR。AtrTrendConfirmReboundStrategy等で使用
+ * @property realTrading リアル取引固有の状態（オプショナル）
  */
 @Serializable
 data class SimulationState(
@@ -36,5 +38,7 @@ data class SimulationState(
     val lastStopLossTime: String = "",
 
     @Serializable(with = BigDecimalSerializer::class)
-    val entryAtr: BigDecimal? = null
+    val entryAtr: BigDecimal? = null,
+
+    val realTrading: RealTradingState? = null
 )
