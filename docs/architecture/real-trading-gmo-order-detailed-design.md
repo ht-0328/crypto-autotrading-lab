@@ -137,7 +137,7 @@
   - **Query Parameter:** `orderId`
   - **Request Body:** なし
   - **対応するRequest DTO:** `GmoExecutionsRequestDto`
-  - **レスレスポンスから使う項目:** `data.list` 内の `executionId`, `orderId`, `price`, `size`, `fee`, `lossGain`
+  - **レスポンスから使う項目:** `data.list` 内の `executionId`, `orderId`, `price`, `size`, `fee`, `lossGain`
   - **対応するResponse DTO:** `GmoExecutionsResponseDto`, `GmoExecutionDto`
   - **変換後のアプリ内モデル:** `ExecutedOrder`
   - **エラー時:** 未確認注文として扱い、状態不整合を防ぐため次回以降の実注文を停止する。
