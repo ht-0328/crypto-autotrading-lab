@@ -9,11 +9,9 @@ import cryptoautotrading.infrastructure.exchange.gmo.dto.*
 import java.math.BigDecimal
 
 /**
- * GMOコイン Private APIとの通信およびドメインモデルへの変換を行うクライアント。
- *
- * 将来的には、Ktorや他のHTTPクライアントを用いた実通信処理を実装するが、
- * 今回のフェーズ（第一段階）では、DTOとドメインモデル間の変換方針を示す
- * インターフェースやスケルトン実装のみを提供する。
+ * GMO Private API のDTOをアプリ内モデルへ変換するMapper。
+ * HTTP通信は行わない。
+ * 実通信を行う GmoPrivateApiClient は、次の実装PR以降で追加する。
  */
 class GmoPrivateApiDtoMapper {
 
