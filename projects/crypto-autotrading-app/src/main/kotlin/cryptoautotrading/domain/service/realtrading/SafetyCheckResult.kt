@@ -6,4 +6,7 @@ package cryptoautotrading.domain.service.realtrading
  * @property passed チェックを通過したかどうか
  * @property reason 通過しなかった場合の理由
  */
-data class SafetyCheckResult(val passed: Boolean, val reason: String? = null)
+data class SafetyCheckResult(
+    val passed: Boolean,
+    val reason: String? = null
+)
