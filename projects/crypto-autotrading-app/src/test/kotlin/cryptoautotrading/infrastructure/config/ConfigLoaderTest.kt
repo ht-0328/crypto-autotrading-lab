@@ -123,7 +123,7 @@ class ConfigLoaderTest {
     }
 
     @Test
-    fun `private_base_url が省略された場合はnullになること`(@TempDir tempDir: Path) {
+    fun `private_base_url が省略された場合は base_url を使うこと`(@TempDir tempDir: Path) {
         // Arrange
         val yamlContent = """
             app:
@@ -147,10 +147,18 @@ class ConfigLoaderTest {
         mapperField.isAccessible = true
         val mapper = mapperField.get(ConfigLoader) as com.fasterxml.jackson.databind.ObjectMapper
 
-        val config = mapper.readValue(configFile, cryptoautotrading.domain.model.AppConfig::class.java)
+        val baseConfig = mapper.readValue(configFile, cryptoautotrading.domain.model.AppConfig::class.java)
+
+        val overrideMethod = ConfigLoader::class.java.getDeclaredMethod("overrideWithEnvVars", cryptoautotrading.domain.model.AppConfig::class.java)
+        overrideMethod.isAccessible = true
+
+        // Mocking System.getenv is tricky and caused StackOverflowError, so let's rely on the real environment.
+        // As long as GMO_PRIVATE_API_BASE_URL isn't explicitly set in the test environment,
+        // it should fall back to base_url.
+        val config = overrideMethod.invoke(ConfigLoader, baseConfig) as cryptoautotrading.domain.model.AppConfig
 
         // Assert
         assertEquals("https://api.coin.z.com", config.api.baseUrl)
-        org.junit.jupiter.api.Assertions.assertNull(config.api.privateBaseUrl)
+        assertEquals("https://api.coin.z.com", config.api.privateBaseUrl)
     }
 }

@@ -137,6 +137,9 @@ object ConfigLoader {
         val envMaxDailyOrderJpy = System.getenv("REAL_TRADING_MAX_DAILY_ORDER_JPY")
         val envMaxPositionJpy = System.getenv("REAL_TRADING_MAX_POSITION_JPY")
 
+        val finalBaseUrl = envBaseUrl ?: base.api.baseUrl
+        val finalPrivateBaseUrl = envPrivateBaseUrl ?: base.api.privateBaseUrl ?: finalBaseUrl
+
         return AppConfig(
             app = AppSettings(
                 interval = envInterval ?: base.app.interval
@@ -157,8 +160,8 @@ object ConfigLoader {
             ),
             api = ApiConfig(
                 retryCount = envRetryCount?.toIntOrNull() ?: base.api.retryCount,
-                baseUrl = envBaseUrl ?: base.api.baseUrl,
-                privateBaseUrl = envPrivateBaseUrl ?: base.api.privateBaseUrl
+                baseUrl = finalBaseUrl,
+                privateBaseUrl = finalPrivateBaseUrl
             ),
             output = OutputConfig(
                 outputPath = envOutputPath ?: base.output.outputPath,
