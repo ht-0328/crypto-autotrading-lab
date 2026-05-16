@@ -11,9 +11,10 @@
 ## 3. 設計方針
 
 - **domain に外部APIを依存させない**: `domain` パッケージにはAPI通信やファイル保存のロジックを含めません。
-- **DTOとモデルの分離**: GMO API のレスポンス型（DTO）は `infrastructure` 層に閉じ込め、`domain` や `application` 層には変換後のドメインモデルのみを渡します。
+- **DTOとモデルの分離**: GMO API のレスポンス型（DTO）は `infrastructure` 層に閉じ込め、`domain` や `application` 層には変換後のドメインモデルのみを渡します。DTOは1APIごとに独立したクラス/ファイルとし、`GmoPrivateApiModels.kt` のような集約クラスは使用しません。
 - **シークレット管理**: APIキーなどの機密情報は GCP Secret Manager から必要なタイミング（実注文の直前）でのみ取得し、メモリ上に長期間保持せず、またログにも出力しません。
 - **状態管理**: 注文状態や保有状態は `state.json` の `realTrading` ブロックで管理し、システム再起動時にも二重注文を防ぎます。
+- **型変換**: GMO API が返す orderId は Long 等であっても、ドメイン層では `String` に変換して扱います。また、APIレスポンスの price や size は、実際の約定値を表すドメインモデルでは `actualPrice`、`actualSize` などの明確な名前に変換します。
 
 ## 4. 責務分担
 
@@ -96,7 +97,7 @@ flowchart TD
 | domain | 安全条件のロジック（上限超過、未約定あり）が正しく弾くこと |
 | application | `dry_run=true` 時にAPIクライアントが一切呼ばれないこと |
 | infrastructure | DTOからドメインモデルへの変換が正しく行われること、APIキーがログに出ないこと |
-| Architecture | DTOがドメイン層に漏れていないこと（Konsistによる検査） |
+| Architecture | DTOがドメイン層に漏れていないこと（Konsistによる検査）、DTOが1クラス1ファイルで配置されていること |
 
 ## 13. 関連ドキュメント
 
