@@ -6,11 +6,14 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * 外部API関連の設定
  *
  * @property retryCount APIリクエスト失敗時の再試行回数
- * @property baseUrl APIのベースURL（デフォルトはGMOコインのPublic API）
+ * @property baseUrl Public API用のベースURL
+ * @property privateBaseUrl Private API用のベースURL
  */
 data class ApiConfig(
     @JsonProperty("retry_count")
     val retryCount: Int,
     @JsonProperty("base_url")
-    val baseUrl: String? = null
+    val baseUrl: String? = null,
+    @JsonProperty("private_base_url")
+    val privateBaseUrl: String? = null
 )

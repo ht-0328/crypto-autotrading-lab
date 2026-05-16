@@ -1,0 +1,29 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/private/v1/activeOrders",
+    "queryParameters": {
+      "symbol": {
+        "matches": ".*"
+      }
+    },
+    "headers": {
+      "API-KEY": {
+        "matches": ".*"
+      },
+      "API-TIMESTAMP": {
+        "matches": ".*"
+      },
+      "API-SIGN": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "active_orders_response.json"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/private/v1/account/assets",
+    "headers": {
+      "API-KEY": {
+        "matches": ".*"
+      },
+      "API-TIMESTAMP": {
+        "matches": ".*"
+      },
+      "API-SIGN": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "assets_response.json"
+  }
+}

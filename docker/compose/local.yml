@@ -10,6 +10,21 @@ services:
     environment:
       - APP_DATA_DIR=/app/data
       - APP_CONFIG_PATH=/app/config/application-gmo.yaml
+      - API_BASE_URL=${API_BASE_URL:-https://api.coin.z.com}
+      - GMO_PRIVATE_API_BASE_URL=${GMO_PRIVATE_API_BASE_URL:-http://wiremock:8080}
+      - GMO_API_KEY=dummy_api_key
+      - GMO_API_SECRET=dummy_api_secret
     volumes:
       - ../../config:/app/config
       - ../../data:/app/data
+    depends_on:
+      - wiremock
+
+  wiremock:
+    image: wiremock/wiremock:latest
+    container_name: crypto-autotrading-wiremock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../../mocks/wiremock:/home/wiremock
+    command: ["--global-response-templating", "--disable-gzip"]

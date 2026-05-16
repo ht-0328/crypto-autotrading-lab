@@ -1,0 +1,25 @@
+{
+  "status": 0,
+  "data": {
+    "pagination": {
+      "currentPage": 1,
+      "count": 1
+    },
+    "list": [
+      {
+        "executionId": 987654321,
+        "orderId": 123456789,
+        "positionId": 1111111,
+        "symbol": "BTC",
+        "side": "BUY",
+        "settleType": "OPEN",
+        "size": "0.01",
+        "price": "10000000",
+        "lossGain": "0",
+        "fee": "0",
+        "timestamp": "2023-01-01T00:00:00.000Z"
+      }
+    ]
+  },
+  "responsetime": "2023-01-01T00:00:00.000Z"
+}
