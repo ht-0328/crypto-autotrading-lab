@@ -8,6 +8,7 @@ import cryptoautotrading.domain.model.AppConfig
 import cryptoautotrading.domain.model.AppSettings
 import cryptoautotrading.domain.model.OutputConfig
 import cryptoautotrading.domain.model.TradingConfig
+import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.File
 
@@ -127,6 +128,13 @@ object ConfigLoader {
         val envOutputPath = System.getenv("OUTPUT_PATH")
         val envStatePath = System.getenv("STATE_PATH")
 
+        val envRealTradingDryRun = System.getenv("REAL_TRADING_DRY_RUN")
+        val envRealTradingEnabled = System.getenv("REAL_TRADING_ENABLED")
+        val envStopOnUnconfirmedOrder = System.getenv("REAL_TRADING_STOP_ON_UNCONFIRMED_ORDER")
+        val envMaxOrderJpy = System.getenv("REAL_TRADING_MAX_ORDER_JPY")
+        val envMaxDailyOrderJpy = System.getenv("REAL_TRADING_MAX_DAILY_ORDER_JPY")
+        val envMaxPositionJpy = System.getenv("REAL_TRADING_MAX_POSITION_JPY")
+
         return AppConfig(
             app = AppSettings(
                 interval = envInterval ?: base.app.interval
@@ -152,6 +160,14 @@ object ConfigLoader {
             output = OutputConfig(
                 outputPath = envOutputPath ?: base.output.outputPath,
                 statePath = envStatePath ?: base.output.statePath
+            ),
+            realTrading = RealTradingConfig(
+                dryRun = envRealTradingDryRun?.toBooleanStrictOrNull() ?: base.realTrading.dryRun,
+                realTradeEnabled = envRealTradingEnabled?.toBooleanStrictOrNull() ?: base.realTrading.realTradeEnabled,
+                stopOnUnconfirmedOrder = envStopOnUnconfirmedOrder?.toBooleanStrictOrNull() ?: base.realTrading.stopOnUnconfirmedOrder,
+                maxOrderJpy = envMaxOrderJpy?.toIntOrNull() ?: base.realTrading.maxOrderJpy,
+                maxDailyOrderJpy = envMaxDailyOrderJpy?.toIntOrNull() ?: base.realTrading.maxDailyOrderJpy,
+                maxPositionJpy = envMaxPositionJpy?.toIntOrNull() ?: base.realTrading.maxPositionJpy
             )
         )
     }

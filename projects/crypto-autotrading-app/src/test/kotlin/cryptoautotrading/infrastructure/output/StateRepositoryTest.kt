@@ -60,6 +60,58 @@ class StateRepositoryTest {
         assertEquals(BigDecimal("10000000.5"), loadedState.buyPrice)
         assertEquals(BigDecimal("0.0001"), loadedState.holdingAmount)
         assertEquals("2023-01-01T00:00:00", loadedState.lastUpdatedAt)
+        assertNotNull(loadedState.realTrading)
+        assertEquals(false, loadedState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `realTrading情報を含むJSONを正しく読み込めること`(@TempDir tempDir: Path) {
+        // Arrange
+        val stateFile = tempDir.resolve("real_trading_state.json").toFile()
+        stateFile.writeText(
+            """
+            {
+              "isHolding": false,
+              "buyPrice": "0",
+              "holdingAmount": "0",
+              "lastUpdatedAt": "2023-01-01T00:00:00",
+              "realTrading": {
+                "isStopped": true,
+                "stopReason": "API Error",
+                "stoppedAt": "2023-01-01T00:00:00",
+                "dailyOrderedJpy": "15000",
+                "latestOrder": {
+                  "orderId": "123456",
+                  "symbol": "BTC",
+                  "side": "BUY",
+                  "status": "WAITING",
+                  "requestedAmountJpy": "10000",
+                  "requestedSize": "0.001"
+                }
+              }
+            }
+            """.trimIndent()
+        )
+        val repository = StateRepository(stateFile.absolutePath)
+
+        // Act
+        val loadedState = repository.load()
+
+        // Assert
+        assertNotNull(loadedState.realTrading)
+        assertTrue(loadedState.realTrading.isStopped)
+        assertEquals("API Error", loadedState.realTrading.stopReason)
+        assertEquals("2023-01-01T00:00:00", loadedState.realTrading.stoppedAt)
+        assertEquals(BigDecimal("15000"), loadedState.realTrading.dailyOrderedJpy)
+
+        val latestOrder = loadedState.realTrading.latestOrder
+        assertNotNull(latestOrder)
+        assertEquals("123456", latestOrder!!.orderId)
+        assertEquals("BTC", latestOrder.symbol)
+        assertEquals(cryptoautotrading.domain.model.realtrading.RealOrderSide.BUY, latestOrder.side)
+        assertEquals(cryptoautotrading.domain.model.realtrading.RealOrderStatus.WAITING, latestOrder.status)
+        assertEquals(BigDecimal("10000"), latestOrder.requestedAmountJpy)
+        assertEquals(BigDecimal("0.001"), latestOrder.requestedSize)
     }
 
     @Test
