@@ -15,7 +15,7 @@ import java.math.BigDecimal
  * @property lastUpdatedAt 最後に状態が更新された日時（ISO 8601形式の文字列など）
  * @property lastStopLossTime 最後に損切りしたK線の時間
  * @property entryAtr エントリー時に算出されたATR。AtrTrendConfirmReboundStrategy等で使用
- * @property realTrading リアル取引固有の状態（オプショナル）
+ * @property realTrading リアル取引固有の状態。既存stateに存在しない場合はデフォルト状態を使用する。
  */
 @Serializable
 data class SimulationState(
