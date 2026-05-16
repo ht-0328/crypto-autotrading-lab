@@ -1,0 +1,18 @@
+{
+  "status": 0,
+  "data": [
+    {
+      "amount": "1000000",
+      "available": "1000000",
+      "conversionRate": "1",
+      "symbol": "JPY"
+    },
+    {
+      "amount": "0.1",
+      "available": "0.1",
+      "conversionRate": "10000000",
+      "symbol": "BTC"
+    }
+  ],
+  "responsetime": "2023-01-01T00:00:00.000Z"
+}

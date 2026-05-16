@@ -1,0 +1,24 @@
+{
+  "status": 0,
+  "data": {
+    "list": [
+      {
+        "rootOrderId": 123456789,
+        "orderId": 123456789,
+        "symbol": "BTC",
+        "side": "BUY",
+        "orderType": "NORMAL",
+        "executionType": "LIMIT",
+        "settleType": "OPEN",
+        "size": "0.01",
+        "executedSize": "0.01",
+        "price": "10000000",
+        "losscutPrice": "0",
+        "status": "EXECUTED",
+        "timeInForce": "FAS",
+        "timestamp": "2023-01-01T00:00:00.000Z"
+      }
+    ]
+  },
+  "responsetime": "2023-01-01T00:00:00.000Z"
+}

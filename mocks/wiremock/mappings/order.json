@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/private/v1/order",
+    "headers": {
+      "API-KEY": {
+        "matches": ".*"
+      },
+      "API-TIMESTAMP": {
+        "matches": ".*"
+      },
+      "API-SIGN": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "order_response.json"
+  }
+}
