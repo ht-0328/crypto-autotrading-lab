@@ -8,6 +8,7 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -78,6 +79,16 @@ class GmoPrivateApiClientImplTest {
     fun `placeOrder が正しくマッピングされること`() = runTest {
         val mockEngine = MockEngine { request ->
             assertEquals("test_api_key", request.headers["API-KEY"])
+
+            val requestBody = (request.body as TextContent).text
+            // MARKET注文時に price, timeInForce, cancelBefore が含まれないことを検証
+            assertEquals(true, requestBody.contains("\"symbol\":\"BTC\""))
+            assertEquals(true, requestBody.contains("\"side\":\"BUY\""))
+            assertEquals(true, requestBody.contains("\"executionType\":\"MARKET\""))
+            assertEquals(true, requestBody.contains("\"size\":\"0.01\""))
+            assertEquals(false, requestBody.contains("\"price\""))
+            assertEquals(false, requestBody.contains("\"timeInForce\""))
+            assertEquals(false, requestBody.contains("\"cancelBefore\""))
 
             respond(
                 content = """

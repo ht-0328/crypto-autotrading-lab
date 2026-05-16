@@ -39,7 +39,10 @@ class GmoPrivateApiClientImpl(
 ) : GmoPrivateApiClient {
 
     private val logger = KotlinLogging.logger {}
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
+    }
 
     /**
      * @inheritDoc
