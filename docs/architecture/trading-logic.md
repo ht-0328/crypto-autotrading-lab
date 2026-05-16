@@ -15,10 +15,10 @@
 
 ## 関連ドキュメント
 
-- [phase1-overview.md](phase1-overview.md)
-- [cooldown-rebound-strategy.md](cooldown-rebound-strategy.md)
-- [trend-confirm-rebound-strategy.md](trend-confirm-rebound-strategy.md)
-- [atr-trend-confirm-rebound-strategy.md](atr-trend-confirm-rebound-strategy.md)
+- [../specifications/phase1-simulation.md](../specifications/phase1-simulation.md)
+- [../specifications/strategies/cooldown-rebound-strategy.md](../specifications/strategies/cooldown-rebound-strategy.md)
+- [../specifications/strategies/trend-confirm-rebound-strategy.md](../specifications/strategies/trend-confirm-rebound-strategy.md)
+- [../specifications/strategies/atr-trend-confirm-rebound-strategy.md](../specifications/strategies/atr-trend-confirm-rebound-strategy.md)
 
 ## 現在の採用戦略
 

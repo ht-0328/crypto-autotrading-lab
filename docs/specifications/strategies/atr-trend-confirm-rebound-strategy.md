@@ -1,0 +1,92 @@
+# AtrTrendConfirmReboundStrategy 仕様書
+
+## 1. 文書の目的
+
+この文書では、新しい売買戦略 `AtrTrendConfirmReboundStrategy` の仕様を定義します。
+
+売り条件にATR（Average True Range）を導入し、相場の変動幅（ボラティリティ）に合わせて利確・損切り幅を動的に調整する仕様を整理します。
+
+## 2. 対象範囲
+
+### 対象
+
+- `AtrTrendConfirmReboundStrategy` の売買判定ルール
+- ATRを用いた動的な利確・損切り幅の計算
+
+### 対象外
+
+- 他の戦略の仕様（別仕様書で定義）
+
+## 3. 用語
+
+| 用語 | 意味 |
+| --- | --- |
+| ATR | Average True Range の略。過去の一定期間における「真の値幅」の平均。ボラティリティの指標。 |
+
+## 4. 機能概要
+
+`AtrTrendConfirmReboundStrategy` は、買い条件は `TrendConfirmReboundStrategy` と同じですが、売り（利確・損切り）の閾値を固定値ではなく、エントリー時点のATRに基づいて動的に決定します。相場が荒れている時は幅を広げ、穏やかな時は狭めることで、ノイズによる無駄な損切りを防ぎます。
+
+## 5. 入力仕様
+
+| 項目 | 例 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| K線リスト | List<Kline> | 必須 | 売買判定およびATR計算に用いる価格データ |
+| 状態 | SimulationState | 必須 | 現在の保有状態、買値、エントリー時のATRなどの情報 |
+
+## 6. 出力仕様
+
+| 項目 | 例 | 説明 |
+| --- | --- | --- |
+| 売買判定結果 | SELL_CANDIDATE | 買う、売る、保持、見送りのいずれか |
+
+## 7. 処理仕様
+
+保有時の判定手順：
+1. 買値と、エントリー時に記録したATRを取得する
+2. 設定値（利確倍率、損切り倍率）を取得する
+3. 利確ライン = 買値 + (ATR × 利確倍率) を計算する
+4. 損切りライン = 買値 - (ATR × 損切り倍率) を計算する
+5. 現在の終値が利確ラインまたは損切りラインに到達しているか判定する
+
+## 8. 判定条件・業務ルール
+
+| 条件 | 結果 |
+| --- | --- |
+| 現在価格 >= 買値 + (ATR × 利確倍率) | 利確（SELL_CANDIDATE） |
+| 現在価格 <= 買値 - (ATR × 損切り倍率) | 損切り（SELL_CANDIDATE）+ クールダウン開始 |
+| 上記以外 | 保持（HOLDING） |
+
+## 9. エラー仕様
+
+ATR計算に必要な期間のK線が不足している場合は、見送りまたは保有継続とします。
+
+## 10. 具体例
+
+### 例1: 正常に処理される場合（ATR利確）
+
+- エントリー: 買値 10,000,000 円, エントリー時のATR 50,000 円
+- 設定: 利確倍率 2.0
+- 利確ライン: 10,100,000 円
+- 現在価格: 10,150,000 円
+- 期待する結果: 利確ラインを超えたため、`SELL_CANDIDATE` となる。
+
+## 11. Mermaid による処理フロー
+
+```mermaid
+flowchart TD
+    Start[開始] --> IsHolding{今持っているか?}
+
+    IsHolding -- はい --> CalcLines[買値とATRから利確・損切ラインを計算]
+    CalcLines --> CheckTakeProfit{利確ライン到達?}
+    CheckTakeProfit -- はい --> SellProfit[SELL_CANDIDATE]
+    CheckTakeProfit -- いいえ --> CheckStopLoss{損切りライン到達?}
+    CheckStopLoss -- はい --> SellLoss[SELL_CANDIDATE + クールダウン開始]
+    CheckStopLoss -- いいえ --> Holding[HOLDING]
+
+    IsHolding -- いいえ --> 買い判定[買い判定(既存と同じ)]
+```
+
+## 12. 関連ドキュメント
+
+- [対応する設計書](../../architecture/trading-strategy-design.md)

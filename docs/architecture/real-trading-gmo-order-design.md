@@ -1,202 +1,103 @@
-# リアル購入処理の設計仕様（GMOコイン）
+# リアル購入処理（GMOコイン） 設計書
 
-## 概要
-本ドキュメントは、GMOコイン Private API を利用した「リアル注文処理」の仕様を定めます。
+## 1. 文書の目的
 
-- リアル注文処理では相場の売買判断（テクニカル条件等）を行わず、既存の Strategy が出力した判定結果（シグナル）を元に、安全に実注文を行えるかどうかの確認とAPI呼び出しのみを担当します。
-- `dry_run=true` または `real_trade_enabled=false` の場合は、今まで通りのシミュレーション動作を行います。
-- `dry_run=false` かつ `real_trade_enabled=true` の場合だけ、実注文処理に進みます。
-- **初期対応の範囲**: 初期対応では「現物取引（Spot）」のみを対象とし、レバレッジ取引は対象外とします。また、売り注文（SELL）の自動化は初期対応の対象外とし、買い注文のみを自動化します。
-- APIキー等の機密情報はすべて GCP Secret Manager で管理し、ログへの出力は厳禁とします。
+この文書では、対応する仕様（GMOコイン Private APIを利用したリアル注文処理）をどのように実装するかを定義する。
 
-## 既存 Strategy とリアル注文処理の責務分離
-リアル注文処理と、相場を分析する Strategy の責務は以下のように明確に分離します。
+## 2. 対応する仕様書
 
-- **Strategy の責務**: 相場データ（KLine等）を分析し、「今買うべきか」「売るべきか」「見送るべきか」を判断する。判断結果は `TradeDecision`（`action`: `BUY_CANDIDATE`, `SELL_CANDIDATE`, `SKIP`, `HOLDING`）として返す。
-- **リアル注文処理の責務**: Strategy の判定結果を受け取り、残高や上限設定などの「安全面」から実注文してよいかを判断し、GMOコイン Private API に注文を送信する。
-- **留意事項**:
-  - リアル注文処理側では「価格が下がったから買う」「MAを上抜けたから買う」といった Strategy の買い条件・売り条件を一切再実装しません。
-  - Strategy を切り替えても、リアル注文処理の安全チェック（残高確認、二重注文防止など）は共通で動作します。
+- [対応する仕様書](../specifications/features/real-trading-gmo-order.md)
 
-### 判定結果（シグナル）の扱い
-- **`BUY_CANDIDATE`**: 買い注文の候補として扱い、注文実行条件（後述）の安全チェックに回します。
-- **`SELL_CANDIDATE`**:
-  - `dry_run=true` または `real_trade_enabled=false` の場合: これまで通り、シミュレーション上の売却動作として扱い、`state.json` 上で残金・保有数量・確定損益を更新し、CSV・ログを出力します。
-  - `dry_run=false` かつ `real_trade_enabled=true` の場合: 初期対応では実売却注文は行わず、ログに記録して終了します。将来的にGMO側の残高確認などを経て実売却注文を行う仕様とします。
-- **`SKIP` / `HOLDING`**: 実注文は行いません（処理をスキップまたは現在状態の維持のみ行います）。
+## 3. 設計方針
 
-## 注文実行条件
-既存 Strategy の判定結果が `BUY_CANDIDATE` の場合、注文候補として扱います。
-ただし、以下の**安全条件をすべて満たす場合のみ**実注文を許可します。一つでも満たさない条件がある場合は実注文せず、理由をログまたは状態（state.json）に残します。
+- **domain に外部APIを依存させない**: `domain` パッケージにはAPI通信やファイル保存のロジックを含めません。
+- **DTOとモデルの分離**: GMO API のレスポンス型（DTO）は `infrastructure` 層に閉じ込め、`domain` や `application` 層には変換後のドメインモデルのみを渡します。
+- **シークレット管理**: APIキーなどの機密情報は GCP Secret Manager から必要なタイミング（実注文の直前）でのみ取得し、メモリ上に長期間保持せず、またログにも出力しません。
+- **状態管理**: 注文状態や保有状態は `state.json` の `realTrading` ブロックで管理し、システム再起動時にも二重注文を防ぎます。
 
-1. `real_trade_enabled` が `true` であること
-2. `dry_run` が `false` であること
-3. 現在対象の銘柄を保有中ではないこと（二重注文・多重保有の防止）
-4. GMO側に未約定の注文（Active Orders）が存在しないこと
-5. GMO Private API で確認した利用可能なJPY残高（`available`）が、今回の注文予定額以上であること
-6. 注文予定額が、1回あたりの注文金額上限（`max_order_jpy`）を超えないこと
-7. 1日の累計注文額が、上限（`max_daily_order_jpy`）を超えないこと
-8. 現在の保有金額と注文予定額の合計が、最大保有金額（`max_position_jpy`）を超えないこと
+## 4. 責務分担
 
-## 注文金額と数量の計算仕様
-注文時の金額や数量は、以下のルールに従って決定します。新しい独自の金額ロジックは追加しません。
+| 層・部品 | 役割 |
+| --- | --- |
+| presentation | Cloud Run Job からの実行エントリポイント |
+| application | Strategyの判定結果を受け取り、安全チェックを経て、実注文プロセス全体の順序を管理 |
+| domain | 安全チェックの閾値判定、注文状態（ドメインモデル）の表現、Strategyによる売買判定 |
+| infrastructure | GMO Private API クライアントの実装、GCP Secret Manager からのキー取得、state.jsonの保存 |
 
-- `trading.trade_amount`（既存設定）を、1回あたりの「注文予定額の基本値」として扱います。
-- `max_order_jpy` を「1回あたりの注文金額の安全上限」として扱います。
-- `trade_amount > max_order_jpy` の場合は安全条件違反とし、実注文を見送ります。
-- **実注文数量の計算**: 注文予定額と現在価格から実際の注文数量を計算します（例: 予定額 1000円 / 価格 10,000,000円 = 0.0001 BTC）。
-- 数量の丸め処理は、GMOコインの銘柄ごとの注文仕様（最小注文数量や小数点以下の桁数）に厳密に合わせます。
+## 5. 配置予定のクラス・ファイル
 
-## dry-run と実注文ONの仕様
+| 種類 | 配置 | 役割 |
+| --- | --- | --- |
+| interface | `domain.repository.ExchangeApiRepository` | 取引所API（残高、注文、約定）の抽象化 |
+| class | `infrastructure.exchange.gmo.GmoPrivateApiClient` | GMO APIの具体的な通信処理 |
+| data class| `infrastructure.exchange.gmo.dto.*Dto` | GMO APIのリクエスト/レスポンス用DTO（1クラス1ファイル） |
+| class | `application.trading.RealTradingService` | 実注文の安全チェックと実行フローの制御 |
+| class | `infrastructure.secret.GcpSecretManagerClient` | APIキーの取得 |
 
-### dry-run モード（デフォルト）
-dry-run は、新しい注文予定モードではなく、既存のシミュレーション実行モードとして定義します。
-`dry_run=true` または `real_trade_enabled=false` の場合、以下の挙動となります。
+## 6. 処理フロー
 
-- 既存 Strategy による売買判定は今まで通り行います。
-- `BUY_CANDIDATE` / `SELL_CANDIDATE` / `SKIP` / `HOLDING` の判定結果を今まで通り扱います。
-- dry-run では、既存のシミュレーション処理として `state.json` を更新します。
-- 既存のCSV出力・ログ出力も今まで通り行います。
-- GMO Private API は**一切呼び出しません**。
-- GCP Secret Manager から GMO APIキーや Secret Key を**取得しません**。
-- GMO側の残高、注文状態、約定状態は一切変化しません。
-- 実際のお金は動きません。
-- 疑似 orderId は作りません。
+1. `application` が Strategy からの判定結果（`BUY_CANDIDATE`）を受け取る
+2. `application` が設定（dry_run, real_trade_enabled）を確認する
+3. `infrastructure` 経由で Secret Manager から APIキーを取得する
+4. `infrastructure` の `GmoPrivateApiClient` を使って残高と未約定注文を取得する
+5. `domain` のルールに基づいて安全チェックを実施する
+6. チェックOKなら `GmoPrivateApiClient` で注文APIを呼び出し、`orderId` を取得する
+7. 約定APIを呼び出して確認し、`state.json` を更新する
 
-### 実注文ON モード
-`dry_run=false` かつ `real_trade_enabled=true` の場合のみ、以下の挙動となります。
-- `BUY_CANDIDATE` を受け取り、注文候補となったタイミングで初めて GCP Secret Manager から APIキー と Secret Key を取得します。
-- 残高確認 API や Active Orders 確認 API を呼び出します。
-- 安全条件をクリアした場合のみ、注文 API を呼び出します。
-- **注意**: 注文 API を呼び出して `orderId` が返却された時点では、まだ「保有状態」として更新しません。
-- 注文成功後、GMO側で約定済みであることが確認できた場合のみ、`state.json` の保有状態・買値・保有数量を更新します。
-
-## 具体例
-
-### パターン1: dry-run で BUY_CANDIDATE になった場合
-- **起動時刻**: 2026-05-11 10:00
-- **使用 Strategy**: `AtrTrendConfirmReboundStrategy`
-- **Strategy の判定結果**: `BUY_CANDIDATE`
-- `dry_run=true`
-- `real_trade_enabled=false`
-- **現在価格**: 10,000,000円
-- `trading.trade_amount`: 1,000円
-- **シミュレーション上の購入数量**: 0.0001 BTC
-
-**この場合の動作**:
-- GMO Private API は呼ばない
-- APIキーは取得しない
-- 実際のお金は動かない
-- 既存シミュレーションと同じく、`state.json` の残金・保有BTC数量・買値を更新する
-- CSVとログも今まで通り出力する
-
-### パターン2: dry-run で SELL_CANDIDATE になった場合
-- **使用 Strategy が `SELL_CANDIDATE` を返した**
-- `dry_run=true`
-
-**この場合の動作**:
-- GMO Private API は呼ばない
-- 実際の売却注文は送らない
-- 既存シミュレーションと同じく、`state.json` 上で売却済みとして残金・保有数量・確定損益を更新する
-- CSVとログも今まで通り出力する
-
-### パターン3: 実注文ONの場合
-- `dry_run=false`
-- `real_trade_enabled=true`
-- Strategy の判定結果が `BUY_CANDIDATE`
-- 安全条件をすべて満たす
-
-この場合だけ、GMO Private API を使った実注文処理に進む。注文送信後、約定が確認できたら保有状態を更新する。
-
-### パターン4: 実注文ONで SELL_CANDIDATE になった場合
-- `dry_run=false`
-- `real_trade_enabled=true`
-- Strategy の判定結果が `SELL_CANDIDATE`
-
-初期対応のため、実売却処理は行わずログに記録して終了する。
-
-### パターン5: 実注文ONで注文しない例（安全条件違反）
-- `dry_run=false` だが、GMO APIで確認した利用可能残高が 500円しかなく、注文予定額（1000円）を下回っていた。
-- 注文を見送る。GMO Private API への注文リクエストは送信せず、「残高不足」という理由をログに記録して終了する。
-
-## Mermaid による図
+## 7. Mermaid による設計フロー
 
 ```mermaid
 flowchart TD
-    A[Cloud Run Job 起動] --> B[設定読み込み]
-    B --> C[市場データ取得]
-    C --> D[既存 Strategy で売買判定]
-    D --> E{dry_run = true ?}
-
-    E -- Yes --> F[既存シミュレーション処理]
-    F --> G[SimulationService で state.json 更新]
-    G --> H[CSV・ログ出力]
-    H --> Z[終了]
-
-    E -- No --> I{real_trade_enabled = true ?}
-    I -- No --> F
-
-    I -- Yes --> J{判定結果}
-    J -- SKIP --> Z
-    J -- HOLDING --> Z
-    J -- SELL_CANDIDATE --> K[初期対応では実売却せずログ記録]
-    K --> Z
-    J -- BUY_CANDIDATE --> L[実注文前チェック]
-
-    L --> M{残高・未約定注文・上限チェックOK?}
-    M -- No --> N[注文せず理由を記録]
-    N --> Z
-
-    M -- Yes --> O[Secret Manager からAPIキー取得]
-    O --> P[GMO Private API へ買い注文]
-    P --> Q[orderId 保存]
-    Q --> R{約定確認できた?}
-    R -- Yes --> S[state.json 更新 (保有状態ON)]
-    S --> Z
-    R -- No --> T[未確認注文として記録・次回停止]
-    T --> Z
+    A[Application: RealTradingService] -->|APIキー要求| B[Infrastructure: SecretManager]
+    A -->|残高・未約定確認| C[Infrastructure: GmoPrivateApiClient]
+    C --> D[GMO Private API]
+    A -->|条件判定| E[Domain: Safety Rules]
+    A -->|注文実行| C
+    A -->|状態保存| F[Infrastructure: StateRepository]
+    F --> G[state.json]
 ```
 
-## エラーと異常時の停止条件
-GMO Private API の呼び出し時等に以下の異常が発生した場合は、重大な問題として扱い、**以降の実注文を強制的に停止**します。
+## 8. データの流れ
 
-- APIからエラーレスポンス（特に `ERR-xxx` 等のエラーコード）が返却された場合
-- API通信のタイムアウトや、署名エラーが発生した場合
-- 注文送信後、約定ステータスが正しく確認できない（`stop_on_unconfirmed_order=true` の場合）
-  - この場合、未確認注文として記録し、状態の整合性が取れないため次回以降の実注文を停止する仕様とします。
-- 未定義のシステム例外が発生した場合
+| データ | 発生元 | 渡し先 | 説明 |
+| --- | --- | --- | --- |
+| GmoActiveOrderDto | GMO API | infrastructure | GMO APIからの未約定注文レスポンス |
+| ExchangeActiveOrder | infrastructure | domain / application | DTOから変換された、ドメイン層で扱う未約定注文モデル |
+| API Keys | GCP Secret Manager | infrastructure | 注文APIの署名生成に使用（ログ出力厳禁） |
 
-停止からの復旧は、原因調査（ログ確認等）と手動でのフラグリセットによってのみ行うものとします。
+## 9. 状態管理
 
-## セキュリティと機密情報の扱い
-- **APIキー等の保存先**: GMO Private APIキー、Secret Keyは GCP Secret Manager のみに保存します。GitHub Secrets等には保存しません。
-- **ログ出力の厳禁**: APIキー、Secret Key、およびリクエスト送信時に生成した署名文字列は、**いかなる場合もログに出力してはいけません**（マスキングを徹底するか、出力そのものを省く）。
-- **キーの取得タイミング**: アプリケーション起動時ではなく、`BUY_CANDIDATE` が発生し、実注文の安全条件チェックを行う直前など、本当に必要なタイミングでのみ取得・利用します。
+| 保存先 | 保存内容 | 更新タイミング |
+| --- | --- | --- |
+| `state.json` (realTrading) | orderId, 注文ステータス, 約定結果, 停止フラグ(isStopped) | 注文送信直後、約定確認後、またはエラーによる強制停止時 |
 
-## state.json に保存する情報
+## 10. エラー処理設計
 
-### dry-run または real_trade_enabled=false の場合
-既存シミュレーションと同じ情報を保存します。
+| エラー | 検知する場所 | 扱い |
+| --- | --- | --- |
+| APIエラーレスポンス | infrastructure | application に伝播し、`isStopped=true` にして次回注文を停止する |
+| 通信タイムアウト / 署名エラー | infrastructure | 同上 |
+| 約定未確認 | application | `state.json` に未確認として記録し、次回起動時に状態不整合を防ぐため新規注文を停止 |
 
-- 残金
-- 保有状態
-- 買値
-- 保有数量
-- 確定損益
-- 最終更新時刻
-- entryAtr など既存 Strategy に必要な情報
+## 11. 具体例
 
-### 実注文ONの場合
-GMO Private API に注文を送った場合のみ、実注文管理に必要な情報を追加で保存します。
+### 例1: 正常処理（DTO変換と実行）
 
-- orderId
-- 注文対象銘柄
-- 注文方向
-- 注文金額
-- 注文数量
-- 注文時価格
-- 注文ステータス
-- 約定確認結果
-- 注文実行時刻
+- 10:00 にアプリが Strategy から `BUY_CANDIDATE` を受け取る。
+- `RealTradingService` が `ExchangeApiRepository.getAssets()` を呼び出す。
+- `GmoPrivateApiClient` が API通信し、`GmoAccountAssetDto` を受け取る。
+- `GmoAccountAssetDto` をドメインモデル `ExchangeAsset` に変換して返す。
+- 残高チェックを通過後、`ExchangeApiRepository.placeOrder()` を実行し、`AcceptedOrder` モデルを受け取って `state.json` に保存する。
 
-これらを保持することで、次回起動時に GMO Private API の `activeOrders` や `executions` の結果と突合し、二重注文の防止や約定状態の確認を行います。
+## 12. テスト方針
+
+| テスト対象 | 確認内容 |
+| --- | --- |
+| domain | 安全条件のロジック（上限超過、未約定あり）が正しく弾くこと |
+| application | `dry_run=true` 時にAPIクライアントが一切呼ばれないこと |
+| infrastructure | DTOからドメインモデルへの変換が正しく行われること、APIキーがログに出ないこと |
+| Architecture | DTOがドメイン層に漏れていないこと（Konsistによる検査） |
+
+## 13. 関連ドキュメント
+
+- [対応する仕様書](../specifications/features/real-trading-gmo-order.md)
