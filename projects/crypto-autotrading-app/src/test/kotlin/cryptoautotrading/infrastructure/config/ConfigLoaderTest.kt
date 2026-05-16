@@ -33,6 +33,7 @@ class ConfigLoaderTest {
             api:
               retry_count: 3
               base_url: "https://api.coin.z.com"
+              private_base_url: "http://wiremock:8080"
             output:
               output_path: "trades.csv"
               state_path: "state.json"
@@ -65,6 +66,7 @@ class ConfigLoaderTest {
         assertEquals(0.01, config.trading.sharpChangeThreshold)
         assertEquals(3, config.api.retryCount)
         assertEquals("https://api.coin.z.com", config.api.baseUrl)
+        assertEquals("http://wiremock:8080", config.api.privateBaseUrl)
         assertEquals("trades.csv", config.output.outputPath)
         assertEquals("state.json", config.output.statePath)
 
@@ -118,5 +120,37 @@ class ConfigLoaderTest {
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxOrderJpy)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxDailyOrderJpy)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxPositionJpy)
+    }
+
+    @Test
+    fun `private_base_url が省略された場合はnullになること`(@TempDir tempDir: Path) {
+        // Arrange
+        val yamlContent = """
+            app:
+              interval: "5min"
+            trading:
+              symbol: "BTC"
+              initial_capital: 10000
+              trade_amount: 1000
+            api:
+              retry_count: 3
+              base_url: "https://api.coin.z.com"
+            output:
+              output_path: "trades.csv"
+              state_path: "state.json"
+        """.trimIndent()
+        val configFile = tempDir.resolve("application-test-no-private-api.yaml").toFile()
+        configFile.writeText(yamlContent)
+
+        // Act
+        val mapperField = ConfigLoader::class.java.getDeclaredField("mapper")
+        mapperField.isAccessible = true
+        val mapper = mapperField.get(ConfigLoader) as com.fasterxml.jackson.databind.ObjectMapper
+
+        val config = mapper.readValue(configFile, cryptoautotrading.domain.model.AppConfig::class.java)
+
+        // Assert
+        assertEquals("https://api.coin.z.com", config.api.baseUrl)
+        org.junit.jupiter.api.Assertions.assertNull(config.api.privateBaseUrl)
     }
 }
