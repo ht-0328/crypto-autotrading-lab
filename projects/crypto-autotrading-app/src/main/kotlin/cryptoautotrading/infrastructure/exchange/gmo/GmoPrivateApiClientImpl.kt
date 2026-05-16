@@ -79,12 +79,13 @@ class GmoPrivateApiClientImpl(
         price: BigDecimal?
     ): AcceptedOrder {
         val path = "/private/v1/order"
+        val isMarket = executionType == "MARKET"
         val requestDto = GmoPlaceOrderRequestDto(
             symbol = symbol,
             side = side,
             executionType = executionType,
-            timeInForce = "FAS", // デフォルト
-            price = price?.toPlainString(),
+            timeInForce = if (isMarket) null else "FAS", // MARKET注文では送らない
+            price = if (isMarket) null else price?.toPlainString(), // MARKET注文では送らない
             size = size.toPlainString(),
 
             cancelBefore = null

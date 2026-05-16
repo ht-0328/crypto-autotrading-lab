@@ -12,5 +12,7 @@ data class ApiConfig(
     @JsonProperty("retry_count")
     val retryCount: Int,
     @JsonProperty("base_url")
-    val baseUrl: String? = null
+    val baseUrl: String? = null,
+    @JsonProperty("private_base_url")
+    val privateBaseUrl: String? = null
 )

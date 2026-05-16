@@ -1,0 +1,16 @@
+<<<<<<< SEARCH
+# 外部API関連の設定
+api:
+  # APIリクエスト失敗時の再試行回数
+  retry_count: 3
+  # APIのベースURL（デフォルトはGMOコインのPublic API）
+  base_url: "https://api.coin.z.com"
+=======
+# 外部API関連の設定
+api:
+  # APIリクエスト失敗時の再試行回数
+  retry_count: 3
+  # APIのベースURL（デフォルトはGMOコインのPublic API）
+  base_url: "https://api.coin.z.com"
+  private_base_url: "https://api.coin.z.com"
+>>>>>>> REPLACE
