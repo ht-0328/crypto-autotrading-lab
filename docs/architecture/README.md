@@ -1,15 +1,20 @@
 # 設計 (Architecture)
 
-このディレクトリには、システムの構造、動作仕様、ロジックに関するドキュメントが含まれています。
+このディレクトリには、システムをどのように実装するかを定義した「設計書」が含まれています。
+仕様書（何を満たすべきか）については、[`../specifications/`](../specifications/) を参照してください。
 
-## ドキュメント一覧
+## 設計書一覧
 
-- [phase1-overview.md](phase1-overview.md): Phase1におけるシステムのフォルダ構成や実行フローの全体像。
-- [trading-logic.md](trading-logic.md): 売買判定のロジック（いつ買い、いつ売るのか）についての解説。
-- [cooldown-rebound-strategy.md](cooldown-rebound-strategy.md): CooldownReboundStrategy の売買ロジックとバックテスト比較観点の仕様書。
-- [trend-confirm-rebound-strategy.md](trend-confirm-rebound-strategy.md): TrendConfirmReboundStrategy の売買ロジックとバックテスト比較観点の仕様書。
-- [atr-trend-confirm-rebound-strategy.md](atr-trend-confirm-rebound-strategy.md): AtrTrendConfirmReboundStrategy の売買ロジックとバックテスト比較観点の仕様書。
-- [kline-csv-export.md](kline-csv-export.md): 過去K線CSV作成機能の仕様書。
-- [kline-csv-import.md](kline-csv-import.md): 過去K線CSV読み込み機能の仕様書。
-- [backtest.md](backtest.md): バックテスト本体の仕様書。
-- [real-trading-gmo-order-design.md](real-trading-gmo-order-design.md): GMOコインのPrivate APIを利用したリアル購入処理の設計方針仕様書。
+- [システム全体構成 設計書](system-overview.md): Phase1におけるシステム全体の構成、パッケージ設計、実行フロー。
+  - 対応する仕様書: [Phase1 仕様書](../specifications/phase1-simulation.md)
+- [売買戦略の基本ロジック](trading-logic.md): 各戦略が共通して利用する基本的な売買ロジックの考え方。
+- [売買戦略（Trading Strategy） 設計書](trading-strategy-design.md): 各種戦略（Strategyパターン）の実装方針と状態管理。
+- [過去K線CSV作成機能 設計書](kline-csv-export-design.md): GMO Public API からのK線取得とCSV保存の設計。
+  - 対応する仕様書: [過去K線CSV作成機能 仕様書](../specifications/features/kline-csv-export.md)
+- [過去K線CSV読み込み機能 設計書](kline-csv-import-design.md): 過去K線CSVの読み込み処理の設計。
+  - 対応する仕様書: [過去K線CSV読み込み機能 仕様書](../specifications/features/kline-csv-import.md)
+- [バックテスト機能 設計書](backtest-design.md): バックテストの処理フローと計算設計。
+  - 対応する仕様書: [バックテスト機能 仕様書](../specifications/features/backtest.md)
+- [リアル購入処理（GMOコイン） 設計書](real-trading-gmo-order-design.md): GMO Private API を利用したリアル注文処理の設計。
+  - 対応する仕様書: [リアル購入処理（GMOコイン） 仕様書](../specifications/features/real-trading-gmo-order.md)
+- [リアル購入処理 詳細設計](real-trading-gmo-order-detailed-design.md): DTOや詳細なAPI連携の設計。

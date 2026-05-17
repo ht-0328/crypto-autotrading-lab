@@ -13,7 +13,8 @@
 
 1. [リポジトリの全体像](../README.md)
 2. [アプリの目的と一番大事な方針 (overview/product.md)](overview/product.md)
-3. [Phase1 の仕様と全体像 (architecture/phase1-overview.md)](architecture/phase1-overview.md)
+3. [Phase1 の仕様と全体像 (specifications/phase1-simulation.md)](specifications/phase1-simulation.md)
+4. [システム全体構成 設計書 (architecture/system-overview.md)](architecture/system-overview.md)
 
 ### 📈 アプリの目的やロードマップを知りたい方
 
@@ -23,9 +24,9 @@
 ### 🧠 売買ロジックの仕組みを知りたい方
 
 1. [売買ロジック説明 (architecture/trading-logic.md)](architecture/trading-logic.md)
-2. [過去K線CSV作成機能の仕様 (architecture/kline-csv-export.md)](architecture/kline-csv-export.md)
-3. [過去K線CSV読み込み機能の仕様 (architecture/kline-csv-import.md)](architecture/kline-csv-import.md)
-4. [バックテスト機能の仕様 (architecture/backtest.md)](architecture/backtest.md)
+2. [過去K線CSV作成機能の仕様 (specifications/features/kline-csv-export.md)](specifications/features/kline-csv-export.md)
+3. [過去K線CSV読み込み機能の仕様 (specifications/features/kline-csv-import.md)](specifications/features/kline-csv-import.md)
+4. [バックテスト機能の仕様 (specifications/features/backtest.md)](specifications/features/backtest.md)
 
 ### 💻 ローカルで開発・テストをしたい方
 
@@ -56,8 +57,10 @@ AIエージェントに開発を依頼する前に、人間が内容を把握し
 
 ## ディレクトリ構成
 
+- **`specifications/`**: 仕様書を置く場所です。何を満たす必要があるか、入力・出力・条件・エラー・具体例などを定義しています。仕様を確認したい場合はここを参照してください。
+- **`architecture/`**: 設計書を置く場所です。どのように作るか、責務分担・処理の流れ・クラス配置・データ保存などを定義しています。設計を確認したい場合はここを参照してください。
+- **`templates/`**: 仕様書および設計書を作成する際のテンプレートを置いています。新しく文書を書く場合はここを見てください。
 - `overview/`: プロダクトの目的やロードマップ
-- `architecture/`: システムの構造や売買ロジックの仕様
 - `development/`: 開発環境の構築手順や日々の開発フロー
 - `operations/`: GCP環境の構築やデプロイ手順
 - `ai/`: AIエージェント向けのルールや制約事項

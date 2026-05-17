@@ -19,9 +19,9 @@
   - 環境変数: `APP_TRADING_STRATEGY_NAME`
 - **使用できる戦略**:
   - `SafeReboundStrategy`: デフォルトの戦略。現在価格と買値（buyPrice）を基準に利確・損切りを判定します。
-  - `CooldownReboundStrategy`: 損切り直後の再エントリーを一定期間制限（クールダウン）する戦略です（詳細は[こちら](docs/architecture/cooldown-rebound-strategy.md)）。
-  - `TrendConfirmReboundStrategy`: 反発だけでなく、短期トレンド（MA5）の上向きを確認してからエントリーする戦略です（詳細は[こちら](docs/architecture/trend-confirm-rebound-strategy.md)）。
-  - `AtrTrendConfirmReboundStrategy`: `TrendConfirmReboundStrategy` をベースにし、売り判定にATRを用いた変動幅を使用する戦略です（詳細は[こちら](docs/architecture/atr-trend-confirm-rebound-strategy.md)）。
+  - `CooldownReboundStrategy`: 損切り直後の再エントリーを一定期間制限（クールダウン）する戦略です（詳細は[こちら](docs/specifications/strategies/cooldown-rebound-strategy.md)）。
+  - `TrendConfirmReboundStrategy`: 反発だけでなく、短期トレンド（MA5）の上向きを確認してからエントリーする戦略です（詳細は[こちら](docs/specifications/strategies/trend-confirm-rebound-strategy.md)）。
+  - `AtrTrendConfirmReboundStrategy`: `TrendConfirmReboundStrategy` をベースにし、売り判定にATRを用いた変動幅を使用する戦略です（詳細は[こちら](docs/specifications/strategies/atr-trend-confirm-rebound-strategy.md)）。
   - `SimpleContrarianStrategy`: 比較用の旧ロジック（単純な逆張り）です。
 
 ## 開発ドキュメント
