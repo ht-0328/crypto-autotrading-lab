@@ -50,6 +50,7 @@ class GmoPrivateApiClientImpl(
     override suspend fun getAssets(): List<ExchangeAsset> {
         val path = "/v1/account/assets"
         val responseText = executeGet(path)
+        logger.info { "GMO Private API raw response: $responseText" }
         return try {
             val dto = json.decodeFromString<GmoAccountAssetsResponseDto>(responseText)
             if (dto.status != 0) {
@@ -71,6 +72,7 @@ class GmoPrivateApiClientImpl(
         val path = "/v1/activeOrders"
         val queryParams = listOf("symbol" to symbol)
         val responseText = executeGet(path, queryParams)
+        logger.info { "GMO Private API raw response: $responseText" }
         return try {
             val dto = json.decodeFromString<GmoActiveOrdersResponseDto>(responseText)
             if (dto.status != 0) {

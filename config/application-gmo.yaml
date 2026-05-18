@@ -33,7 +33,7 @@ api:
   retry_count: 3
   # APIのベースURL（デフォルトはGMOコインのPublic API）
   base_url: "https://api.coin.z.com"
-  private_base_url: "https://api.coin.z.com"
+  private_base_url: "https://api.coin.z.com/private"
 
 # データ出力関連の設定
 output:
