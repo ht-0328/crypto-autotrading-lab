@@ -77,8 +77,11 @@ class GmoPrivateApiClientImpl(
                 logger.error { "GMO Private API エラーレスポンス: $responseText" }
                 throw IllegalStateException("APIエラー: $responseText")
             }
-            val data = dto.data ?: throw IllegalStateException("APIエラー: data が存在しません: $responseText")
-            dtoMapper.mapToExchangeActiveOrders(data.list)
+            // data 自体が存在しない場合は0件として扱う
+            val data = dto.data ?: return emptyList()
+            // data.list が存在しない場合も0件として扱う
+            val list = data.list ?: return emptyList()
+            dtoMapper.mapToExchangeActiveOrders(list)
         } catch (e: Exception) {
             logger.error(e) { "GMO Private API のレスポンスのパースまたは処理に失敗しました。レスポンス本文: $responseText" }
             throw e
