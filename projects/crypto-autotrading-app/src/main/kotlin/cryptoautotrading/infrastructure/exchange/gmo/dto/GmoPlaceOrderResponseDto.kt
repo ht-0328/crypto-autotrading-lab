@@ -7,11 +7,13 @@ import kotlinx.serialization.Serializable
  *
  * @property status レスポンスステータス
  * @property data 注文受付されたorderId
+ * @property messages エラーメッセージリスト（エラー時のみ存在）
  * @property responsetime レスポンス時刻
  */
 @Serializable
 data class GmoPlaceOrderResponseDto(
     val status: Int,
-    val data: String,
+    val data: String? = null,
+    val messages: List<GmoMessageDto>? = null,
     val responsetime: String
 )

@@ -59,7 +59,7 @@ class GmoPrivateApiDtoMapper {
      */
     fun mapToAcceptedOrder(dto: GmoPlaceOrderResponseDto): AcceptedOrder {
         return AcceptedOrder(
-            orderId = dto.data
+            orderId = dto.data ?: throw IllegalArgumentException("data が存在しません")
         )
     }
 

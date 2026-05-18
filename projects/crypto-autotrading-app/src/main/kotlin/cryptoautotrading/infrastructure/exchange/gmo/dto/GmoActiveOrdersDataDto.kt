@@ -9,5 +9,5 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class GmoActiveOrdersDataDto(
-    val list: List<GmoActiveOrderDto>
+    val list: List<GmoActiveOrderDto>? = null
 )

@@ -48,27 +48,46 @@ class GmoPrivateApiClientImpl(
      * @inheritDoc
      */
     override suspend fun getAssets(): List<ExchangeAsset> {
-        val path = "/private/v1/account/assets"
+        val path = "/v1/account/assets"
         val responseText = executeGet(path)
-        val dto = json.decodeFromString<GmoAccountAssetsResponseDto>(responseText)
-        if (dto.status != 0) {
-            throw IllegalStateException("APIエラー: $responseText")
+        logger.info { "GMO Private API raw response: $responseText" }
+        return try {
+            val dto = json.decodeFromString<GmoAccountAssetsResponseDto>(responseText)
+            if (dto.status != 0) {
+                logger.error { "GMO Private API エラーレスポンス: $responseText" }
+                throw IllegalStateException("APIエラー: $responseText")
+            }
+            val data = dto.data ?: throw IllegalStateException("APIエラー: data が存在しません: $responseText")
+            dtoMapper.mapToExchangeAssets(data)
+        } catch (e: Exception) {
+            logger.error(e) { "GMO Private API のレスポンスのパースまたは処理に失敗しました。レスポンス本文: $responseText" }
+            throw e
         }
-        return dtoMapper.mapToExchangeAssets(dto.data)
     }
 
     /**
      * @inheritDoc
      */
     override suspend fun getActiveOrders(symbol: String): List<ExchangeActiveOrder> {
-        val path = "/private/v1/activeOrders"
+        val path = "/v1/activeOrders"
         val queryParams = listOf("symbol" to symbol)
         val responseText = executeGet(path, queryParams)
-        val dto = json.decodeFromString<GmoActiveOrdersResponseDto>(responseText)
-        if (dto.status != 0) {
-            throw IllegalStateException("APIエラー: $responseText")
+        logger.info { "GMO Private API raw response: $responseText" }
+        return try {
+            val dto = json.decodeFromString<GmoActiveOrdersResponseDto>(responseText)
+            if (dto.status != 0) {
+                logger.error { "GMO Private API エラーレスポンス: $responseText" }
+                throw IllegalStateException("APIエラー: $responseText")
+            }
+            // data 自体が存在しない場合は0件として扱う
+            val data = dto.data ?: return emptyList()
+            // data.list が存在しない場合も0件として扱う
+            val list = data.list ?: return emptyList()
+            dtoMapper.mapToExchangeActiveOrders(list)
+        } catch (e: Exception) {
+            logger.error(e) { "GMO Private API のレスポンスのパースまたは処理に失敗しました。レスポンス本文: $responseText" }
+            throw e
         }
-        return dtoMapper.mapToExchangeActiveOrders(dto.data.list)
     }
 
     /**
@@ -81,7 +100,7 @@ class GmoPrivateApiClientImpl(
         size: BigDecimal,
         price: BigDecimal?
     ): AcceptedOrder {
-        val path = "/private/v1/order"
+        val path = "/v1/order"
         val isMarket = executionType == "MARKET"
         val requestDto = GmoPlaceOrderRequestDto(
             symbol = symbol,
@@ -95,39 +114,62 @@ class GmoPrivateApiClientImpl(
         )
         val requestBody = json.encodeToString(requestDto)
         val responseText = executePost(path, requestBody)
-        val dto = json.decodeFromString<GmoPlaceOrderResponseDto>(responseText)
-        if (dto.status != 0) {
-            throw IllegalStateException("APIエラー: $responseText")
+        return try {
+            val dto = json.decodeFromString<GmoPlaceOrderResponseDto>(responseText)
+            if (dto.status != 0) {
+                logger.error { "GMO Private API エラーレスポンス: $responseText" }
+                throw IllegalStateException("APIエラー: $responseText")
+            }
+            if (dto.data == null) {
+                throw IllegalStateException("APIエラー: data が存在しません: $responseText")
+            }
+            dtoMapper.mapToAcceptedOrder(dto)
+        } catch (e: Exception) {
+            logger.error(e) { "GMO Private API のレスポンスのパースまたは処理に失敗しました。レスポンス本文: $responseText" }
+            throw e
         }
-        return dtoMapper.mapToAcceptedOrder(dto)
     }
 
     /**
      * @inheritDoc
      */
     override suspend fun getOrders(orderId: String): List<ExchangeOrderStatus> {
-        val path = "/private/v1/orders"
+        val path = "/v1/orders"
         val queryParams = listOf("orderId" to orderId)
         val responseText = executeGet(path, queryParams)
-        val dto = json.decodeFromString<GmoOrdersResponseDto>(responseText)
-        if (dto.status != 0) {
-            throw IllegalStateException("APIエラー: $responseText")
+        return try {
+            val dto = json.decodeFromString<GmoOrdersResponseDto>(responseText)
+            if (dto.status != 0) {
+                logger.error { "GMO Private API エラーレスポンス: $responseText" }
+                throw IllegalStateException("APIエラー: $responseText")
+            }
+            val data = dto.data ?: throw IllegalStateException("APIエラー: data が存在しません: $responseText")
+            dtoMapper.mapToExchangeOrderStatuses(data.list)
+        } catch (e: Exception) {
+            logger.error(e) { "GMO Private API のレスポンスのパースまたは処理に失敗しました。レスポンス本文: $responseText" }
+            throw e
         }
-        return dtoMapper.mapToExchangeOrderStatuses(dto.data.list)
     }
 
     /**
      * @inheritDoc
      */
     override suspend fun getExecutions(orderId: String): List<ExecutedOrder> {
-        val path = "/private/v1/executions"
+        val path = "/v1/executions"
         val queryParams = listOf("orderId" to orderId)
         val responseText = executeGet(path, queryParams)
-        val dto = json.decodeFromString<GmoExecutionsResponseDto>(responseText)
-        if (dto.status != 0) {
-            throw IllegalStateException("APIエラー: $responseText")
+        return try {
+            val dto = json.decodeFromString<GmoExecutionsResponseDto>(responseText)
+            if (dto.status != 0) {
+                logger.error { "GMO Private API エラーレスポンス: $responseText" }
+                throw IllegalStateException("APIエラー: $responseText")
+            }
+            val data = dto.data ?: throw IllegalStateException("APIエラー: data が存在しません: $responseText")
+            dtoMapper.mapToExecutedOrders(data.list)
+        } catch (e: Exception) {
+            logger.error(e) { "GMO Private API のレスポンスのパースまたは処理に失敗しました。レスポンス本文: $responseText" }
+            throw e
         }
-        return dtoMapper.mapToExecutedOrders(dto.data.list)
     }
 
     /**
@@ -157,7 +199,7 @@ class GmoPrivateApiClientImpl(
 
         val url = "$baseUrl$fullPath"
 
-        logger.info { "GMO Private API (GET) を呼び出します: $path" }
+        logger.info { "GMO Private API (GET) を呼び出します: $fullPath" }
 
         val response = httpClient.get(url) {
             header("API-KEY", credential.apiKey)
