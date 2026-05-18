@@ -48,7 +48,7 @@ class GmoPrivateApiClientImpl(
      * @inheritDoc
      */
     override suspend fun getAssets(): List<ExchangeAsset> {
-        val path = "/private/v1/account/assets"
+        val path = "/v1/account/assets"
         val responseText = executeGet(path)
         return try {
             val dto = json.decodeFromString<GmoAccountAssetsResponseDto>(responseText)
@@ -68,7 +68,7 @@ class GmoPrivateApiClientImpl(
      * @inheritDoc
      */
     override suspend fun getActiveOrders(symbol: String): List<ExchangeActiveOrder> {
-        val path = "/private/v1/activeOrders"
+        val path = "/v1/activeOrders"
         val queryParams = listOf("symbol" to symbol)
         val responseText = executeGet(path, queryParams)
         return try {
@@ -95,7 +95,7 @@ class GmoPrivateApiClientImpl(
         size: BigDecimal,
         price: BigDecimal?
     ): AcceptedOrder {
-        val path = "/private/v1/order"
+        val path = "/v1/order"
         val isMarket = executionType == "MARKET"
         val requestDto = GmoPlaceOrderRequestDto(
             symbol = symbol,
@@ -129,7 +129,7 @@ class GmoPrivateApiClientImpl(
      * @inheritDoc
      */
     override suspend fun getOrders(orderId: String): List<ExchangeOrderStatus> {
-        val path = "/private/v1/orders"
+        val path = "/v1/orders"
         val queryParams = listOf("orderId" to orderId)
         val responseText = executeGet(path, queryParams)
         return try {
@@ -150,7 +150,7 @@ class GmoPrivateApiClientImpl(
      * @inheritDoc
      */
     override suspend fun getExecutions(orderId: String): List<ExecutedOrder> {
-        val path = "/private/v1/executions"
+        val path = "/v1/executions"
         val queryParams = listOf("orderId" to orderId)
         val responseText = executeGet(path, queryParams)
         return try {
@@ -187,14 +187,14 @@ class GmoPrivateApiClientImpl(
         val sign = signatureGenerator.generate(
             timestamp = timestamp,
             method = "GET",
-            path = path,
+            path = fullPath,
             body = "",
             secretKey = credential.secretKey
         )
 
         val url = "$baseUrl$fullPath"
 
-        logger.info { "GMO Private API (GET) を呼び出します: $path" }
+        logger.info { "GMO Private API (GET) を呼び出します: $fullPath" }
 
         val response = httpClient.get(url) {
             header("API-KEY", credential.apiKey)
