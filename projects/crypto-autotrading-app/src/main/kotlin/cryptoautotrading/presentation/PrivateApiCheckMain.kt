@@ -64,7 +64,7 @@ fun main() = runBlocking {
         }
 
         // 2. 未約定注文取得API呼び出し
-        val symbol = "BTC" // 一旦BTCで確認
+        val symbol = config.trading.symbol
         logger.info { "未約定注文取得APIを呼び出します (symbol=$symbol)..." }
         val activeOrders = client.getActiveOrders(symbol)
         logger.info { "未約定注文取得に成功しました" }
@@ -72,6 +72,7 @@ fun main() = runBlocking {
 
     } catch (e: Exception) {
         logger.error(e) { "Private APIの呼び出し中にエラーが発生しました" }
+        exitProcess(1)
     } finally {
         httpClient.close()
         logger.info { "Private API疎通確認を終了します" }
