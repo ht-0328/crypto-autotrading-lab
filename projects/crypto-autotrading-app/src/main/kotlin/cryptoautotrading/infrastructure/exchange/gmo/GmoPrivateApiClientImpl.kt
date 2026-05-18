@@ -187,7 +187,7 @@ class GmoPrivateApiClientImpl(
         val sign = signatureGenerator.generate(
             timestamp = timestamp,
             method = "GET",
-            path = fullPath,
+            path = path,
             body = "",
             secretKey = credential.secretKey
         )
