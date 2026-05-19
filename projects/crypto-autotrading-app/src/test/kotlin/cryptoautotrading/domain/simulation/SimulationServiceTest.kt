@@ -321,6 +321,33 @@ class SimulationServiceTest {
     }
 
     @Test
+    fun `SimulationState更新時にrealTradingが引き継がれること`() {
+        // Arrange
+        val initialRealTradingState = cryptoautotrading.domain.model.realtrading.RealTradingState(
+            isStopped = true,
+            stopReason = "Test Error"
+        )
+        val currentState = SimulationState(
+            cashBalance = BigDecimal("10000"),
+            isHolding = false,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
+            lastUpdatedAt = "2023-01-01T00:00:00",
+            realTrading = initialRealTradingState
+        )
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val currentPrice = BigDecimal("50000.0")
+        val tradeAmount = 1000
+
+        // Act
+        val nextState = simulationService.updateState(currentState, decision, currentPrice, tradeAmount)
+
+        // Assert
+        assertTrue(nextState.isHolding)
+        assertEquals(initialRealTradingState, nextState.realTrading)
+    }
+
+    @Test
     fun `判定がHOLDINGの場合、状態が維持されること`() {
         // Arrange
         val currentState = SimulationState(

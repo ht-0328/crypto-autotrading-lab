@@ -3,6 +3,15 @@ app:
   # データを取得する間隔（例: 5min, 1hour）
   interval: "5min"
 
+# リアル取引関連の設定
+real_trading:
+  dry_run: true
+  real_trade_enabled: false
+  stop_on_unconfirmed_order: true
+  max_order_jpy: 1000
+  max_daily_order_jpy: 1000
+  max_position_jpy: 1000
+
 # 取引関連の設定
 trading:
   # ATR計算に使用するK線の数

@@ -41,6 +41,7 @@ class TradingApplication(
 
     private val logger = KotlinLogging.logger {}
     private val simulationService = SimulationService()
+    private val realTradeOrderUseCase = RealTradeOrderUseCase()
     private val pnlCalculator = ProfitAndLossCalculator()
 
 /**
@@ -86,6 +87,9 @@ class TradingApplication(
             val strategy = createStrategy(config.trading)
             val decision = strategy.judge(klineData, currentState)
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
+
+            // リアル取引の処理 (Phase 1: 条件判定とログ出力のみ)
+            realTradeOrderUseCase.executeOrderIfNeeded(decision, config.realTrading)
 
             // 4. 状態の更新
             // 最新のK線の終値を現在価格とする。データが空の場合は終了する
