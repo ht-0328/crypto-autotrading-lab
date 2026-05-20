@@ -16,6 +16,7 @@ import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
+import cryptoautotrading.application.port.RealTradingExchangePort
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -36,12 +37,13 @@ class TradingApplication(
     private val marketDataClient: MarketDataClient,
     private val stateRepository: SimulationStateRepository,
     private val tradeHistoryRepository: TradeHistoryRepository,
-    private val resultOutputPort: ResultOutputPort
+    private val resultOutputPort: ResultOutputPort,
+    private val realTradingExchangePort: RealTradingExchangePort? = null
 ) {
 
     private val logger = KotlinLogging.logger {}
     private val simulationService = SimulationService()
-    private val realTradeOrderUseCase = RealTradeOrderUseCase()
+    private val realTradeOrderUseCase = RealTradeOrderUseCase(exchangePort = realTradingExchangePort)
     private val pnlCalculator = ProfitAndLossCalculator()
 
 /**
@@ -88,9 +90,6 @@ class TradingApplication(
             val decision = strategy.judge(klineData, currentState)
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
 
-            // リアル取引の処理 (Phase 1: 条件判定とログ出力のみ)
-            realTradeOrderUseCase.executeOrderIfNeeded(decision, config.realTrading)
-
             // 4. 状態の更新
             // 最新のK線の終値を現在価格とする。データが空の場合は終了する
             if (klineData.isEmpty()) {
@@ -99,6 +98,16 @@ class TradingApplication(
             }
             val latestKline = klineData.sortedBy { it.openTime }.last()
             val currentPrice = latestKline.close.toBigDecimal()
+
+            // リアル取引の処理 (実注文・状態保存)
+            currentState = realTradeOrderUseCase.executeOrderIfNeeded(
+                decision = decision,
+                config = config.realTrading,
+                tradeAmount = config.trading.tradeAmount,
+                symbol = config.trading.symbol,
+                currentState = currentState,
+                currentPrice = currentPrice
+            )
 
             // 損益と想定損益の計算
             val pnl = pnlCalculator.calculate(

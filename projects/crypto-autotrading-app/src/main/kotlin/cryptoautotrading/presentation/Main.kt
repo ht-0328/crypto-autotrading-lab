@@ -2,11 +2,17 @@ package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
 import cryptoautotrading.infrastructure.config.ConfigLoader
+import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientAdapter
+import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
+import cryptoautotrading.infrastructure.exchange.gmo.auth.EnvGmoCredentialProvider
+import cryptoautotrading.infrastructure.exchange.gmo.auth.GmoSignatureGeneratorImpl
 import cryptoautotrading.infrastructure.output.ConsoleOutput
 import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.nio.file.Paths
@@ -52,18 +58,49 @@ fun main() = runBlocking {
         val retryCount = config.api.retryCount
         logger.info { "最終的に採用したAPIベースURL: $baseUrl, リトライ回数: $retryCount" }
 
-        GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
-            val app = TradingApplication(
-                config = config,
-                marketDataClient = apiClient,
-                stateRepository = stateRepository,
-                tradeHistoryRepository = csvRepository,
-                resultOutputPort = resultOutputPort
-            )
+        // 実注文が有効な場合のみ、Private API 用のクライアントと認証情報を初期化する
+        val isRealTradeActive = config.realTrading.realTradeEnabled && !config.realTrading.dryRun
 
-            logger.info { "TradingApplication の実行を開始します" }
-            app.run()
-            logger.info { "TradingApplication の実行が終了しました" }
+        if (isRealTradeActive) {
+            HttpClient(CIO).use { httpClient ->
+                val privateApiClient = GmoPrivateApiClientImpl(
+                    httpClient = httpClient,
+                    baseUrl = baseUrl,
+                    signatureGenerator = GmoSignatureGeneratorImpl(),
+                    credentialProvider = EnvGmoCredentialProvider()
+                )
+                val realTradingExchangePort = GmoPrivateApiClientAdapter(privateApiClient)
+
+                GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
+                    val app = TradingApplication(
+                        config = config,
+                        marketDataClient = apiClient,
+                        stateRepository = stateRepository,
+                        tradeHistoryRepository = csvRepository,
+                        resultOutputPort = resultOutputPort,
+                        realTradingExchangePort = realTradingExchangePort
+                    )
+
+                    logger.info { "TradingApplication の実行を開始します(実注文有効)" }
+                    app.run()
+                    logger.info { "TradingApplication の実行が終了しました" }
+                }
+            }
+        } else {
+            GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
+                val app = TradingApplication(
+                    config = config,
+                    marketDataClient = apiClient,
+                    stateRepository = stateRepository,
+                    tradeHistoryRepository = csvRepository,
+                    resultOutputPort = resultOutputPort,
+                    realTradingExchangePort = null
+                )
+
+                logger.info { "TradingApplication の実行を開始します(シミュレーションのみ)" }
+                app.run()
+                logger.info { "TradingApplication の実行が終了しました" }
+            }
         }
     } catch (e: Exception) {
         logger.error(e) { "アプリケーションの起動・実行中に予期せぬエラーが発生しました: ${e.message}" }
