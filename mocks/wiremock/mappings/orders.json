@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/private/v1/orders",
+    "urlPath": "/v1/orders",
     "queryParameters": {
       "orderId": {
         "matches": ".*"

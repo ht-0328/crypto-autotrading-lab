@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/private/v1/activeOrders",
+    "urlPath": "/v1/activeOrders",
     "queryParameters": {
       "symbol": {
         "matches": ".*"

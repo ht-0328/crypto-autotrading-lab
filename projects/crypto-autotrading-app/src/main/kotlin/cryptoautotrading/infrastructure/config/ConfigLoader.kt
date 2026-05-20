@@ -93,8 +93,8 @@ object ConfigLoader {
             ),
             api = ApiConfig(
                 retryCount = 3,
-                publicBaseUrl = "https://api.coin.z.com/public",
-                privateBaseUrl = "https://api.coin.z.com/private"
+                publicBaseUrl = "https://api.coin.z.com",
+                privateBaseUrl = "https://api.coin.z.com"
             ),
             output = OutputConfig(
                 outputPath = "trades.csv",

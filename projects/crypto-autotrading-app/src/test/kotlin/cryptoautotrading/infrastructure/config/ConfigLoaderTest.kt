@@ -32,8 +32,8 @@ class ConfigLoaderTest {
               sharp_change_threshold: 0.01
             api:
               retry_count: 3
-              public_base_url: "https://api.coin.z.com/public"
-              private_base_url: "https://api.coin.z.com/private"
+              public_base_url: "https://api.coin.z.com"
+              private_base_url: "https://api.coin.z.com"
             output:
               output_path: "trades.csv"
               state_path: "state.json"
@@ -65,8 +65,8 @@ class ConfigLoaderTest {
         assertEquals(0.003, config.trading.volatilityThreshold)
         assertEquals(0.01, config.trading.sharpChangeThreshold)
         assertEquals(3, config.api.retryCount)
-        assertEquals("https://api.coin.z.com/public", config.api.publicBaseUrl)
-        assertEquals("https://api.coin.z.com/private", config.api.privateBaseUrl)
+        assertEquals("https://api.coin.z.com", config.api.publicBaseUrl)
+        assertEquals("https://api.coin.z.com", config.api.privateBaseUrl)
         assertEquals("trades.csv", config.output.outputPath)
         assertEquals("state.json", config.output.statePath)
 
@@ -96,8 +96,8 @@ class ConfigLoaderTest {
               sharp_change_threshold: 0.01
             api:
               retry_count: 3
-              public_base_url: "https://api.coin.z.com/public"
-              private_base_url: "https://api.coin.z.com/private"
+              public_base_url: "https://api.coin.z.com"
+              private_base_url: "https://api.coin.z.com"
             output:
               output_path: "trades.csv"
               state_path: "state.json"
@@ -135,7 +135,7 @@ class ConfigLoaderTest {
               trade_amount: 1000
             api:
               retry_count: 3
-              public_base_url: "https://api.coin.z.com/public"
+              public_base_url: "https://api.coin.z.com"
             output:
               output_path: "trades.csv"
               state_path: "state.json"
@@ -159,7 +159,7 @@ class ConfigLoaderTest {
         val config = overrideMethod.invoke(ConfigLoader, baseConfig) as cryptoautotrading.domain.model.AppConfig
 
         // Assert
-        assertEquals("https://api.coin.z.com/public", config.api.publicBaseUrl)
+        assertEquals("https://api.coin.z.com", config.api.publicBaseUrl)
         org.junit.jupiter.api.Assertions.assertNull(config.api.privateBaseUrl)
     }
 }

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.assertThrows
 class GmoPublicApiClientTest {
 
     private val apiConfig = ApiConfig(
-        publicBaseUrl = "https://api.coin.z.com/public",
+        publicBaseUrl = "https://api.coin.z.com",
         retryCount = 1
     )
 
@@ -66,7 +66,7 @@ class GmoPublicApiClientTest {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
-        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com", apiConfig.retryCount, httpClient)
 
         // Act
         val response = apiClient.getTicker("BTC")
@@ -112,7 +112,7 @@ class GmoPublicApiClientTest {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
-        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com", apiConfig.retryCount, httpClient)
 
         // Act
         val response = apiClient.getKlines("BTC", "5min", "20230101")
@@ -141,7 +141,7 @@ class GmoPublicApiClientTest {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
-        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com", apiConfig.retryCount, httpClient)
 
         // Act & Assert
         assertThrows<Exception> {
@@ -195,7 +195,7 @@ class GmoPublicApiClientTest {
             }
         }
         // retryCount = 1
-        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com", apiConfig.retryCount, httpClient)
 
         // Act
         val response = apiClient.getTicker("BTC")
@@ -226,7 +226,7 @@ class GmoPublicApiClientTest {
             }
         }
         // retryCount = 1
-        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com/public", apiConfig.retryCount, httpClient)
+        val apiClient = GmoPublicApiClient(apiConfig.publicBaseUrl ?: "https://api.coin.z.com", apiConfig.retryCount, httpClient)
 
         // Act & Assert
         assertThrows<Exception> {

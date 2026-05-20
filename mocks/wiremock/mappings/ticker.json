@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/public/v1/ticker",
+    "urlPath": "/v1/ticker",
     "queryParameters": {
       "symbol": {
         "equalTo": "BTC"
