@@ -187,6 +187,9 @@ class RealTradeOrderUseCaseTest {
         assertEquals("dummy_order_id", latestOrder?.orderId)
         assertEquals(RealOrderStatus.ORDERED, latestOrder?.status)
         assertEquals(RealOrderSide.BUY, latestOrder?.side)
+
+        // dailyOrderedJpy が加算されていること
+        assertEquals(BigDecimal("10000"), newState.realTrading.dailyOrderedJpy)
     }
 }
 

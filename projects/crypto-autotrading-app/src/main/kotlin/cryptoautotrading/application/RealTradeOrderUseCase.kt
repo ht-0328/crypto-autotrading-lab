@@ -117,6 +117,16 @@ class RealTradeOrderUseCase(
 
                 val nowStr = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
+                // 1日の累計注文額を加算し、日付を更新する
+                // 現状、同日内の注文受付であれば無条件に加算する（キャンセルされても加算されたままになるが安全寄りの設計とする）
+                val todayStr = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                val isSameDay = currentState.realTrading.dailyOrderedDate == todayStr
+                val newDailyOrderedJpy = if (isSameDay) {
+                    currentState.realTrading.dailyOrderedJpy.add(BigDecimal(tradeAmount))
+                } else {
+                    BigDecimal(tradeAmount)
+                }
+
                 // orderId を保存した新しい状態を生成
                 val newLatestOrder = RealOrderState(
                     orderId = acceptedOrder.orderId,
@@ -130,7 +140,9 @@ class RealTradeOrderUseCase(
                 )
 
                 val newRealTradingState = currentState.realTrading.copy(
-                    latestOrder = newLatestOrder
+                    latestOrder = newLatestOrder,
+                    dailyOrderedDate = todayStr,
+                    dailyOrderedJpy = newDailyOrderedJpy
                 )
 
                 logger.info { "リアル取引: 注文受付完了。orderId: ${acceptedOrder.orderId} を保存しました。" }
