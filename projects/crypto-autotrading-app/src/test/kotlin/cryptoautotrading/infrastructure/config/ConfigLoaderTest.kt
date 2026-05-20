@@ -33,7 +33,6 @@ class ConfigLoaderTest {
             api:
               retry_count: 3
               base_url: "https://api.coin.z.com"
-              private_base_url: "http://wiremock:8080"
             output:
               output_path: "trades.csv"
               state_path: "state.json"
@@ -66,7 +65,6 @@ class ConfigLoaderTest {
         assertEquals(0.01, config.trading.sharpChangeThreshold)
         assertEquals(3, config.api.retryCount)
         assertEquals("https://api.coin.z.com", config.api.baseUrl)
-        assertEquals("http://wiremock:8080", config.api.privateBaseUrl)
         assertEquals("trades.csv", config.output.outputPath)
         assertEquals("state.json", config.output.statePath)
 
@@ -159,6 +157,5 @@ class ConfigLoaderTest {
 
         // Assert
         assertEquals("https://api.coin.z.com", config.api.baseUrl)
-        assertEquals("https://api.coin.z.com", config.api.privateBaseUrl)
     }
 }
