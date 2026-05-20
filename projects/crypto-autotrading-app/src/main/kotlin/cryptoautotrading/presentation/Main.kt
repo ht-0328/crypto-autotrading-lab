@@ -69,7 +69,7 @@ fun main() = runBlocking {
                     signatureGenerator = GmoSignatureGeneratorImpl(),
                     credentialProvider = EnvGmoCredentialProvider()
                 )
-                val realTradingExchangePort = GmoPrivateApiClientAdapter(privateApiClient)
+                val realTradingExchangeClient = GmoPrivateApiClientAdapter(privateApiClient)
 
                 GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
                     val app = TradingApplication(
@@ -78,7 +78,7 @@ fun main() = runBlocking {
                         stateRepository = stateRepository,
                         tradeHistoryRepository = csvRepository,
                         resultOutputPort = resultOutputPort,
-                        realTradingExchangePort = realTradingExchangePort
+                        realTradingExchangeClient = realTradingExchangeClient
                     )
 
                     logger.info { "TradingApplication の実行を開始します(実注文有効)" }
@@ -94,7 +94,7 @@ fun main() = runBlocking {
                     stateRepository = stateRepository,
                     tradeHistoryRepository = csvRepository,
                     resultOutputPort = resultOutputPort,
-                    realTradingExchangePort = null
+                    realTradingExchangeClient = null
                 )
 
                 logger.info { "TradingApplication の実行を開始します(シミュレーションのみ)" }

@@ -1,6 +1,5 @@
 package cryptoautotrading.application
 
-import cryptoautotrading.application.port.RealTradingExchangePort
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
@@ -17,13 +16,13 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * リアル取引の注文処理を担当するUseCase
+ * リアル取引の注文処理を担当するサービス
  *
- * @property exchangePort リアル取引の取引所操作を行うポート
+ * @property exchangeClient リアル取引の取引所操作を行うクライアント
  * @property safetyChecker 実注文前安全チェックを行うサービス
  */
-class RealTradeOrderUseCase(
-    private val exchangePort: RealTradingExchangePort? = null,
+class RealTradingService(
+    private val exchangeClient: RealTradingExchangeClient? = null,
     private val safetyChecker: RealTradingSafetyChecker = RealTradingSafetyChecker()
 ) {
     private val logger = KotlinLogging.logger {}
@@ -58,14 +57,14 @@ class RealTradeOrderUseCase(
         if (decision.action == TradeAction.BUY_CANDIDATE) {
             logger.info { "リアル取引: BUY_CANDIDATE を検知しました。安全チェックを開始します。" }
 
-            if (exchangePort == null) {
-                logger.warn { "リアル取引: exchangePort が設定されていないため、実注文処理をスキップします。" }
+            if (exchangeClient == null) {
+                logger.warn { "リアル取引: exchangeClient が設定されていないため、実注文処理をスキップします。" }
                 return currentState
             }
 
             try {
                 // GMO Private API から現在のアセットとアクティブオーダーを取得
-                val currentHoldingAssets = exchangePort.getAssets()
+                val currentHoldingAssets = exchangeClient.getAssets()
 
                 // JPY の available を取得
                 val jpyAsset = currentHoldingAssets.find { it.symbol == "JPY" }
@@ -85,7 +84,7 @@ class RealTradeOrderUseCase(
                     emptyList()
                 }
 
-                val activeOrders = exchangePort.getActiveOrders(symbol)
+                val activeOrders = exchangeClient.getActiveOrders(symbol)
 
                 val safetyCheckResult = safetyChecker.checkPreOrderSafety(
                     config = config,
@@ -107,7 +106,7 @@ class RealTradeOrderUseCase(
                 val size = BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
 
                 // 注文実行
-                val acceptedOrder = exchangePort.placeOrder(
+                val acceptedOrder = exchangeClient.placeOrder(
                     symbol = symbol,
                     side = "BUY",
                     executionType = "MARKET",

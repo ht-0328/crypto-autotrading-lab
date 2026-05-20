@@ -1,19 +1,19 @@
 package cryptoautotrading.infrastructure.exchange.gmo
 
-import cryptoautotrading.application.port.RealTradingExchangePort
+import cryptoautotrading.application.RealTradingExchangeClient
 import cryptoautotrading.domain.model.order.AcceptedOrder
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder
 import cryptoautotrading.domain.model.order.ExchangeAsset
 import java.math.BigDecimal
 
 /**
- * [GmoPrivateApiClient] を利用して [RealTradingExchangePort] の実装を提供するアダプタークラス
+ * [GmoPrivateApiClient] を利用して [RealTradingExchangeClient] の実装を提供するアダプタークラス
  *
  * @property gmoPrivateApiClient GMO Private API クライアント
  */
 class GmoPrivateApiClientAdapter(
     private val gmoPrivateApiClient: GmoPrivateApiClient
-) : RealTradingExchangePort {
+) : RealTradingExchangeClient {
 
     /**
      * 資産残高を取得する。

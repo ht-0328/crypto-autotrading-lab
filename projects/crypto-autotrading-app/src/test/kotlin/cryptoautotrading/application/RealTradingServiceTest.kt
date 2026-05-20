@@ -1,6 +1,5 @@
 package cryptoautotrading.application
 
-import cryptoautotrading.application.port.RealTradingExchangePort
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
@@ -18,15 +17,15 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 
-class RealTradeOrderUseCaseTest {
+class RealTradingServiceTest {
 
-    private lateinit var mockPort: MockRealTradingExchangePort
-    private lateinit var useCase: RealTradeOrderUseCase
+    private lateinit var mockClient: MockRealTradingExchangeClient
+    private lateinit var service: RealTradingService
 
     @BeforeEach
     fun setup() {
-        mockPort = MockRealTradingExchangePort()
-        useCase = RealTradeOrderUseCase(exchangePort = mockPort)
+        mockClient = MockRealTradingExchangeClient()
+        service = RealTradingService(exchangeClient = mockClient)
     }
 
     @Test
@@ -35,10 +34,10 @@ class RealTradeOrderUseCaseTest {
         val config = RealTradingConfig(realTradeEnabled = false, dryRun = false)
         val state = SimulationState()
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
@@ -47,10 +46,10 @@ class RealTradeOrderUseCaseTest {
         val config = RealTradingConfig(realTradeEnabled = true, dryRun = true)
         val state = SimulationState()
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
@@ -59,27 +58,27 @@ class RealTradeOrderUseCaseTest {
         val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState()
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
-    fun `exchangePortがnullの場合は実注文処理がスキップされること`() = runBlocking {
-        val useCaseNullPort = RealTradeOrderUseCase(exchangePort = null)
+    fun `exchangeClientがnullの場合は実注文処理がスキップされること`() = runBlocking {
+        val serviceNullClient = RealTradingService(exchangeClient = null)
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState()
 
-        val newState = useCaseNullPort.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = serviceNullClient.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
     }
 
     @Test
     fun `JPY残高不足の場合は実注文がスキップされること`() = runBlocking {
-        mockPort.assets = listOf(ExchangeAsset("JPY", BigDecimal("5000"), BigDecimal("5000"), BigDecimal.ONE))
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("5000"), BigDecimal("5000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(
             realTradeEnabled = true, dryRun = false,
@@ -87,16 +86,16 @@ class RealTradeOrderUseCaseTest {
         )
         val state = SimulationState()
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
     fun `未約定注文がある場合は実注文がスキップされること`() = runBlocking {
-        mockPort.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
-        mockPort.activeOrders = listOf(ExchangeActiveOrder("order1", "BTC", "BUY", BigDecimal("0.01"), BigDecimal.ZERO, "WAITING"))
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        mockClient.activeOrders = listOf(ExchangeActiveOrder("order1", "BTC", "BUY", BigDecimal("0.01"), BigDecimal.ZERO, "WAITING"))
 
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(
@@ -105,15 +104,15 @@ class RealTradeOrderUseCaseTest {
         )
         val state = SimulationState()
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
     fun `maxOrderJpy超過の場合は実注文がスキップされること`() = runBlocking {
-        mockPort.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(
             realTradeEnabled = true, dryRun = false,
@@ -121,15 +120,15 @@ class RealTradeOrderUseCaseTest {
         )
         val state = SimulationState()
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 30000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 30000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
     fun `maxDailyOrderJpy超過の場合は実注文がスキップされること`() = runBlocking {
-        mockPort.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(
             realTradeEnabled = true, dryRun = false,
@@ -137,15 +136,15 @@ class RealTradeOrderUseCaseTest {
         )
         val state = SimulationState(realTrading = cryptoautotrading.domain.model.realtrading.RealTradingState(dailyOrderedJpy = BigDecimal("40000")))
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 15000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 15000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
     fun `maxPositionJpy超過の場合は実注文がスキップされること`() = runBlocking {
-        mockPort.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(
             realTradeEnabled = true, dryRun = false,
@@ -153,15 +152,15 @@ class RealTradeOrderUseCaseTest {
         )
         val state = SimulationState(holdingAmount = BigDecimal("0.045")) // 約定価格1,000,000なら45,000円分
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
         assertEquals(state, newState)
-        assertFalse(mockPort.placeOrderCalled)
+        assertFalse(mockClient.placeOrderCalled)
     }
 
     @Test
     fun `条件を満たした場合はplaceOrderが呼ばれorderIdが保存されるがisHoldingはtrueにならないこと`() = runBlocking {
-        mockPort.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
 
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(
@@ -170,13 +169,13 @@ class RealTradeOrderUseCaseTest {
         )
         val state = SimulationState(isHolding = false)
 
-        val newState = useCase.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
 
-        assertTrue(mockPort.placeOrderCalled)
-        assertEquals("BTC", mockPort.lastPlaceOrderSymbol)
+        assertTrue(mockClient.placeOrderCalled)
+        assertEquals("BTC", mockClient.lastPlaceOrderSymbol)
 
         val expectedSize = BigDecimal("10000").divide(BigDecimal("1000000"), 8, java.math.RoundingMode.DOWN)
-        assertEquals(expectedSize, mockPort.lastPlaceOrderSize)
+        assertEquals(expectedSize, mockClient.lastPlaceOrderSize)
 
         // isHolding は true にならないこと
         assertFalse(newState.isHolding)
@@ -193,7 +192,7 @@ class RealTradeOrderUseCaseTest {
     }
 }
 
-class MockRealTradingExchangePort : RealTradingExchangePort {
+class MockRealTradingExchangeClient : RealTradingExchangeClient {
     var assets: List<ExchangeAsset> = emptyList()
     var activeOrders: List<ExchangeActiveOrder> = emptyList()
 

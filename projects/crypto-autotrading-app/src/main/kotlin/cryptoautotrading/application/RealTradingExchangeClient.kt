@@ -1,4 +1,4 @@
-package cryptoautotrading.application.port
+package cryptoautotrading.application
 
 import cryptoautotrading.domain.model.order.AcceptedOrder
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder
@@ -6,9 +6,9 @@ import cryptoautotrading.domain.model.order.ExchangeAsset
 import java.math.BigDecimal
 
 /**
- * リアル取引に必要な取引所操作を抽象化するポート
+ * リアル取引に必要な取引所操作を抽象化するインターフェース
  */
-interface RealTradingExchangePort {
+interface RealTradingExchangeClient {
     /**
      * 資産残高を取得する。
      *

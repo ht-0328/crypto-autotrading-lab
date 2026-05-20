@@ -16,7 +16,6 @@ import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
-import cryptoautotrading.application.port.RealTradingExchangePort
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -38,12 +37,12 @@ class TradingApplication(
     private val stateRepository: SimulationStateRepository,
     private val tradeHistoryRepository: TradeHistoryRepository,
     private val resultOutputPort: ResultOutputPort,
-    private val realTradingExchangePort: RealTradingExchangePort? = null
+    private val realTradingExchangeClient: RealTradingExchangeClient? = null
 ) {
 
     private val logger = KotlinLogging.logger {}
     private val simulationService = SimulationService()
-    private val realTradeOrderUseCase = RealTradeOrderUseCase(exchangePort = realTradingExchangePort)
+    private val realTradingService = RealTradingService(exchangeClient = realTradingExchangeClient)
     private val pnlCalculator = ProfitAndLossCalculator()
 
 /**
@@ -100,7 +99,7 @@ class TradingApplication(
             val currentPrice = latestKline.close.toBigDecimal()
 
             // リアル取引の処理 (実注文・状態保存)
-            currentState = realTradeOrderUseCase.executeOrderIfNeeded(
+            currentState = realTradingService.executeOrderIfNeeded(
                 decision = decision,
                 config = config.realTrading,
                 tradeAmount = config.trading.tradeAmount,
