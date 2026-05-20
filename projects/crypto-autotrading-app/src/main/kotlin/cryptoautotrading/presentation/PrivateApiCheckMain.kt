@@ -33,8 +33,8 @@ fun main() = runBlocking {
         exitProcess(1)
     }
 
-    val baseUrl = config.api.baseUrl ?: "https://api.coin.z.com"
-    logger.info { "使用するベースURL: $baseUrl" }
+    val privateBaseUrl = config.api.privateBaseUrl ?: "https://api.coin.z.com/private"
+    logger.info { "使用するPrivate APIベースURL: $privateBaseUrl" }
 
     val httpClient = HttpClient(CIO) {
         // 設定が必要なら追加
@@ -46,7 +46,7 @@ fun main() = runBlocking {
 
         val client = GmoPrivateApiClientImpl(
             httpClient = httpClient,
-            baseUrl = baseUrl,
+            baseUrl = privateBaseUrl,
             signatureGenerator = signatureGenerator,
             credentialProvider = credentialProvider
         )

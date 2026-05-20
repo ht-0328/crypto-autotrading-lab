@@ -54,9 +54,10 @@ fun main() = runBlocking {
         val resultOutputPort = ConsoleOutput
 
         // APIのベースURLを設定ファイルから取得する
-        val baseUrl = config.api.baseUrl ?: "https://api.coin.z.com"
+        val publicBaseUrl = config.api.publicBaseUrl ?: "https://api.coin.z.com/public"
+        val privateBaseUrl = config.api.privateBaseUrl ?: "https://api.coin.z.com/private"
         val retryCount = config.api.retryCount
-        logger.info { "最終的に採用したAPIベースURL: $baseUrl, リトライ回数: $retryCount" }
+        logger.info { "最終的に採用したAPIベースURL(Public): $publicBaseUrl, APIベースURL(Private): $privateBaseUrl, リトライ回数: $retryCount" }
 
         // 実注文が有効な場合のみ、Private API 用のクライアントと認証情報を初期化する
         val isRealTradeActive = config.realTrading.realTradeEnabled && !config.realTrading.dryRun
@@ -65,13 +66,13 @@ fun main() = runBlocking {
             HttpClient(CIO).use { httpClient ->
                 val privateApiClient = GmoPrivateApiClientImpl(
                     httpClient = httpClient,
-                    baseUrl = baseUrl,
+                    baseUrl = privateBaseUrl,
                     signatureGenerator = GmoSignatureGeneratorImpl(),
                     credentialProvider = EnvGmoCredentialProvider()
                 )
                 val realTradingExchangeClient = GmoPrivateApiClientAdapter(privateApiClient)
 
-                GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
+                GmoPublicApiClient(publicBaseUrl, retryCount).use { apiClient ->
                     val app = TradingApplication(
                         config = config,
                         marketDataClient = apiClient,
@@ -87,7 +88,7 @@ fun main() = runBlocking {
                 }
             }
         } else {
-            GmoPublicApiClient(baseUrl, retryCount).use { apiClient ->
+            GmoPublicApiClient(publicBaseUrl, retryCount).use { apiClient ->
                 val app = TradingApplication(
                     config = config,
                     marketDataClient = apiClient,

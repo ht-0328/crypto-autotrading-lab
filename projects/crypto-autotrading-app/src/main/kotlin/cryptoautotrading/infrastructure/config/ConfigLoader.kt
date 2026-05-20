@@ -93,7 +93,8 @@ object ConfigLoader {
             ),
             api = ApiConfig(
                 retryCount = 3,
-                baseUrl = "https://api.coin.z.com"
+                publicBaseUrl = "https://api.coin.z.com/public",
+                privateBaseUrl = "https://api.coin.z.com/private"
             ),
             output = OutputConfig(
                 outputPath = "trades.csv",
@@ -124,7 +125,8 @@ object ConfigLoader {
         val envAtrProfitMultiplier = System.getenv("TRADING_ATR_PROFIT_MULTIPLIER")
         val envAtrLossMultiplier = System.getenv("TRADING_ATR_LOSS_MULTIPLIER")
         val envRetryCount = System.getenv("API_RETRY_COUNT")
-        val envBaseUrl = System.getenv("API_BASE_URL")
+        val envPublicBaseUrl = System.getenv("API_PUBLIC_BASE_URL")
+        val envPrivateBaseUrl = System.getenv("API_PRIVATE_BASE_URL")
         val envOutputPath = System.getenv("OUTPUT_PATH")
         val envStatePath = System.getenv("STATE_PATH")
 
@@ -135,7 +137,8 @@ object ConfigLoader {
         val envMaxDailyOrderJpy = System.getenv("REAL_TRADING_MAX_DAILY_ORDER_JPY")
         val envMaxPositionJpy = System.getenv("REAL_TRADING_MAX_POSITION_JPY")
 
-        val finalBaseUrl = envBaseUrl ?: base.api.baseUrl
+        val finalPublicBaseUrl = envPublicBaseUrl ?: base.api.publicBaseUrl
+        val finalPrivateBaseUrl = envPrivateBaseUrl ?: base.api.privateBaseUrl
 
         return AppConfig(
             app = AppSettings(
@@ -157,7 +160,8 @@ object ConfigLoader {
             ),
             api = ApiConfig(
                 retryCount = envRetryCount?.toIntOrNull() ?: base.api.retryCount,
-                baseUrl = finalBaseUrl
+                publicBaseUrl = finalPublicBaseUrl,
+                privateBaseUrl = finalPrivateBaseUrl
             ),
             output = OutputConfig(
                 outputPath = envOutputPath ?: base.output.outputPath,
