@@ -33,7 +33,7 @@ fun main() = runBlocking {
         exitProcess(1)
     }
 
-    val privateBaseUrl = config.api.privateBaseUrl ?: "https://api.coin.z.com"
+    val privateBaseUrl = config.api.privateBaseUrl ?: "https://api.coin.z.com/private"
     logger.info { "使用するPrivate APIベースURL: $privateBaseUrl" }
 
     val httpClient = HttpClient(CIO) {

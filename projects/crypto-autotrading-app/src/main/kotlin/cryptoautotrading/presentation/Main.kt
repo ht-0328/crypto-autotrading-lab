@@ -54,8 +54,8 @@ fun main() = runBlocking {
         val resultOutputPort = ConsoleOutput
 
         // APIのベースURLを設定ファイルから取得する
-        val publicBaseUrl = config.api.publicBaseUrl ?: "https://api.coin.z.com"
-        val privateBaseUrl = config.api.privateBaseUrl ?: "https://api.coin.z.com"
+        val publicBaseUrl = config.api.publicBaseUrl ?: "https://api.coin.z.com/public"
+        val privateBaseUrl = config.api.privateBaseUrl ?: "https://api.coin.z.com/private"
         val retryCount = config.api.retryCount
         logger.info { "最終的に採用したAPIベースURL(Public): $publicBaseUrl, APIベースURL(Private): $privateBaseUrl, リトライ回数: $retryCount" }
 

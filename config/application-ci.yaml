@@ -32,8 +32,8 @@ api:
   # APIリクエスト失敗時の再試行回数
   retry_count: 3
   # APIのベースURL（デフォルトはGMOコインのPublic API）
-  public_base_url: "http://localhost:8080"
-  private_base_url: "http://localhost:8080"
+  public_base_url: "http://localhost:8080/public"
+  private_base_url: "http://localhost:8080/private"
 
 # データ出力関連の設定
 output:

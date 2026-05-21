@@ -37,7 +37,7 @@ fun main() = runBlocking {
         // 設定ファイルからのAPI情報取得
         logger.info { "設定ファイルの読み込みを開始します" }
         val config = ConfigLoader.load()
-        val publicBaseUrl = config.api.publicBaseUrl ?: "https://api.coin.z.com"
+        val publicBaseUrl = config.api.publicBaseUrl ?: "https://api.coin.z.com/public"
         val retryCount = config.api.retryCount
         logger.info { "採用したAPIベースURL: $publicBaseUrl, リトライ回数: $retryCount" }
 
