@@ -30,7 +30,7 @@ class TradingApplicationTest {
                 volatilityThreshold = 0.003,
                 sharpChangeThreshold = 0.01
             ),
-            api = ApiConfig(retryCount = 3, baseUrl = ""),
+            api = ApiConfig(retryCount = 3, publicBaseUrl = ""),
             output = OutputConfig(outputPath = "", statePath = "")
         )
     }

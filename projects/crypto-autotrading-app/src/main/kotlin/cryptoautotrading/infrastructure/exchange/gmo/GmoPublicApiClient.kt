@@ -57,7 +57,7 @@ class GmoPublicApiClient(
      * @return ティッカーレスポンス
      */
     override suspend fun getTicker(symbol: String): TickerResponse {
-        val url = "$baseUrl/public/v1/ticker"
+        val url = "$baseUrl/v1/ticker"
         logger.info { "ティッカー情報の取得を開始します" }
         logger.debug { "APIリクエスト: GET $url?symbol=$symbol" }
 
@@ -90,7 +90,7 @@ class GmoPublicApiClient(
      * @return K線レスポンス
      */
     override suspend fun getKlines(symbol: String, interval: String, date: String): KlineResponse {
-        val url = "$baseUrl/public/v1/klines"
+        val url = "$baseUrl/v1/klines"
         logger.info { "K線データ取得APIを呼び出します: $date" }
         logger.debug { "APIリクエスト: GET $url?symbol=$symbol&interval=$interval&date=$date" }
 

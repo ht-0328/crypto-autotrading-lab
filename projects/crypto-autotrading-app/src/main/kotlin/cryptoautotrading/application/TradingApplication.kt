@@ -36,12 +36,13 @@ class TradingApplication(
     private val marketDataClient: MarketDataClient,
     private val stateRepository: SimulationStateRepository,
     private val tradeHistoryRepository: TradeHistoryRepository,
-    private val resultOutputPort: ResultOutputPort
+    private val resultOutputPort: ResultOutputPort,
+    private val realTradingExchangeClient: RealTradingExchangeClient? = null
 ) {
 
     private val logger = KotlinLogging.logger {}
     private val simulationService = SimulationService()
-    private val realTradeOrderUseCase = RealTradeOrderUseCase()
+    private val realTradingService = RealTradingService(exchangeClient = realTradingExchangeClient)
     private val pnlCalculator = ProfitAndLossCalculator()
 
 /**
@@ -88,9 +89,6 @@ class TradingApplication(
             val decision = strategy.judge(klineData, currentState)
             logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
 
-            // リアル取引の処理 (Phase 1: 条件判定とログ出力のみ)
-            realTradeOrderUseCase.executeOrderIfNeeded(decision, config.realTrading)
-
             // 4. 状態の更新
             // 最新のK線の終値を現在価格とする。データが空の場合は終了する
             if (klineData.isEmpty()) {
@@ -100,6 +98,16 @@ class TradingApplication(
             val latestKline = klineData.sortedBy { it.openTime }.last()
             val currentPrice = latestKline.close.toBigDecimal()
 
+            // リアル取引の処理 (実注文・状態保存)
+            currentState = realTradingService.executeOrderIfNeeded(
+                decision = decision,
+                config = config.realTrading,
+                tradeAmount = config.trading.tradeAmount,
+                symbol = config.trading.symbol,
+                currentState = currentState,
+                currentPrice = currentPrice
+            )
+
             // 損益と想定損益の計算
             val pnl = pnlCalculator.calculate(
                 isHolding = currentState.isHolding,
@@ -108,15 +116,25 @@ class TradingApplication(
                 holdingAmount = currentState.holdingAmount,
                 shouldSell = decision.action == TradeAction.SELL_CANDIDATE
             )
-            val fee = java.math.BigDecimal.ZERO // Phase1 では手数料ゼロとする
+            val fee = java.math.BigDecimal.ZERO // 手数料は現時点ではゼロとして扱う
 
-            val nextState = simulationService.updateState(
-                currentState = currentState,
-                decision = decision,
-                currentPrice = currentPrice,
-                tradeAmount = config.trading.tradeAmount,
-                eventTime = latestKline.openTime
-            )
+            val isRealTradeActive = config.realTrading.realTradeEnabled && !config.realTrading.dryRun
+            val shouldBypassSimulationStateUpdate = isRealTradeActive && decision.action == TradeAction.BUY_CANDIDATE
+
+            val nextState = if (shouldBypassSimulationStateUpdate) {
+                // 実取引モードの場合は、シミュレーション用の状態更新（即座に保有状態を変更する処理）をバイパスする
+                // （注文受付と約定は別のため、約定確認するまでは isHolding=true にしない）
+                logger.info { "実取引モードで買い注文を扱うため、シミュレーションによる即時保有更新をバイパスします" }
+                currentState
+            } else {
+                simulationService.updateState(
+                    currentState = currentState,
+                    decision = decision,
+                    currentPrice = currentPrice,
+                    tradeAmount = config.trading.tradeAmount,
+                    eventTime = latestKline.openTime
+                )
+            }
             logger.info { "Next Simulation State: $nextState" }
 
             val estimatedHoldingValue = nextState.holdingAmount * currentPrice
