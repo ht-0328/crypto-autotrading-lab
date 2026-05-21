@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "urlPath": "/v1/klines",
+    "urlPath": "/public/v1/klines",
     "queryParameters": {
       "symbol": {
         "equalTo": "BTC"
