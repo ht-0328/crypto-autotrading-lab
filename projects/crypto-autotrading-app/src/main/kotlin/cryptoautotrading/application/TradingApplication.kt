@@ -122,7 +122,7 @@ class TradingApplication(
             val nextState = if (isRealTradeActive && decision.action == TradeAction.BUY_CANDIDATE || decision.action == TradeAction.SELL_CANDIDATE) {
                 // 実取引モードの場合は、シミュレーション用の状態更新（即座に保有状態を変更する処理）をバイパスする
                 // （注文受付と約定は別のため、約定確認するまでは isHolding=true にしない）
-                logger.info { "実取引モードが有効なため、シミュレーションによる即時状態更新をバイパスします" }
+                logger.info { "実取引モードで買い注文を扱うため、シミュレーションによる即時保有更新をバイパスします" }
                 currentState
             } else {
                 simulationService.updateState(
