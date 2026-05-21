@@ -116,10 +116,12 @@ class TradingApplication(
                 holdingAmount = currentState.holdingAmount,
                 shouldSell = decision.action == TradeAction.SELL_CANDIDATE
             )
-            val fee = java.math.BigDecimal.ZERO // Phase1 では手数料ゼロとする
+            val fee = java.math.BigDecimal.ZERO // 手数料は現時点ではゼロとして扱う
 
             val isRealTradeActive = config.realTrading.realTradeEnabled && !config.realTrading.dryRun
-            val nextState = if (isRealTradeActive && decision.action == TradeAction.BUY_CANDIDATE || decision.action == TradeAction.SELL_CANDIDATE) {
+            val shouldBypassSimulationStateUpdate = isRealTradeActive && decision.action == TradeAction.BUY_CANDIDATE
+
+            val nextState = if (shouldBypassSimulationStateUpdate) {
                 // 実取引モードの場合は、シミュレーション用の状態更新（即座に保有状態を変更する処理）をバイパスする
                 // （注文受付と約定は別のため、約定確認するまでは isHolding=true にしない）
                 logger.info { "実取引モードで買い注文を扱うため、シミュレーションによる即時保有更新をバイパスします" }
