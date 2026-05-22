@@ -3,6 +3,8 @@ package cryptoautotrading.application
 import cryptoautotrading.domain.model.order.AcceptedOrder
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder
 import cryptoautotrading.domain.model.order.ExchangeAsset
+import cryptoautotrading.domain.model.order.ExchangeOrderStatus
+import cryptoautotrading.domain.model.order.ExecutedOrder
 import java.math.BigDecimal
 
 /**
@@ -41,4 +43,20 @@ interface RealTradingExchangeClient {
         size: BigDecimal,
         price: BigDecimal? = null
     ): AcceptedOrder
+
+    /**
+     * 注文状態を確認する。
+     *
+     * @param orderId 確認対象の注文ID
+     * @return 注文状態のリスト
+     */
+    suspend fun getOrders(orderId: String): List<ExchangeOrderStatus>
+
+    /**
+     * 約定結果を確認する。
+     *
+     * @param orderId 確認対象の注文ID
+     * @return 約定結果のリスト
+     */
+    suspend fun getExecutions(orderId: String): List<ExecutedOrder>
 }

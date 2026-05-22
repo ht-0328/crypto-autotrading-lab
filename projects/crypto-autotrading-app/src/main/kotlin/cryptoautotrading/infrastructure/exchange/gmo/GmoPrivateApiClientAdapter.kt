@@ -4,6 +4,8 @@ import cryptoautotrading.application.RealTradingExchangeClient
 import cryptoautotrading.domain.model.order.AcceptedOrder
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder
 import cryptoautotrading.domain.model.order.ExchangeAsset
+import cryptoautotrading.domain.model.order.ExchangeOrderStatus
+import cryptoautotrading.domain.model.order.ExecutedOrder
 import java.math.BigDecimal
 
 /**
@@ -46,5 +48,19 @@ class GmoPrivateApiClientAdapter(
             size = size,
             price = price
         )
+    }
+
+    /**
+     * 注文状態を確認する。
+     */
+    override suspend fun getOrders(orderId: String): List<ExchangeOrderStatus> {
+        return gmoPrivateApiClient.getOrders(orderId)
+    }
+
+    /**
+     * 約定結果を確認する。
+     */
+    override suspend fun getExecutions(orderId: String): List<ExecutedOrder> {
+        return gmoPrivateApiClient.getExecutions(orderId)
     }
 }
