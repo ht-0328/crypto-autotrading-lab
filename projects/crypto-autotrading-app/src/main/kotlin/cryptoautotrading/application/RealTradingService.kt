@@ -54,13 +54,87 @@ class RealTradingService(
             return currentState
         }
 
+        if (exchangeClient == null) {
+            if (decision.action == TradeAction.BUY_CANDIDATE) {
+                logger.warn { "リアル取引: exchangeClient が設定されていないため、実注文処理をスキップします。" }
+            }
+            return currentState
+        }
+
+        // 未確認注文がある場合は、状態の確認を優先する
+        val latestOrder = currentState.realTrading.latestOrder
+        if (latestOrder != null && (latestOrder.status == RealOrderStatus.ORDERED || latestOrder.status == RealOrderStatus.WAITING || latestOrder.status == RealOrderStatus.UNCONFIRMED)) {
+            logger.info { "リアル取引: 未確認注文 (orderId: ${latestOrder.orderId}) が存在します。状態を確認します。" }
+            try {
+                val orders = exchangeClient.getOrders(latestOrder.orderId)
+                val targetOrder = orders.find { it.orderId == latestOrder.orderId }
+                if (targetOrder != null) {
+                    val mappedStatus = mapExchangeStatus(targetOrder.status)
+                    if (mappedStatus == RealOrderStatus.EXECUTED) {
+                        logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) の約定を確認しました。約定情報を取得します。" }
+                        val executions = exchangeClient.getExecutions(latestOrder.orderId)
+                        if (executions.isNotEmpty()) {
+                            var totalSize = BigDecimal.ZERO
+                            var totalCost = BigDecimal.ZERO
+                            var maxTimestamp = ""
+                            for (execution in executions) {
+                                totalSize = totalSize.add(execution.actualSize)
+                                totalCost = totalCost.add(execution.actualSize.multiply(execution.actualPrice))
+                                if (maxTimestamp.isEmpty() || execution.timestamp > maxTimestamp) {
+                                    maxTimestamp = execution.timestamp
+                                }
+                            }
+                            val averagePrice = if (totalSize > BigDecimal.ZERO) totalCost.divide(totalSize, 8, RoundingMode.HALF_UP) else BigDecimal.ZERO
+
+                            if (totalSize > BigDecimal.ZERO) {
+                                val updatedOrder = latestOrder.copy(
+                                    status = RealOrderStatus.EXECUTED,
+                                    executedPrice = averagePrice,
+                                    executedSize = totalSize,
+                                    executedAt = maxTimestamp
+                                )
+                                val updatedRealTrading = currentState.realTrading.copy(latestOrder = updatedOrder)
+
+                                logger.info { "リアル取引: 約定情報を反映します。isHolding=true, price=$averagePrice, size=$totalSize" }
+                                return currentState.copy(
+                                    isHolding = true,
+                                    buyPrice = averagePrice,
+                                    holdingAmount = totalSize,
+                                    realTrading = updatedRealTrading
+                                )
+                            } else {
+                                logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定数量が0以下でした。totalSize=$totalSize" }
+                                val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
+                                return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+                            }
+                        } else {
+                            logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定情報が取得できませんでした。" }
+                            val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
+                            return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+                        }
+                    } else {
+                        logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) は未約定です。ステータス: ${targetOrder.status}" }
+                        val updatedOrder = latestOrder.copy(status = mappedStatus)
+                        return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+                    }
+                } else {
+                    logger.warn { "リアル取引: 注文状態の取得結果に orderId: ${latestOrder.orderId} が含まれていませんでした。" }
+                    val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
+                    return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+                }
+            } catch (e: Exception) {
+                logger.error(e) { "リアル取引: 注文状態の確認中にエラーが発生しました。" }
+                val newRealTradingState = currentState.realTrading.copy(
+                    isStopped = true,
+                    stopReason = e.message ?: "Failed to check order status",
+                    stoppedAt = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                )
+                return currentState.copy(realTrading = newRealTradingState)
+            }
+        }
+
         if (decision.action == TradeAction.BUY_CANDIDATE) {
             logger.info { "リアル取引: BUY_CANDIDATE を検知しました。安全チェックを開始します。" }
-
-            if (exchangeClient == null) {
-                logger.warn { "リアル取引: exchangeClient が設定されていないため、実注文処理をスキップします。" }
-                return currentState
-            }
 
             try {
                 // GMO Private API から現在のアセットとアクティブオーダーを取得
@@ -169,6 +243,22 @@ class RealTradingService(
         } else {
             logger.debug { "Trade action is not BUY_CANDIDATE (${decision.action}). No real trade action taken." }
             return currentState
+        }
+    }
+
+    /**
+     * 取引所から返却された注文ステータスの文字列を内部の RealOrderStatus 列挙型に変換する。
+     *
+     * @param status 取引所側のステータス文字列
+     * @return 変換後のステータス
+     */
+    private fun mapExchangeStatus(status: String): RealOrderStatus {
+        return when (status) {
+            "WAITING" -> RealOrderStatus.WAITING
+            "ORDERED" -> RealOrderStatus.ORDERED
+            "CANCELED" -> RealOrderStatus.CANCELED
+            "EXECUTED" -> RealOrderStatus.EXECUTED
+            else -> RealOrderStatus.UNCONFIRMED
         }
     }
 }

@@ -6,9 +6,13 @@ import cryptoautotrading.domain.model.TradeDecision
 import cryptoautotrading.domain.model.order.AcceptedOrder
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder
 import cryptoautotrading.domain.model.order.ExchangeAsset
+import cryptoautotrading.domain.model.order.ExchangeOrderStatus
+import cryptoautotrading.domain.model.order.ExecutedOrder
 import cryptoautotrading.domain.model.realtrading.RealOrderSide
 import cryptoautotrading.domain.model.realtrading.RealOrderStatus
+import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
+import cryptoautotrading.domain.model.realtrading.RealTradingState
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -29,6 +33,103 @@ class RealTradingServiceTest {
     }
 
     @Test
+    fun `EXECUTEDだがgetExecutionsの合計約定数量が0の場合はisHoldingがtrueにならないこと`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "exec_id_zero_size",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+
+        // Mock EXECUTED response
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("exec_id_zero_size", "EXECUTED", BigDecimal("0.01")))
+        // Mock executions return zero size
+        mockClient.mockExecutionsResponse = listOf(
+            ExecutedOrder("exec_id_1", "exec_id_zero_size", "BTC", "BUY", BigDecimal("950000"), BigDecimal.ZERO, BigDecimal.ZERO, "2023-10-27T10:00:00")
+        )
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertTrue(mockClient.getOrdersCalled)
+        assertTrue(mockClient.getExecutionsCalled)
+        assertFalse(mockClient.placeOrderCalled)
+
+        assertFalse(newState.isHolding)
+        assertEquals(RealOrderStatus.UNCONFIRMED, newState.realTrading.latestOrder?.status)
+    }
+
+    @Test
+    fun `getOrdersがCANCELEDを返した場合、latestOrder_statusがCANCELEDになること`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "canceled_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+
+        // Mock CANCELED response
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("canceled_id", "CANCELED", BigDecimal.ZERO))
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertTrue(mockClient.getOrdersCalled)
+        assertFalse(mockClient.getExecutionsCalled)
+        assertFalse(mockClient.placeOrderCalled)
+
+        assertFalse(newState.isHolding)
+        assertEquals(RealOrderStatus.CANCELED, newState.realTrading.latestOrder?.status)
+    }
+
+    @Test
+    fun `getOrdersが未知のステータスを返した場合、latestOrder_statusがUNCONFIRMEDになること`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "unknown_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+
+        // Mock UNKNOWN response
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("unknown_id", "SOMETHING_NEW", BigDecimal.ZERO))
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertTrue(mockClient.getOrdersCalled)
+        assertFalse(mockClient.getExecutionsCalled)
+        assertFalse(mockClient.placeOrderCalled)
+
+        assertFalse(newState.isHolding)
+        assertEquals(RealOrderStatus.UNCONFIRMED, newState.realTrading.latestOrder?.status)
+    }
+
+    @Test
     fun `realTradeEnabledがfalseの場合は実注文処理がスキップされること`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
         val config = RealTradingConfig(realTradeEnabled = false, dryRun = false)
@@ -38,6 +139,107 @@ class RealTradingServiceTest {
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
+    }
+
+    @Test
+    fun `latestOrderがORDEREDの場合、getOrdersが呼ばれ新規placeOrderは呼ばれないこと`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "unconfirmed_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+
+        // Mock to return WAITING status
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("unconfirmed_id", "WAITING", BigDecimal.ZERO))
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertTrue(mockClient.getOrdersCalled)
+        assertFalse(mockClient.placeOrderCalled)
+        assertFalse(newState.isHolding)
+        assertEquals(RealOrderStatus.WAITING, newState.realTrading.latestOrder?.status)
+    }
+
+    @Test
+    fun `getOrdersの結果がEXECUTEDの場合だけgetExecutionsが呼ばれること`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "exec_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+
+        // Mock EXECUTED response
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("exec_id", "EXECUTED", BigDecimal("0.01")))
+        // Mock executions return actual value
+        mockClient.mockExecutionsResponse = listOf(
+            ExecutedOrder("exec_id_1", "exec_id", "BTC", "BUY", BigDecimal("950000"), BigDecimal("0.01"), BigDecimal.ZERO, "2023-10-27T10:00:00")
+        )
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertTrue(mockClient.getOrdersCalled)
+        assertTrue(mockClient.getExecutionsCalled)
+        assertFalse(mockClient.placeOrderCalled)
+
+        assertTrue(newState.isHolding)
+        assertEquals(BigDecimal("950000").compareTo(newState.buyPrice), 0)
+        assertEquals(BigDecimal("0.01").compareTo(newState.holdingAmount), 0)
+        assertEquals(RealOrderStatus.EXECUTED, newState.realTrading.latestOrder?.status)
+        assertEquals(BigDecimal("950000").compareTo(newState.realTrading.latestOrder?.executedPrice), 0)
+        assertEquals(BigDecimal("0.01").compareTo(newState.realTrading.latestOrder?.executedSize), 0)
+        assertEquals("2023-10-27T10:00:00", newState.realTrading.latestOrder?.executedAt)
+    }
+
+    @Test
+    fun `getExecutionsで約定情報が取れない場合はisHoldingがtrueにならないこと`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "exec_id_no_info",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+
+        // Mock EXECUTED response but no executions
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("exec_id_no_info", "EXECUTED", BigDecimal("0.01")))
+        mockClient.mockExecutionsResponse = emptyList()
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertTrue(mockClient.getOrdersCalled)
+        assertTrue(mockClient.getExecutionsCalled)
+        assertFalse(mockClient.placeOrderCalled)
+
+        assertFalse(newState.isHolding)
+        assertEquals(RealOrderStatus.UNCONFIRMED, newState.realTrading.latestOrder?.status)
     }
 
     @Test
@@ -196,6 +398,11 @@ class MockRealTradingExchangeClient : RealTradingExchangeClient {
     var assets: List<ExchangeAsset> = emptyList()
     var activeOrders: List<ExchangeActiveOrder> = emptyList()
 
+    var mockOrdersResponse: List<ExchangeOrderStatus> = emptyList()
+    var mockExecutionsResponse: List<ExecutedOrder> = emptyList()
+
+    var getOrdersCalled = false
+    var getExecutionsCalled = false
     var placeOrderCalled = false
     var lastPlaceOrderSymbol: String? = null
     var lastPlaceOrderSize: BigDecimal? = null
@@ -219,5 +426,15 @@ class MockRealTradingExchangeClient : RealTradingExchangeClient {
         lastPlaceOrderSymbol = symbol
         lastPlaceOrderSize = size
         return AcceptedOrder("dummy_order_id")
+    }
+
+    override suspend fun getOrders(orderId: String): List<ExchangeOrderStatus> {
+        getOrdersCalled = true
+        return mockOrdersResponse
+    }
+
+    override suspend fun getExecutions(orderId: String): List<ExecutedOrder> {
+        getExecutionsCalled = true
+        return mockExecutionsResponse
     }
 }
