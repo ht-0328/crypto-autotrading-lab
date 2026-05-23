@@ -69,7 +69,8 @@ class RealTradingService(
                 val orders = exchangeClient.getOrders(latestOrder.orderId)
                 val targetOrder = orders.find { it.orderId == latestOrder.orderId }
                 if (targetOrder != null) {
-                    if (targetOrder.status == "EXECUTED") {
+                    val mappedStatus = mapExchangeStatus(targetOrder.status)
+                    if (mappedStatus == RealOrderStatus.EXECUTED) {
                         logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) の約定を確認しました。約定情報を取得します。" }
                         val executions = exchangeClient.getExecutions(latestOrder.orderId)
                         if (executions.isNotEmpty()) {
@@ -84,13 +85,6 @@ class RealTradingService(
                                 }
                             }
                             val averagePrice = if (totalSize > BigDecimal.ZERO) totalCost.divide(totalSize, 8, RoundingMode.HALF_UP) else BigDecimal.ZERO
-
-                            val updatedOrder = latestOrder.copy(
-                                status = RealOrderStatus.EXECUTED,
-                                executedPrice = averagePrice,
-                                executedSize = totalSize,
-                                executedAt = maxTimestamp
-                            )
 
                             if (totalSize > BigDecimal.ZERO) {
                                 val updatedOrder = latestOrder.copy(
@@ -120,7 +114,6 @@ class RealTradingService(
                         }
                     } else {
                         logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) は未約定です。ステータス: ${targetOrder.status}" }
-                        val mappedStatus = mapExchangeStatus(targetOrder.status)
                         val updatedOrder = latestOrder.copy(status = mappedStatus)
                         return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
                     }
