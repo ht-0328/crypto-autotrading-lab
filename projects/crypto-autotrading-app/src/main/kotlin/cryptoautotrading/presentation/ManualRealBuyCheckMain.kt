@@ -131,8 +131,6 @@ fun main() = runBlocking {
                     logger.warn { "手動確認終了: 安全チェック等により注文なし (実行後も orderId なし)" }
                 } else {
                     logger.info { "手動確認終了: 注文処理が実行されました (orderId 変化: $previousOrderId -> $currentOrderId)" }
-
-
                 }
 
             } catch (e: Exception) {
