@@ -91,15 +91,28 @@ class RealTradingService(
                                 executedSize = totalSize,
                                 executedAt = maxTimestamp
                             )
-                            val updatedRealTrading = currentState.realTrading.copy(latestOrder = updatedOrder)
 
-                            logger.info { "リアル取引: 約定情報を反映します。isHolding=true, price=$averagePrice, size=$totalSize" }
-                            return currentState.copy(
-                                isHolding = true,
-                                buyPrice = averagePrice,
-                                holdingAmount = totalSize,
-                                realTrading = updatedRealTrading
-                            )
+                            if (totalSize > BigDecimal.ZERO) {
+                                val updatedOrder = latestOrder.copy(
+                                    status = RealOrderStatus.EXECUTED,
+                                    executedPrice = averagePrice,
+                                    executedSize = totalSize,
+                                    executedAt = maxTimestamp
+                                )
+                                val updatedRealTrading = currentState.realTrading.copy(latestOrder = updatedOrder)
+
+                                logger.info { "リアル取引: 約定情報を反映します。isHolding=true, price=$averagePrice, size=$totalSize" }
+                                return currentState.copy(
+                                    isHolding = true,
+                                    buyPrice = averagePrice,
+                                    holdingAmount = totalSize,
+                                    realTrading = updatedRealTrading
+                                )
+                            } else {
+                                logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定数量が0以下でした。totalSize=$totalSize" }
+                                val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
+                                return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+                            }
                         } else {
                             logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定情報が取得できませんでした。" }
                             val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
@@ -107,12 +120,7 @@ class RealTradingService(
                         }
                     } else {
                         logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) は未約定です。ステータス: ${targetOrder.status}" }
-                        val mappedStatus = when (targetOrder.status) {
-                            "WAITING" -> RealOrderStatus.WAITING
-                            "ORDERED" -> RealOrderStatus.ORDERED
-                            "CANCELED" -> RealOrderStatus.CANCELED
-                            else -> RealOrderStatus.UNCONFIRMED
-                        }
+                        val mappedStatus = mapExchangeStatus(targetOrder.status)
                         val updatedOrder = latestOrder.copy(status = mappedStatus)
                         return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
                     }
@@ -242,6 +250,22 @@ class RealTradingService(
         } else {
             logger.debug { "Trade action is not BUY_CANDIDATE (${decision.action}). No real trade action taken." }
             return currentState
+        }
+    }
+
+    /**
+     * 取引所から返却された注文ステータスの文字列を内部の RealOrderStatus 列挙型に変換する。
+     *
+     * @param status 取引所側のステータス文字列
+     * @return 変換後のステータス
+     */
+    private fun mapExchangeStatus(status: String): RealOrderStatus {
+        return when (status) {
+            "WAITING" -> RealOrderStatus.WAITING
+            "ORDERED" -> RealOrderStatus.ORDERED
+            "CANCELED" -> RealOrderStatus.CANCELED
+            "EXECUTED" -> RealOrderStatus.EXECUTED
+            else -> RealOrderStatus.UNCONFIRMED
         }
     }
 }
