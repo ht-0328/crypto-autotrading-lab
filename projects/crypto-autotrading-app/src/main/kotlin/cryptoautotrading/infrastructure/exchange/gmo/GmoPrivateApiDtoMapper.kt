@@ -11,7 +11,7 @@ import java.math.BigDecimal
 /**
  * GMO Private API のDTOをアプリ内モデルへ変換するMapper。
  * HTTP通信は行わない。
- * 実通信を行う GmoPrivateApiClient は、次の実装PR以降で追加する。
+ * HTTP通信は GmoPrivateApiClientImpl が担当する。
  */
 class GmoPrivateApiDtoMapper {
 

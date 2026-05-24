@@ -1,4 +1,4 @@
-package cryptoautotrading.domain
+package cryptoautotrading.domain.realtrading
 
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder

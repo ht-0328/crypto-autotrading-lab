@@ -1,9 +1,9 @@
 package cryptoautotrading.presentation
 
-import cryptoautotrading.application.RealTradingService
+import cryptoautotrading.domain.realtrading.RealTradingService
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
-import cryptoautotrading.domain.RealTradingSafetyChecker
+import cryptoautotrading.domain.realtrading.RealTradingSafetyChecker
 import cryptoautotrading.infrastructure.config.ConfigLoader
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient

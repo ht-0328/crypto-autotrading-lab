@@ -16,7 +16,8 @@ import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClient
+import cryptoautotrading.domain.realtrading.RealTradingService
+import cryptoautotrading.domain.realtrading.RealTradingClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -38,7 +39,7 @@ class TradingApplication(
     private val stateRepository: SimulationStateRepository,
     private val tradeHistoryRepository: TradeHistoryRepository,
     private val resultOutputPort: ResultOutputPort,
-    private val realTradingExchangeClient: GmoPrivateApiClient? = null
+    private val realTradingExchangeClient: RealTradingClient? = null
 ) {
 
     private val logger = KotlinLogging.logger {}

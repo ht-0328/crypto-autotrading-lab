@@ -1,4 +1,4 @@
-package cryptoautotrading.infrastructure.exchange.gmo
+package cryptoautotrading.domain.realtrading
 
 import cryptoautotrading.domain.model.order.AcceptedOrder
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder
@@ -8,9 +8,9 @@ import cryptoautotrading.domain.model.order.ExecutedOrder
 import java.math.BigDecimal
 
 /**
- * GMO Private API クライアントインターフェース
+ * リアル取引の取引所操作インターフェース
  */
-interface GmoPrivateApiClient {
+interface RealTradingClient {
     /**
      * 資産残高を取得する。
      *
