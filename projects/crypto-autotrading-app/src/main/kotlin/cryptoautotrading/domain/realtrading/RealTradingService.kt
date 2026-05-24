@@ -6,6 +6,8 @@ import cryptoautotrading.domain.model.TradeDecision
 import cryptoautotrading.domain.model.realtrading.RealOrderSide
 import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealOrderStatus
+import cryptoautotrading.domain.model.order.ExchangeAsset
+import cryptoautotrading.domain.model.order.ExecutedOrder
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.domain.realtrading.RealTradingClient
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -111,6 +113,17 @@ class RealTradingService(
     }
 
     /**
+     * 未確認注文の状態かどうかを判定する。
+     *
+     * @return 未確認注文の状態である場合は true
+     */
+    private fun RealOrderStatus.isWaitingForConfirmation(): Boolean {
+        return this == RealOrderStatus.ORDERED ||
+               this == RealOrderStatus.WAITING ||
+               this == RealOrderStatus.UNCONFIRMED
+    }
+
+    /**
      * 状態に未確認の注文が存在するかどうかを判定する。
      *
      * @param currentState 現在のシミュレーション状態
@@ -118,9 +131,39 @@ class RealTradingService(
      */
     private fun hasUnconfirmedOrder(currentState: SimulationState): Boolean {
         val latestOrder = currentState.realTrading.latestOrder ?: return false
-        return latestOrder.status == RealOrderStatus.ORDERED ||
-               latestOrder.status == RealOrderStatus.WAITING ||
-               latestOrder.status == RealOrderStatus.UNCONFIRMED
+        return latestOrder.status.isWaitingForConfirmation()
+    }
+
+    /**
+     * 注文を未確認状態に戻す。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param latestOrder 最新の注文状態
+     * @return 更新されたシミュレーション状態
+     */
+    private fun markLatestOrderUnconfirmed(
+        currentState: SimulationState,
+        latestOrder: RealOrderState
+    ): SimulationState {
+        val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
+        return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+    }
+
+    /**
+     * 注文状態を更新する。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param latestOrder 最新の注文状態
+     * @param status 新しいステータス
+     * @return 更新されたシミュレーション状態
+     */
+    private fun updateLatestOrderStatus(
+        currentState: SimulationState,
+        latestOrder: RealOrderState,
+        status: RealOrderStatus
+    ): SimulationState {
+        val updatedOrder = latestOrder.copy(status = status)
+        return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
     }
 
     /**
@@ -138,23 +181,49 @@ class RealTradingService(
             val orders = client.getOrders(latestOrder.orderId)
             val targetOrder = orders.find { it.orderId == latestOrder.orderId }
 
-            if (targetOrder != null) {
-                val mappedStatus = mapExchangeStatus(targetOrder.status)
-                if (mappedStatus == RealOrderStatus.EXECUTED) {
-                    return handleExecutedOrder(currentState, latestOrder, client)
-                } else {
-                    logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) は未約定です。ステータス: ${targetOrder.status}" }
-                    val updatedOrder = latestOrder.copy(status = mappedStatus)
-                    return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
-                }
-            } else {
+            if (targetOrder == null) {
                 logger.warn { "リアル取引: 注文状態の取得結果に orderId: ${latestOrder.orderId} が含まれていませんでした。" }
-                val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
-                return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+                return markLatestOrderUnconfirmed(currentState, latestOrder)
             }
+
+            val mappedStatus = mapExchangeStatus(targetOrder.status)
+            if (mappedStatus == RealOrderStatus.EXECUTED) {
+                return handleExecutedOrder(currentState, latestOrder, client)
+            }
+
+            logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) は未約定です。ステータス: ${targetOrder.status}" }
+            return updateLatestOrderStatus(currentState, latestOrder, mappedStatus)
         } catch (e: Exception) {
             logger.error(e) { "リアル取引: 注文状態の確認中にエラーが発生しました。" }
             return stopRealTrading(currentState, e.message ?: "注文状態の確認に失敗しました")
+        }
+    }
+
+    /**
+     * 約定情報の集計結果
+     */
+    private data class ExecutionSummary(
+        val totalSize: BigDecimal,
+        val totalCost: BigDecimal,
+        val latestTimestamp: String
+    )
+
+    /**
+     * 約定情報を集計する。
+     *
+     * @param executions 約定情報のリスト
+     * @return 集計結果
+     */
+    private fun summarizeExecutions(executions: List<ExecutedOrder>): ExecutionSummary {
+        return executions.fold(ExecutionSummary(BigDecimal.ZERO, BigDecimal.ZERO, "")) { acc, execution ->
+            val newTotalSize = acc.totalSize.add(execution.actualSize)
+            val newTotalCost = acc.totalCost.add(execution.actualSize.multiply(execution.actualPrice))
+            val newLatestTimestamp = if (acc.latestTimestamp.isEmpty() || execution.timestamp > acc.latestTimestamp) {
+                execution.timestamp
+            } else {
+                acc.latestTimestamp
+            }
+            ExecutionSummary(newTotalSize, newTotalCost, newLatestTimestamp)
         }
     }
 
@@ -173,45 +242,35 @@ class RealTradingService(
     ): SimulationState {
         logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) の約定を確認しました。約定情報を取得します。" }
         val executions = client.getExecutions(latestOrder.orderId)
-        if (executions.isNotEmpty()) {
-            var totalSize = BigDecimal.ZERO
-            var totalCost = BigDecimal.ZERO
-            var maxTimestamp = ""
-            for (execution in executions) {
-                totalSize = totalSize.add(execution.actualSize)
-                totalCost = totalCost.add(execution.actualSize.multiply(execution.actualPrice))
-                if (maxTimestamp.isEmpty() || execution.timestamp > maxTimestamp) {
-                    maxTimestamp = execution.timestamp
-                }
-            }
-            val averagePrice = if (totalSize > BigDecimal.ZERO) totalCost.divide(totalSize, 8, RoundingMode.HALF_UP) else BigDecimal.ZERO
 
-            if (totalSize > BigDecimal.ZERO) {
-                val updatedOrder = latestOrder.copy(
-                    status = RealOrderStatus.EXECUTED,
-                    executedPrice = averagePrice,
-                    executedSize = totalSize,
-                    executedAt = maxTimestamp
-                )
-                val updatedRealTrading = currentState.realTrading.copy(latestOrder = updatedOrder)
-
-                logger.info { "リアル取引: 約定情報を反映します。isHolding=true, price=$averagePrice, size=$totalSize" }
-                return currentState.copy(
-                    isHolding = true,
-                    buyPrice = averagePrice,
-                    holdingAmount = totalSize,
-                    realTrading = updatedRealTrading
-                )
-            } else {
-                logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定数量が0以下でした。totalSize=$totalSize" }
-                val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
-                return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
-            }
-        } else {
+        if (executions.isEmpty()) {
             logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定情報が取得できませんでした。" }
-            val updatedOrder = latestOrder.copy(status = RealOrderStatus.UNCONFIRMED)
-            return currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = updatedOrder))
+            return markLatestOrderUnconfirmed(currentState, latestOrder)
         }
+
+        val summary = summarizeExecutions(executions)
+
+        if (summary.totalSize <= BigDecimal.ZERO) {
+            logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定数量が0以下でした。totalSize=${summary.totalSize}" }
+            return markLatestOrderUnconfirmed(currentState, latestOrder)
+        }
+
+        val averagePrice = summary.totalCost.divide(summary.totalSize, 8, RoundingMode.HALF_UP)
+        val updatedOrder = latestOrder.copy(
+            status = RealOrderStatus.EXECUTED,
+            executedPrice = averagePrice,
+            executedSize = summary.totalSize,
+            executedAt = summary.latestTimestamp
+        )
+        val updatedRealTrading = currentState.realTrading.copy(latestOrder = updatedOrder)
+
+        logger.info { "リアル取引: 約定情報を反映します。isHolding=true, price=$averagePrice, size=${summary.totalSize}" }
+        return currentState.copy(
+            isHolding = true,
+            buyPrice = averagePrice,
+            holdingAmount = summary.totalSize,
+            realTrading = updatedRealTrading
+        )
     }
 
     /**
@@ -295,7 +354,7 @@ class RealTradingService(
      * @param tradeAmount 注文金額
      * @return JPY残高が注文予定額を満たしている場合は true
      */
-    private fun checkJpyBalance(assets: List<cryptoautotrading.domain.model.order.ExchangeAsset>, tradeAmount: Int): Boolean {
+    private fun checkJpyBalance(assets: List<ExchangeAsset>, tradeAmount: Int): Boolean {
         val jpyAsset = assets.find { it.symbol == "JPY" }
         val jpyAvailable = jpyAsset?.available ?: BigDecimal.ZERO
 
@@ -337,8 +396,9 @@ class RealTradingService(
         size: BigDecimal,
         currentPrice: BigDecimal
     ): SimulationState {
-        val nowStr = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        val todayStr = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val now = LocalDateTime.now(ZoneId.of("Asia/Tokyo"))
+        val nowStr = now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        val todayStr = now.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
         val isSameDay = currentState.realTrading.dailyOrderedDate == todayStr
         val newDailyOrderedJpy = if (isSameDay) {
             currentState.realTrading.dailyOrderedJpy.add(BigDecimal(tradeAmount))
