@@ -5,6 +5,7 @@ import cryptoautotrading.domain.model.order.ExchangeActiveOrder
 import cryptoautotrading.domain.model.order.ExchangeAsset
 import cryptoautotrading.domain.model.realtrading.RealOrderStatus
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
+import cryptoautotrading.domain.model.realtrading.SafetyCheckResult
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
 
