@@ -35,6 +35,7 @@
 
 まず以下を読んでください。
 
+- [.github/pull_request_template.md](./.github/pull_request_template.md)
 - [docs/ai/review-checklist.md](./docs/ai/review-checklist.md)
 - [docs/ai/pr-and-commit-rules.md](./docs/ai/pr-and-commit-rules.md)
 
