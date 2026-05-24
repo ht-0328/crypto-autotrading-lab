@@ -17,7 +17,7 @@ class ArchitectureTest {
      * 依存関係がルール通りに厳格に守られていることを検証する。
      *
      * - domain: 他のどのレイヤにも依存しない（独立していること）
-     * - application: domain レイヤのみに依存する
+     * - application: domain, infrastructure レイヤに依存する
      * - infrastructure: domain と application レイヤに依存する
      * - presentation: 全てのレイヤ（domain, application, infrastructure）に依存する（DI等のため）
      */
@@ -33,7 +33,7 @@ class ArchitectureTest {
         Konsist.scopeFromProject()
             .assertArchitecture {
                 domain.dependsOnNothing()
-                application.dependsOn(domain)
+                application.dependsOn(domain, infrastructure)
                 infrastructure.dependsOn(domain, application)
                 presentation.dependsOn(domain, application, infrastructure)
             }

@@ -2,7 +2,6 @@ package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
 import cryptoautotrading.infrastructure.config.ConfigLoader
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientAdapter
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import cryptoautotrading.infrastructure.exchange.gmo.auth.EnvGmoCredentialProvider
@@ -70,7 +69,6 @@ fun main() = runBlocking {
                     signatureGenerator = GmoSignatureGeneratorImpl(),
                     credentialProvider = EnvGmoCredentialProvider()
                 )
-                val realTradingExchangeClient = GmoPrivateApiClientAdapter(privateApiClient)
 
                 GmoPublicApiClient(publicBaseUrl, retryCount).use { apiClient ->
                     val app = TradingApplication(
@@ -79,7 +77,7 @@ fun main() = runBlocking {
                         stateRepository = stateRepository,
                         tradeHistoryRepository = csvRepository,
                         resultOutputPort = resultOutputPort,
-                        realTradingExchangeClient = realTradingExchangeClient
+                        realTradingExchangeClient = privateApiClient
                     )
 
                     logger.info { "TradingApplication の実行を開始します(実注文有効)" }

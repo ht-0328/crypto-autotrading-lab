@@ -7,7 +7,8 @@ import cryptoautotrading.domain.model.realtrading.RealOrderSide
 import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealOrderStatus
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
-import cryptoautotrading.domain.service.realtrading.RealTradingSafetyChecker
+import cryptoautotrading.domain.RealTradingSafetyChecker
+import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -22,7 +23,7 @@ import java.time.format.DateTimeFormatter
  * @property safetyChecker 実注文前安全チェックを行うサービス
  */
 class RealTradingService(
-    private val exchangeClient: RealTradingExchangeClient? = null,
+    private val exchangeClient: GmoPrivateApiClient? = null,
     private val safetyChecker: RealTradingSafetyChecker = RealTradingSafetyChecker()
 ) {
     private val logger = KotlinLogging.logger {}

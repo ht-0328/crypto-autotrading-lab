@@ -1,4 +1,4 @@
-package cryptoautotrading.domain.service.realtrading
+package cryptoautotrading.domain.model.realtrading
 
 /**
  * リアル注文前安全チェックの結果を表すデータクラス
