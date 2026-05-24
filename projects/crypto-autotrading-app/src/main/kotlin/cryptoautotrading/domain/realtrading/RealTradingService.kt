@@ -8,6 +8,7 @@ import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealOrderStatus
 import cryptoautotrading.domain.model.order.ExchangeAsset
 import cryptoautotrading.domain.model.order.ExecutedOrder
+import cryptoautotrading.domain.model.realtrading.ExecutionSummary
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.domain.realtrading.RealTradingClient
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -198,15 +199,6 @@ class RealTradingService(
             return stopRealTrading(currentState, e.message ?: "注文状態の確認に失敗しました")
         }
     }
-
-    /**
-     * 約定情報の集計結果
-     */
-    private data class ExecutionSummary(
-        val totalSize: BigDecimal,
-        val totalCost: BigDecimal,
-        val latestTimestamp: String
-    )
 
     /**
      * 約定情報を集計する。
