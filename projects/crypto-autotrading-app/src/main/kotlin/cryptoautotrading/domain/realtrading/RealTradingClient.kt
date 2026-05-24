@@ -10,7 +10,7 @@ import java.math.BigDecimal
 /**
  * リアル取引の取引所操作インターフェース
  */
-interface RealTradingExchange {
+interface RealTradingClient {
     /**
      * 資産残高を取得する。
      *
