@@ -74,26 +74,30 @@ class RealTradingService(
                 currentState
             }
             else -> {
-                logger.debug { "Trade action is not BUY_CANDIDATE (${decision.action}). No real trade action taken." }
+                logger.debug { "売買判定が BUY_CANDIDATE ではないため、リアル取引は実行しません。action=${decision.action}" }
                 currentState
             }
         }
     }
 
     /**
-     * リアル取引をスキップすべきかどうかを判定する
+     * リアル取引をスキップすべきかどうかを判定する。
+     *
+     * @param config リアル取引設定
+     * @return リアル取引をスキップする場合は true
      */
     private fun shouldSkipRealTrading(config: RealTradingConfig): Boolean {
         if (config.dryRun || !config.realTradeEnabled) {
-            logger.debug { "Real trading is disabled or in dry-run mode. Skipping real trade execution." }
+            logger.debug { "リアル取引が無効、または dry-run モードのため、実注文処理をスキップします。" }
             return true
         }
         return false
     }
 
     /**
-     * exchangeClient が未設定の場合の処理を行う
+     * exchangeClient が未設定の場合の処理を行う。
      *
+     * @param action 取引アクション
      * @return スキップすべき場合は true
      */
     private fun handleMissingExchangeClient(action: TradeAction): Boolean {
@@ -107,7 +111,10 @@ class RealTradingService(
     }
 
     /**
-     * 状態に未確認の注文が存在するかどうかを判定する
+     * 状態に未確認の注文が存在するかどうかを判定する。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @return 未確認の注文が存在する場合は true
      */
     private fun hasUnconfirmedOrder(currentState: SimulationState): Boolean {
         val latestOrder = currentState.realTrading.latestOrder ?: return false
@@ -117,7 +124,10 @@ class RealTradingService(
     }
 
     /**
-     * 未確認の最新注文の状態を確認し、シミュレーション状態に反映する
+     * 未確認の最新注文の状態を確認し、シミュレーション状態に反映する。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @return 更新されたシミュレーション状態
      */
     private suspend fun checkLatestOrderStatus(currentState: SimulationState): SimulationState {
         val latestOrder = currentState.realTrading.latestOrder ?: return currentState
@@ -144,12 +154,17 @@ class RealTradingService(
             }
         } catch (e: Exception) {
             logger.error(e) { "リアル取引: 注文状態の確認中にエラーが発生しました。" }
-            return stopRealTrading(currentState, e.message ?: "Failed to check order status")
+            return stopRealTrading(currentState, e.message ?: "注文状態の確認に失敗しました")
         }
     }
 
     /**
-     * 約定済みの注文情報を取得し、状態に反映する
+     * 約定済みの注文情報を取得し、状態に反映する。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param latestOrder 最新の注文状態
+     * @param client リアル取引クライアント
+     * @return 更新されたシミュレーション状態
      */
     private suspend fun handleExecutedOrder(
         currentState: SimulationState,
@@ -200,7 +215,14 @@ class RealTradingService(
     }
 
     /**
-     * BUY_CANDIDATE の場合の買い注文処理を実行する
+     * BUY_CANDIDATE の場合の買い注文処理を実行する。
+     *
+     * @param config リアル取引設定
+     * @param tradeAmount 注文金額
+     * @param symbol 通貨ペアシンボル
+     * @param currentState 現在のシミュレーション状態
+     * @param currentPrice 現在の価格
+     * @return 更新されたシミュレーション状態
      */
     private suspend fun executeBuyCandidateOrder(
         config: RealTradingConfig,
@@ -262,12 +284,16 @@ class RealTradingService(
             )
         } catch (e: Exception) {
             logger.error(e) { "リアル取引: 注文処理中にエラーが発生しました。" }
-            return stopRealTrading(currentState, e.message ?: "Unknown error")
+            return stopRealTrading(currentState, e.message ?: "不明なエラーが発生しました")
         }
     }
 
     /**
-     * JPY残高が注文予定額を満たしているかチェックする
+     * JPY残高が注文予定額を満たしているかチェックする。
+     *
+     * @param assets 資産リスト
+     * @param tradeAmount 注文金額
+     * @return JPY残高が注文予定額を満たしている場合は true
      */
     private fun checkJpyBalance(assets: List<cryptoautotrading.domain.model.order.ExchangeAsset>, tradeAmount: Int): Boolean {
         val jpyAsset = assets.find { it.symbol == "JPY" }
@@ -282,14 +308,26 @@ class RealTradingService(
     }
 
     /**
-     * 注文数量を計算する (注文予定額 / 現在価格、切り捨て)
+     * 注文数量を計算する (注文予定額 / 現在価格、切り捨て)。
+     *
+     * @param tradeAmount 注文金額
+     * @param currentPrice 現在の価格
+     * @return 計算された注文数量
      */
     private fun calculateOrderSize(tradeAmount: Int, currentPrice: BigDecimal): BigDecimal {
         return BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
     }
 
     /**
-     * 注文受付後の RealOrderState と SimulationState を作成する
+     * 注文受付後の RealOrderState と SimulationState を作成する。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param orderId 注文ID
+     * @param symbol 通貨ペアシンボル
+     * @param tradeAmount 注文金額
+     * @param size 注文数量
+     * @param currentPrice 現在の価格
+     * @return 更新されたシミュレーション状態
      */
     private fun buildOrderedState(
         currentState: SimulationState,
@@ -333,7 +371,11 @@ class RealTradingService(
     }
 
     /**
-     * エラー時にリアル取引を停止モードにする
+     * エラー時にリアル取引を停止モードにする。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param reason 停止理由
+     * @return 更新されたシミュレーション状態
      */
     private fun stopRealTrading(currentState: SimulationState, reason: String): SimulationState {
         val newRealTradingState = currentState.realTrading.copy(
