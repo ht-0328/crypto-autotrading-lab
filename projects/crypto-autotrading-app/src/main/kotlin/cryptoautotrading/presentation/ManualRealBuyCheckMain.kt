@@ -3,9 +3,8 @@ package cryptoautotrading.presentation
 import cryptoautotrading.application.RealTradingService
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
-import cryptoautotrading.domain.service.realtrading.RealTradingSafetyChecker
+import cryptoautotrading.domain.RealTradingSafetyChecker
 import cryptoautotrading.infrastructure.config.ConfigLoader
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientAdapter
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import cryptoautotrading.infrastructure.exchange.gmo.auth.EnvGmoCredentialProvider
@@ -87,10 +86,9 @@ fun main() = runBlocking {
             signatureGenerator = GmoSignatureGeneratorImpl(),
             credentialProvider = EnvGmoCredentialProvider()
         )
-        val realTradingExchangeClient = GmoPrivateApiClientAdapter(privateApiClient)
         val safetyChecker = RealTradingSafetyChecker()
         val realTradingService = RealTradingService(
-            exchangeClient = realTradingExchangeClient,
+            exchangeClient = privateApiClient,
             safetyChecker = safetyChecker
         )
 
