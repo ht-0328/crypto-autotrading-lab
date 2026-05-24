@@ -13,7 +13,7 @@ import cryptoautotrading.domain.model.realtrading.RealOrderStatus
 import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingState
-import cryptoautotrading.domain.repository.GmoPrivateApiClient
+import cryptoautotrading.domain.realtrading.RealTradingExchange
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -24,12 +24,12 @@ import java.math.BigDecimal
 
 class RealTradingServiceTest {
 
-    private lateinit var mockClient: MockGmoPrivateApiClient
+    private lateinit var mockClient: MockRealTradingExchange
     private lateinit var service: RealTradingService
 
     @BeforeEach
     fun setup() {
-        mockClient = MockGmoPrivateApiClient()
+        mockClient = MockRealTradingExchange()
         service = RealTradingService(exchangeClient = mockClient)
     }
 
@@ -395,7 +395,7 @@ class RealTradingServiceTest {
     }
 }
 
-class MockGmoPrivateApiClient : GmoPrivateApiClient {
+class MockRealTradingExchange : RealTradingExchange {
     var assets: List<ExchangeAsset> = emptyList()
     var activeOrders: List<ExchangeActiveOrder> = emptyList()
 
