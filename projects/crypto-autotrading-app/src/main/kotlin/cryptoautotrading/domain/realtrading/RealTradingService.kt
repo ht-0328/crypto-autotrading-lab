@@ -1,4 +1,4 @@
-package cryptoautotrading.application
+package cryptoautotrading.domain.realtrading
 
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
@@ -7,8 +7,7 @@ import cryptoautotrading.domain.model.realtrading.RealOrderSide
 import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealOrderStatus
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
-import cryptoautotrading.domain.RealTradingSafetyChecker
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClient
+import cryptoautotrading.domain.repository.GmoPrivateApiClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
 import java.math.RoundingMode

@@ -16,7 +16,8 @@ import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClient
+import cryptoautotrading.domain.realtrading.RealTradingService
+import cryptoautotrading.domain.repository.GmoPrivateApiClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
 import java.time.ZoneId

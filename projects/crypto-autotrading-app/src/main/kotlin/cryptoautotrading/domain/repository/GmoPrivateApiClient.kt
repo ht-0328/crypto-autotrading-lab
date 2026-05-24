@@ -1,4 +1,4 @@
-package cryptoautotrading.infrastructure.exchange.gmo
+package cryptoautotrading.domain.repository
 
 import cryptoautotrading.domain.model.order.AcceptedOrder
 import cryptoautotrading.domain.model.order.ExchangeActiveOrder

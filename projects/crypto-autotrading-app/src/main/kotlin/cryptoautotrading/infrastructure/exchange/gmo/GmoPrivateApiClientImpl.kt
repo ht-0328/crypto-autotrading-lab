@@ -5,6 +5,7 @@ import cryptoautotrading.domain.model.order.ExchangeActiveOrder
 import cryptoautotrading.domain.model.order.ExchangeAsset
 import cryptoautotrading.domain.model.order.ExchangeOrderStatus
 import cryptoautotrading.domain.model.order.ExecutedOrder
+import cryptoautotrading.domain.repository.GmoPrivateApiClient
 import cryptoautotrading.infrastructure.exchange.gmo.auth.GmoCredentialProvider
 import cryptoautotrading.infrastructure.exchange.gmo.auth.GmoSignatureGenerator
 import cryptoautotrading.infrastructure.exchange.gmo.dto.*

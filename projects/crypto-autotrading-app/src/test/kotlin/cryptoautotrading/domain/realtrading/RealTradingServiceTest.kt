@@ -1,4 +1,4 @@
-package cryptoautotrading.application
+package cryptoautotrading.domain.realtrading
 
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
@@ -13,7 +13,7 @@ import cryptoautotrading.domain.model.realtrading.RealOrderStatus
 import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingState
-import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClient
+import cryptoautotrading.domain.repository.GmoPrivateApiClient
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
