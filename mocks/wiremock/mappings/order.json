@@ -12,7 +12,7 @@
       "API-SIGN": {
         "matches": ".*"
       }
-    },
+    }
   },
   "response": {
     "status": 200,
