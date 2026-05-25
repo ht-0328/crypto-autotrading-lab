@@ -33,27 +33,27 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: コードをチェックアウト
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Java 17 をセットアップ
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
           cache: "gradle"
 
-      - name: Build and Test
+      - name: ビルドとテスト
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew build
 
-      - name: Run Architecture Rule Tests
+      - name: アーキテクチャルールのテストを実行
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew test --tests "*Architecture*"
 
-      - name: Upload Test Reports
+      - name: テストレポートをアップロード
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -64,52 +64,51 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: コードをチェックアウト
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Java 17 をセットアップ
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
           cache: "gradle"
 
-      - name: Setup Network
+      - name: ネットワークをセットアップ
         run: docker network create crypto-ci-net
 
-      - name: Start WireMock
+      - name: WireMock を起動
         run: |
           docker run -d --name wiremock --network crypto-ci-net -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
-          # Wait for WireMock to be healthy within the Docker network
+          # Docker ネットワーク内で WireMock が起動するまで待つ
           for i in {1..10}; do
             if docker run --rm --network crypto-ci-net curlimages/curl:latest -s http://wiremock:8080/__admin/ > /dev/null; then
-              echo "WireMock is up"
+              echo "WireMock が起動しました"
               break
             fi
-            echo "Waiting for WireMock..."
+            echo "WireMock の起動を待機しています..."
             sleep 2
             if [ $i -eq 10 ]; then
-              echo "Failed to start WireMock"
+              echo "WireMock の起動に失敗しました"
               exit 1
             fi
           done
 
-      - name: Prepare CI Config
+      - name: CI用設定を準備
         run: |
-          mkdir -p build/ci-config
           ci/prepare-ci-config.sh
         env:
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
           INPUT_STRATEGY_NAME: ${{ inputs.strategy_name }}
 
-      - name: Build Docker Image
+      - name: Docker イメージをビルド
         run: docker build -t crypto-app:ci -f docker/app/Dockerfile .
 
-      - name: Setup Data Directory
+      - name: データディレクトリを準備
         run: mkdir -p data
 
-      - name: Run Application
+      - name: アプリケーションを実行
         run: |
           docker run --rm --network crypto-ci-net \
             -e APP_CONFIG_PATH=$APP_CONFIG_PATH \
@@ -119,21 +118,21 @@ jobs:
             -v ${{ github.workspace }}/data:/app/data \
             crypto-app:ci
 
-      - name: Verify Outputs
+      - name: 出力ファイルを確認
         run: |
-          echo "Verifying output files..."
-          test -f ${{ github.workspace }}/data/state.json || (echo "state.json not found!" && exit 1)
-          ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv not found!" && exit 1)
-          echo "Output files verified successfully."
+          echo "出力ファイルを確認します..."
+          test -f ${{ github.workspace }}/data/state.json || (echo "state.json が見つかりません！" && exit 1)
+          ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv が見つかりません！" && exit 1)
+          echo "出力ファイルを確認しました。"
 
-      - name: Verify WireMock Private API Calls
+      - name: WireMock の Private API 呼び出しを確認
         run: |
           ci/verify-wiremock-private-api.sh
         env:
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
 
-      - name: Upload Application Artifacts
+      - name: アプリケーション成果物をアップロード
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -143,19 +142,21 @@ jobs:
             data/state.json
             data/trades_*.csv
 
-      - name: Show Logs and Cleanup
+      - name: 失敗時にログを表示
         if: always()
         run: |
           echo "=== data/app.log ==="
-          cat ${{ github.workspace }}/data/app.log 2>/dev/null || echo "data/app.log not found"
+          cat ${{ github.workspace }}/data/app.log 2>/dev/null || echo "data/app.log が見つかりません"
           echo "=== data/state.json ==="
-          cat ${{ github.workspace }}/data/state.json 2>/dev/null || echo "data/state.json not found"
+          cat ${{ github.workspace }}/data/state.json 2>/dev/null || echo "data/state.json が見つかりません"
           echo "=== data/trades_*.csv ==="
-          cat ${{ github.workspace }}/data/trades_*.csv 2>/dev/null || echo "No CSV files found"
+          cat ${{ github.workspace }}/data/trades_*.csv 2>/dev/null || echo "CSV ファイルが見つかりません"
           echo "=== ls -la data ==="
-          ls -la ${{ github.workspace }}/data 2>/dev/null || echo "data directory not found"
+          ls -la ${{ github.workspace }}/data 2>/dev/null || echo "data ディレクトリが見つかりません"
 
-          # Cleanup network and containers
+      - name: Docker リソースを削除
+        if: always()
+        run: |
           docker stop wiremock || true
           docker rm wiremock || true
           docker network rm crypto-ci-net || true

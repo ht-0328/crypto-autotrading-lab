@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# CI用設定ディレクトリの作成
+mkdir -p build/ci-config
+
 # デフォルト値の決定
 STRATEGY_NAME="${INPUT_STRATEGY_NAME:-SafeReboundStrategy}"
 PUBLIC_API_SOURCE="${INPUT_PUBLIC_API_SOURCE:-wiremock}"
