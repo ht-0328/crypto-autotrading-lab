@@ -97,61 +97,11 @@ jobs:
       - name: Prepare CI Config
         run: |
           mkdir -p build/ci-config
-          STRATEGY="${{ inputs.strategy_name || 'SafeReboundStrategy' }}"
-          PUBLIC_API_SOURCE="${{ inputs.public_api_source || 'wiremock' }}"
-          # `dry_run` is a boolean, so we need to be careful with string conversion.
-          # For push/pull_request, input might be empty, so default to true.
-          DRY_RUN="${{ inputs.dry_run }}"
-          if [ -z "$DRY_RUN" ]; then
-            DRY_RUN="true"
-          fi
-
-          echo "Using trading strategy: $STRATEGY"
-          echo "Using Public API source: $PUBLIC_API_SOURCE"
-          echo "Dry run: $DRY_RUN"
-
-          # Use application-ci.yaml as base, but update its values
-          CONFIG_PATH="build/ci-config/application-ci-docker.yaml"
-          cp config/application-ci.yaml $CONFIG_PATH
-
-          # Update strategy
-          sed -i "s/strategy_name:.*/strategy_name: \"$STRATEGY\"/g" $CONFIG_PATH
-
-          # Update API URLs
-          if [ "$PUBLIC_API_SOURCE" == "real" ]; then
-            sed -i "s|public_base_url:.*|public_base_url: \"https://api.coin.z.com/public\"|g" $CONFIG_PATH
-          else
-            sed -i "s|public_base_url:.*|public_base_url: \"http://wiremock:8080/public\"|g" $CONFIG_PATH
-          fi
-          sed -i "s|private_base_url:.*|private_base_url: \"http://wiremock:8080/private\"|g" $CONFIG_PATH
-
-          # Update real_trading settings block
-          # Since it might not exist in application-ci.yaml, we'll append it.
-          if [ "$DRY_RUN" == "true" ]; then
-            cat <<EOF >> $CONFIG_PATH
-
-real_trading:
-  dry_run: true
-  real_trade_enabled: false
-  stop_on_unconfirmed_order: true
-  max_order_jpy: 1000
-  max_daily_order_jpy: 1000
-  max_position_jpy: 1000
-EOF
-          else
-            cat <<EOF >> $CONFIG_PATH
-
-real_trading:
-  dry_run: false
-  real_trade_enabled: true
-  stop_on_unconfirmed_order: true
-  max_order_jpy: 1000
-  max_daily_order_jpy: 1000
-  max_position_jpy: 1000
-EOF
-          fi
-
-          echo "APP_CONFIG_PATH=/app/$CONFIG_PATH" >> $GITHUB_ENV
+          ci/prepare-ci-config.sh
+        env:
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
+          INPUT_STRATEGY_NAME: ${{ inputs.strategy_name }}
 
       - name: Build Docker Image
         run: docker build -t crypto-app:ci -f docker/app/Dockerfile .
@@ -176,25 +126,12 @@ EOF
           ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv not found!" && exit 1)
           echo "Output files verified successfully."
 
-      - name: Verify WireMock Journal
+      - name: Verify WireMock Private API Calls
         run: |
-          DRY_RUN="${{ inputs.dry_run }}"
-          if [ -z "$DRY_RUN" ]; then
-            DRY_RUN="true"
-          fi
-          PUBLIC_API_SOURCE="${{ inputs.public_api_source || 'wiremock' }}"
-
-          if [ "$DRY_RUN" == "false" ] && [ "$PUBLIC_API_SOURCE" == "wiremock" ]; then
-            echo "Verifying WireMock Private API calls..."
-            JOURNAL=$(docker run --rm --network crypto-ci-net curlimages/curl:latest -s http://wiremock:8080/__admin/requests)
-
-            echo "$JOURNAL" | grep -q "/private/v1/account/assets" || (echo "GET /private/v1/account/assets was not called" && exit 1)
-            echo "$JOURNAL" | grep -q "/private/v1/activeOrders" || (echo "GET /private/v1/activeOrders was not called" && exit 1)
-            echo "$JOURNAL" | grep -q "/private/v1/order" || (echo "POST /private/v1/order was not called" && exit 1)
-            echo "All expected Private API calls were made to WireMock."
-          else
-            echo "Skipping WireMock Private API call verification (dry_run=$DRY_RUN, public_api_source=$PUBLIC_API_SOURCE)"
-          fi
+          ci/verify-wiremock-private-api.sh
+        env:
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
 
       - name: Upload Application Artifacts
         if: always()
