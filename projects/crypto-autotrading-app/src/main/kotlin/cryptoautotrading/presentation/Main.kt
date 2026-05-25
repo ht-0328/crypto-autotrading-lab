@@ -4,6 +4,7 @@ import cryptoautotrading.application.TradingApplication
 import cryptoautotrading.infrastructure.config.ConfigLoader
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
+import cryptoautotrading.infrastructure.exchange.gmo.auth.DummyGmoCredentialProvider
 import cryptoautotrading.infrastructure.exchange.gmo.auth.EnvGmoCredentialProvider
 import cryptoautotrading.infrastructure.exchange.gmo.auth.GmoSignatureGeneratorImpl
 import cryptoautotrading.infrastructure.output.ConsoleOutput
@@ -62,12 +63,21 @@ fun main() = runBlocking {
         val isRealTradeActive = config.realTrading.realTradeEnabled && !config.realTrading.dryRun
 
         if (isRealTradeActive) {
+            val isWireMockPrivateApi = privateBaseUrl.contains("wiremock") ||
+                privateBaseUrl.contains("localhost")
+
+            val credentialProvider = if (isWireMockPrivateApi) {
+                DummyGmoCredentialProvider()
+            } else {
+                EnvGmoCredentialProvider()
+            }
+
             HttpClient(CIO).use { httpClient ->
                 val privateApiClient = GmoPrivateApiClientImpl(
                     httpClient = httpClient,
                     baseUrl = privateBaseUrl,
                     signatureGenerator = GmoSignatureGeneratorImpl(),
-                    credentialProvider = EnvGmoCredentialProvider()
+                    credentialProvider = credentialProvider
                 )
 
                 GmoPublicApiClient(publicBaseUrl, retryCount).use { apiClient ->
