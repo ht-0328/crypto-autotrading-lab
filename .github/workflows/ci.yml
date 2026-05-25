@@ -33,27 +33,27 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: コードをチェックアウト
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Java 17 をセットアップ
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
           cache: "gradle"
 
-      - name: ビルドとテスト
+      - name: Build and Test
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew build
 
-      - name: アーキテクチャルールのテストを実行
+      - name: Run Architecture Rule Tests
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew test --tests "*Architecture*"
 
-      - name: テストレポートをアップロード
+      - name: Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -64,20 +64,20 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: コードをチェックアウト
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Java 17 をセットアップ
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
           cache: "gradle"
 
-      - name: ネットワークをセットアップ
+      - name: Setup Network
         run: docker network create crypto-ci-net
 
-      - name: WireMock を起動
+      - name: Start WireMock
         run: |
           docker run -d --name wiremock --network crypto-ci-net -v ${{ github.workspace }}/mocks/wiremock:/home/wiremock wiremock/wiremock:3.5.2
           # Docker ネットワーク内で WireMock が起動するまで待つ
@@ -94,7 +94,7 @@ jobs:
             fi
           done
 
-      - name: CI用設定を準備
+      - name: Prepare CI Config
         run: |
           ci/prepare-ci-config.sh
         env:
@@ -102,13 +102,13 @@ jobs:
           INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
           INPUT_STRATEGY_NAME: ${{ inputs.strategy_name }}
 
-      - name: Docker イメージをビルド
+      - name: Build Docker Image
         run: docker build -t crypto-app:ci -f docker/app/Dockerfile .
 
-      - name: データディレクトリを準備
+      - name: Setup Data Directory
         run: mkdir -p data
 
-      - name: アプリケーションを実行
+      - name: Run Application
         run: |
           docker run --rm --network crypto-ci-net \
             -e APP_CONFIG_PATH=$APP_CONFIG_PATH \
@@ -118,21 +118,21 @@ jobs:
             -v ${{ github.workspace }}/data:/app/data \
             crypto-app:ci
 
-      - name: 出力ファイルを確認
+      - name: Verify Outputs
         run: |
           echo "出力ファイルを確認します..."
           test -f ${{ github.workspace }}/data/state.json || (echo "state.json が見つかりません！" && exit 1)
           ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv が見つかりません！" && exit 1)
           echo "出力ファイルを確認しました。"
 
-      - name: WireMock の Private API 呼び出しを確認
+      - name: Verify WireMock Private API Calls
         run: |
           ci/verify-wiremock-private-api.sh
         env:
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
 
-      - name: アプリケーション成果物をアップロード
+      - name: Upload Application Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -142,7 +142,7 @@ jobs:
             data/state.json
             data/trades_*.csv
 
-      - name: 失敗時にログを表示
+      - name: Show Logs on Failure
         if: always()
         run: |
           echo "=== data/app.log ==="
@@ -154,7 +154,7 @@ jobs:
           echo "=== ls -la data ==="
           ls -la ${{ github.workspace }}/data 2>/dev/null || echo "data ディレクトリが見つかりません"
 
-      - name: Docker リソースを削除
+      - name: Cleanup Docker
         if: always()
         run: |
           docker stop wiremock || true
