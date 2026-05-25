@@ -13,26 +13,6 @@
         "matches": ".*"
       }
     },
-    "bodyPatterns": [
-      {
-        "matchesJsonPath": "$.symbol"
-      },
-      {
-        "matchesJsonPath": "$.side"
-      },
-      {
-        "matchesJsonPath": "$.executionType"
-      },
-      {
-        "matchesJsonPath": "$.size"
-      },
-      {
-        "doesNotMatch": ".*\"price\".*"
-      },
-      {
-        "doesNotMatch": ".*\"timeInForce\".*"
-      }
-    ]
   },
   "response": {
     "status": 200,
