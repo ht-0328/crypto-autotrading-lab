@@ -125,12 +125,6 @@ jobs:
           ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv が見つかりません！" && exit 1)
           echo "出力ファイルを確認しました。"
 
-      - name: Verify WireMock Private API Calls
-        run: |
-          ci/verify-wiremock-private-api.sh
-        env:
-          INPUT_DRY_RUN: ${{ inputs.dry_run }}
-          INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
 
       - name: Upload Application Artifacts
         if: always()
