@@ -411,7 +411,7 @@ class RealTradingServiceTest {
         val newState = service.executeOrderIfNeeded(
             decision = decision,
             config = config,
-            tradeAmount = 10000, // Should be ignored
+            tradeAmount = 10000, // tradeAmount は ALL_IN では使われない
             symbol = "BTC",
             currentState = state,
             currentPrice = BigDecimal("1000000"),
@@ -421,7 +421,7 @@ class RealTradingServiceTest {
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("BTC", mockClient.lastPlaceOrderSymbol)
 
-        // 15500.5 is truncated to 15500, then divided by 1000000
+        // 15500.5 円を 15500 円に切り捨ててから、現在価格で割る
         val expectedSize = BigDecimal("15500").divide(BigDecimal("1000000"), 8, java.math.RoundingMode.DOWN)
         assertEquals(0, expectedSize.compareTo(mockClient.lastPlaceOrderSize))
 
@@ -463,13 +463,13 @@ class RealTradingServiceTest {
         )
         val state = SimulationState()
 
-        // JPY balance exceeds maxOrderJpy
+        // JPY 残高が maxOrderJpy を超えている
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("15000"), BigDecimal("15000"), BigDecimal.ONE))
 
         val newState = service.executeOrderIfNeeded(
             decision = decision,
             config = config,
-            tradeAmount = 5000, // Should be ignored
+            tradeAmount = 5000, // tradeAmount は ALL_IN では使われない
             symbol = "BTC",
             currentState = state,
             currentPrice = BigDecimal("1000000"),
