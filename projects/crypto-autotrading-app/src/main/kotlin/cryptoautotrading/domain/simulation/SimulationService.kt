@@ -1,5 +1,6 @@
 package cryptoautotrading.domain.simulation
 
+import cryptoautotrading.domain.model.OrderSizingMode
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
@@ -31,32 +32,41 @@ class SimulationService {
         decision: TradeDecision,
         currentPrice: BigDecimal,
         tradeAmount: Int,
-        eventTime: String = ""
+        eventTime: String = "",
+        orderSizingMode: OrderSizingMode = OrderSizingMode.FIXED_AMOUNT
     ): SimulationState {
         logger.debug { "シミュレーション状態の更新処理を開始します" }
-        logger.debug { "更新前状態: $currentState, 判定結果: ${decision.action}, 現在価格: $currentPrice, 取引額: $tradeAmount, イベント時刻: $eventTime" }
+        logger.debug { "更新前状態: $currentState, 判定結果: ${decision.action}, 現在価格: $currentPrice, 取引額: $tradeAmount, イベント時刻: $eventTime, orderSizingMode: $orderSizingMode" }
 
         val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         val timeToRecord = if (eventTime.isNotBlank()) eventTime else nowStr
 
         val nextState = when (decision.action) {
             TradeAction.BUY_CANDIDATE -> {
-                val tradeAmountBd = BigDecimal(tradeAmount)
-                if (!currentState.isHolding && currentState.cashBalance >= tradeAmountBd) {
+                val orderAmountJpy = when (orderSizingMode) {
+                    OrderSizingMode.FIXED_AMOUNT -> BigDecimal(tradeAmount)
+                    OrderSizingMode.ALL_IN -> currentState.cashBalance
+                }
+                if (!currentState.isHolding && currentState.cashBalance >= orderAmountJpy && orderAmountJpy > BigDecimal.ZERO) {
                     // 購入する
-                    val amount = tradeAmountBd.divide(currentPrice, 8, RoundingMode.DOWN)
-                    val actualBuyAmount = amount * currentPrice
-                    SimulationState(
-                        cashBalance = currentState.cashBalance - actualBuyAmount,
-                        isHolding = true,
-                        buyPrice = currentPrice,
-                        holdingAmount = amount,
-                        realizedProfitAndLoss = currentState.realizedProfitAndLoss,
-                        lastUpdatedAt = nowStr,
-                        lastStopLossTime = currentState.lastStopLossTime,
-                        entryAtr = decision.atr,
-                        realTrading = currentState.realTrading
-                    )
+                    val amount = orderAmountJpy.divide(currentPrice, 8, RoundingMode.DOWN)
+                    if (amount > BigDecimal.ZERO) {
+                        val actualBuyAmount = amount * currentPrice
+                        SimulationState(
+                            cashBalance = currentState.cashBalance - actualBuyAmount,
+                            isHolding = true,
+                            buyPrice = currentPrice,
+                            holdingAmount = amount,
+                            realizedProfitAndLoss = currentState.realizedProfitAndLoss,
+                            lastUpdatedAt = nowStr,
+                            lastStopLossTime = currentState.lastStopLossTime,
+                            entryAtr = decision.atr,
+                            realTrading = currentState.realTrading
+                        )
+                    } else {
+                        // 購入数量が0以下の場合は状態を維持
+                        currentState.copy(lastUpdatedAt = nowStr)
+                    }
                 } else {
                     // すでに保有している、または残金不足の場合は状態を維持
                     currentState.copy(lastUpdatedAt = nowStr)

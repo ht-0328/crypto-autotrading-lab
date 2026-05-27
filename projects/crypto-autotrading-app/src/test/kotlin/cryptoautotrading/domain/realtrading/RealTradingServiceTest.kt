@@ -393,6 +393,92 @@ class RealTradingServiceTest {
         // dailyOrderedJpy が加算されていること
         assertEquals(BigDecimal("10000"), newState.realTrading.dailyOrderedJpy)
     }
+
+    @Test
+    fun `ALL_INの場合、JPY_availableを使って注文数量を計算すること`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(
+            realTradeEnabled = true,
+            dryRun = false,
+            maxOrderJpy = 20000,
+            maxDailyOrderJpy = 50000,
+            maxPositionJpy = 50000
+        )
+        val state = SimulationState()
+
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("15500.5"), BigDecimal("15500.5"), BigDecimal.ONE))
+
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000, // Should be ignored
+            symbol = "BTC",
+            currentState = state,
+            currentPrice = BigDecimal("1000000"),
+            orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
+        )
+
+        assertTrue(mockClient.placeOrderCalled)
+        assertEquals("BTC", mockClient.lastPlaceOrderSymbol)
+
+        // 15500.5 is truncated to 15500, then divided by 1000000
+        val expectedSize = BigDecimal("15500").divide(BigDecimal("1000000"), 8, java.math.RoundingMode.DOWN)
+        assertEquals(0, expectedSize.compareTo(mockClient.lastPlaceOrderSize))
+
+        assertEquals(RealOrderStatus.ORDERED, newState.realTrading.latestOrder?.status)
+        assertEquals("dummy_order_id", newState.realTrading.latestOrder?.orderId)
+    }
+
+    @Test
+    fun `ALL_INでJPY_availableが0以下の場合は注文しないこと`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val state = SimulationState()
+
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE))
+
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            currentPrice = BigDecimal("1000000"),
+            orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
+        )
+
+        assertFalse(mockClient.placeOrderCalled)
+        assertEquals(null, newState.realTrading.latestOrder?.orderId)
+    }
+
+    @Test
+    fun `ALL_INでmaxOrderJpyを超える場合は注文しないこと`() = runBlocking {
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(
+            realTradeEnabled = true,
+            dryRun = false,
+            maxOrderJpy = 10000,
+            maxDailyOrderJpy = 50000,
+            maxPositionJpy = 50000
+        )
+        val state = SimulationState()
+
+        // JPY balance exceeds maxOrderJpy
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("15000"), BigDecimal("15000"), BigDecimal.ONE))
+
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 5000, // Should be ignored
+            symbol = "BTC",
+            currentState = state,
+            currentPrice = BigDecimal("1000000"),
+            orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
+        )
+
+        assertFalse(mockClient.placeOrderCalled)
+        assertEquals(null, newState.realTrading.latestOrder?.orderId)
+    }
 }
 
 class MockRealTradingClient : RealTradingClient {

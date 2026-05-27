@@ -107,7 +107,8 @@ class TradingApplication(
                 tradeAmount = config.trading.tradeAmount,
                 symbol = config.trading.symbol,
                 currentState = currentState,
-                currentPrice = currentPrice
+                currentPrice = currentPrice,
+                orderSizingMode = config.trading.orderSizingMode
             )
 
             // 損益と想定損益の計算
@@ -134,7 +135,8 @@ class TradingApplication(
                     decision = decision,
                     currentPrice = currentPrice,
                     tradeAmount = config.trading.tradeAmount,
-                    eventTime = latestKline.openTime
+                    eventTime = latestKline.openTime,
+                    orderSizingMode = config.trading.orderSizingMode
                 )
             }
             logger.info { "Next Simulation State: $nextState" }
