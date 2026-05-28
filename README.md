@@ -97,6 +97,24 @@ cd projects/crypto-autotrading-app
 ./gradlew test
 ```
 
+### DevContainer内でのメニュー実行
+
+DevContainer環境では、以下のスクリプトを実行することで、メニュー形式で各種実行を行うことができます。
+
+```bash
+./scripts/local/run-devcontainer-menu.sh
+```
+
+**メニューで選べる機能:**
+- **メイン実行**: ドライラン（シミュレーション）と実注文を選べます。また、購入時の注文サイズも「金額指定（FIXED_AMOUNT）」と「全買い（ALL_IN）」から選択できます。実注文を選択した場合は、安全のため実行前に `yes` の入力による最終確認が求められます。
+- **CSV取得**: 過去のチャートデータ（K線）をCSVとして取得します。
+- **バックテスト**: 取得したCSVデータを使用してバックテストを実行します。
+
+**設定ファイルの扱い:**
+- 元の設定ファイル（`config/application-gmo.yaml`）は直接書き換えられません。
+- 実行時に一時的な設定ファイルとして `data/local-devcontainer/application-runtime.yaml` が生成され、選択したモード（`dry_run`、`real_trade_enabled`、`order_sizing_mode`、`trade_amount` 等）が反映されます。
+- 実行時のデータ（`state.json`やCSVなど）は `data/local-devcontainer` ディレクトリに出力されます。
+
 Docker Compose を使用する場合 (初回clone直後でもそのままビルド・起動できます):
 
 ```bash
