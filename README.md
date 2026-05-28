@@ -44,6 +44,34 @@
 - **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/operations/gcp/README.md](docs/operations/gcp/README.md) を参照してください。
 - **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
 
+### 注文サイズの設定 (order_sizing_mode)
+
+購入時の注文サイズ（金額）の決定方法として、`order_sizing_mode` を設定できます。
+未指定時はデフォルトで `FIXED_AMOUNT` として動作します。
+
+- **FIXED_AMOUNT**: 今まで通り `trade_amount` 円分だけ買うモードです。
+- **ALL_IN**: 買う時に使える残高を全部使って買うモードです。（シミュレーションでは `cashBalance`、リアル取引では `JPY` 利用可能残高を使用します）
+
+**注意:**
+- `ALL_IN` の場合でも、既存設定との互換性や `FIXED_AMOUNT` モードの際に使われるため `trade_amount` の設定値は削除せずに残してください。
+- リアル取引で `ALL_IN` を使う場合は、安全のため必ず `max_order_jpy` / `max_daily_order_jpy` / `max_position_jpy` の安全上限を設定・確認してください。
+
+#### 設定例
+
+**FIXED_AMOUNT の例:**
+```yaml
+trading:
+  trade_amount: 10000
+  order_sizing_mode: FIXED_AMOUNT
+```
+
+**ALL_IN の例:**
+```yaml
+trading:
+  trade_amount: 10000
+  order_sizing_mode: ALL_IN
+```
+
 ## リポジトリ構成
 
 主要ディレクトリの役割は以下です。
