@@ -156,7 +156,8 @@ object ConfigLoader {
                 cooldownLength = envCooldownLength?.toIntOrNull() ?: base.trading.cooldownLength,
                 atrLength = envAtrLength?.toIntOrNull() ?: base.trading.atrLength,
                 atrProfitMultiplier = envAtrProfitMultiplier?.toDoubleOrNull() ?: base.trading.atrProfitMultiplier,
-                atrLossMultiplier = envAtrLossMultiplier?.toDoubleOrNull() ?: base.trading.atrLossMultiplier
+                atrLossMultiplier = envAtrLossMultiplier?.toDoubleOrNull() ?: base.trading.atrLossMultiplier,
+                orderSizingMode = base.trading.orderSizingMode
             ),
             api = ApiConfig(
                 retryCount = envRetryCount?.toIntOrNull() ?: base.api.retryCount,
