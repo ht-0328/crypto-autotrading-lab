@@ -30,6 +30,7 @@ class ConfigLoaderTest {
               sell_threshold: 0.005
               volatility_threshold: 0.003
               sharp_change_threshold: 0.01
+              order_sizing_mode: ALL_IN
             api:
               retry_count: 3
               public_base_url: "https://api.coin.z.com/public"
@@ -64,6 +65,7 @@ class ConfigLoaderTest {
         assertEquals(0.005, config.trading.sellThreshold)
         assertEquals(0.003, config.trading.volatilityThreshold)
         assertEquals(0.01, config.trading.sharpChangeThreshold)
+        assertEquals(cryptoautotrading.domain.model.OrderSizingMode.ALL_IN, config.trading.orderSizingMode)
         assertEquals(3, config.api.retryCount)
         assertEquals("https://api.coin.z.com/public", config.api.publicBaseUrl)
         assertEquals("https://api.coin.z.com/private", config.api.privateBaseUrl)
