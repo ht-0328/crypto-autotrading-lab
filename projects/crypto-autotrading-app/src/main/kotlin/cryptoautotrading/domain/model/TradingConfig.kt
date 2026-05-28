@@ -39,5 +39,7 @@ data class TradingConfig(
     @JsonProperty("atr_profit_multiplier")
     val atrProfitMultiplier: Double = 2.0,
     @JsonProperty("atr_loss_multiplier")
-    val atrLossMultiplier: Double = 2.0
+    val atrLossMultiplier: Double = 2.0,
+    @JsonProperty("order_sizing_mode")
+    val orderSizingMode: OrderSizingMode = OrderSizingMode.FIXED_AMOUNT
 )

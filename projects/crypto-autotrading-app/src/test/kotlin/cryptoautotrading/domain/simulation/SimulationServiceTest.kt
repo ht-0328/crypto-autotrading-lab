@@ -369,4 +369,91 @@ class SimulationServiceTest {
         assertEquals(currentState.holdingAmount, nextState.holdingAmount)
         assertNotEquals(currentState.lastUpdatedAt, nextState.lastUpdatedAt)
     }
+
+    @Test
+    fun `判定がBUY_CANDIDATEかつALL_INの場合、cashBalanceを全て使って購入状態に更新されること`() {
+        // Arrange
+        val currentState = SimulationState(
+            cashBalance = BigDecimal("15000"),
+            isHolding = false,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
+            lastUpdatedAt = "2023-01-01T00:00:00"
+        )
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val currentPrice = BigDecimal("30000.0")
+        val tradeAmount = 5000 // This should be ignored
+
+        // Act
+        val nextState = simulationService.updateState(
+            currentState = currentState,
+            decision = decision,
+            currentPrice = currentPrice,
+            tradeAmount = tradeAmount,
+            orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
+        )
+
+        // Assert
+        assertTrue(nextState.isHolding)
+        assertEquals(currentPrice, nextState.buyPrice)
+        val expectedAmount = BigDecimal("15000").divide(currentPrice, 8, RoundingMode.DOWN)
+        val actualBuyAmount = expectedAmount * currentPrice
+        assertEquals(expectedAmount, nextState.holdingAmount)
+        assertEquals(0, BigDecimal("15000").subtract(actualBuyAmount).compareTo(nextState.cashBalance))
+    }
+
+    @Test
+    fun `ALL_INですでに保有中の場合は追加で購入されないこと`() {
+        // Arrange
+        val currentState = SimulationState(
+            cashBalance = BigDecimal("15000"),
+            isHolding = true,
+            buyPrice = BigDecimal("20000"),
+            holdingAmount = BigDecimal("0.5"),
+            lastUpdatedAt = "2023-01-01T00:00:00"
+        )
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val currentPrice = BigDecimal("30000.0")
+
+        // Act
+        val nextState = simulationService.updateState(
+            currentState = currentState,
+            decision = decision,
+            currentPrice = currentPrice,
+            tradeAmount = 5000,
+            orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
+        )
+
+        // Assert
+        assertEquals(currentState.cashBalance, nextState.cashBalance)
+        assertTrue(nextState.isHolding)
+        assertEquals(currentState.holdingAmount, nextState.holdingAmount)
+    }
+
+    @Test
+    fun `ALL_INでcashBalanceが0以下の場合は購入されないこと`() {
+        // Arrange
+        val currentState = SimulationState(
+            cashBalance = BigDecimal.ZERO,
+            isHolding = false,
+            buyPrice = BigDecimal.ZERO,
+            holdingAmount = BigDecimal.ZERO,
+            lastUpdatedAt = "2023-01-01T00:00:00"
+        )
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val currentPrice = BigDecimal("30000.0")
+
+        // Act
+        val nextState = simulationService.updateState(
+            currentState = currentState,
+            decision = decision,
+            currentPrice = currentPrice,
+            tradeAmount = 10000,
+            orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
+        )
+
+        // Assert
+        assertFalse(nextState.isHolding)
+        assertEquals(0, BigDecimal.ZERO.compareTo(nextState.cashBalance))
+    }
 }

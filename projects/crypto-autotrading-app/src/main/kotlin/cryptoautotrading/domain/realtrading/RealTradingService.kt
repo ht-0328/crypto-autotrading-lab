@@ -1,5 +1,6 @@
 package cryptoautotrading.domain.realtrading
 
+import cryptoautotrading.domain.model.OrderSizingMode
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.model.TradeDecision
@@ -50,7 +51,8 @@ class RealTradingService(
         tradeAmount: Int,
         symbol: String,
         currentState: SimulationState,
-        currentPrice: BigDecimal
+        currentPrice: BigDecimal,
+        orderSizingMode: OrderSizingMode = OrderSizingMode.FIXED_AMOUNT
     ): SimulationState {
         if (shouldSkipRealTrading(config)) {
             return currentState
@@ -70,7 +72,8 @@ class RealTradingService(
                 tradeAmount = tradeAmount,
                 symbol = symbol,
                 currentState = currentState,
-                currentPrice = currentPrice
+                currentPrice = currentPrice,
+                orderSizingMode = orderSizingMode
             )
             TradeAction.SELL_CANDIDATE -> {
                 logger.info { "リアル取引: SELL_CANDIDATE を検知しましたが、現行フェーズでは売り注文は実行しません。" }
@@ -280,7 +283,8 @@ class RealTradingService(
         tradeAmount: Int,
         symbol: String,
         currentState: SimulationState,
-        currentPrice: BigDecimal
+        currentPrice: BigDecimal,
+        orderSizingMode: OrderSizingMode
     ): SimulationState {
         logger.info { "リアル取引: BUY_CANDIDATE を検知しました。安全チェックを開始します。" }
 
@@ -288,7 +292,20 @@ class RealTradingService(
             val client = exchangeClient ?: return currentState
             val currentHoldingAssets = client.getAssets()
 
-            if (!checkJpyBalance(currentHoldingAssets, tradeAmount)) {
+            val targetOrderAmount = when (orderSizingMode) {
+                OrderSizingMode.FIXED_AMOUNT -> tradeAmount
+                OrderSizingMode.ALL_IN -> {
+                    val jpyAsset = currentHoldingAssets.find { it.symbol == "JPY" }
+                    val jpyAvailable = jpyAsset?.available ?: BigDecimal.ZERO
+                    if (jpyAvailable <= BigDecimal.ZERO) {
+                        logger.warn { "安全チェックNG: JPY available ($jpyAvailable) は0以下です" }
+                        return currentState
+                    }
+                    jpyAvailable.setScale(0, RoundingMode.DOWN).toInt()
+                }
+            }
+
+            if (!checkJpyBalance(currentHoldingAssets, targetOrderAmount)) {
                 return currentState
             }
 
@@ -302,7 +319,7 @@ class RealTradingService(
             val activeOrders = client.getActiveOrders(symbol)
             val safetyCheckResult = safetyChecker.checkPreOrderSafety(
                 config = config,
-                tradeAmount = tradeAmount,
+                tradeAmount = targetOrderAmount,
                 state = currentState,
                 currentHoldingAssets = checkAssets,
                 activeOrders = activeOrders,
@@ -316,7 +333,12 @@ class RealTradingService(
 
             logger.info { "リアル取引: 安全チェックを通過しました。注文処理を開始します。" }
 
-            val size = calculateOrderSize(tradeAmount, currentPrice)
+            val size = calculateOrderSize(targetOrderAmount, currentPrice)
+            if (size <= BigDecimal.ZERO) {
+                logger.warn { "安全チェックNG: 注文数量 ($size) が0以下です" }
+                return currentState
+            }
+
             val acceptedOrder = client.placeOrder(
                 symbol = symbol,
                 side = "BUY",
@@ -329,7 +351,7 @@ class RealTradingService(
                 currentState = currentState,
                 orderId = acceptedOrder.orderId,
                 symbol = symbol,
-                tradeAmount = tradeAmount,
+                tradeAmount = targetOrderAmount,
                 size = size,
                 currentPrice = currentPrice
             )
