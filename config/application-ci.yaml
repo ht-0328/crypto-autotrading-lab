@@ -18,6 +18,8 @@ trading:
   initial_capital: 10000
   # 1回の取引額
   trade_amount: 1000
+  # 注文サイズモード (FIXED_AMOUNT または ALL_IN)
+  # order_sizing_mode: "FIXED_AMOUNT"
   # 買い注文を出す閾値（例: 0.005 は 0.5%）
   buy_threshold: 0.005
   # 売り注文を出す閾値（例: 0.005 は 0.5%）
