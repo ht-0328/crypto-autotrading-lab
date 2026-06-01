@@ -17,14 +17,6 @@ export BACKTEST_STEPS_OUTPUT_PATH="$APP_DATA_DIR/backtest-steps.csv"
 # 追加でデフォルト値を安全に設定（必要に応じて適宜変更）
 export KLINE_EXPORT_SYMBOL=${KLINE_EXPORT_SYMBOL:-"BTC"}
 export KLINE_EXPORT_INTERVAL=${KLINE_EXPORT_INTERVAL:-"5min"}
-# GNU dateとBSD dateの差異を吸収して1日前の日付を取得
-if date --version >/dev/null 2>&1; then
-  DEFAULT_START_DATE=$(date -u -d '1 day ago' '+%Y%m%d')
-else
-  DEFAULT_START_DATE=$(date -u -v-1d '+%Y%m%d')
-fi
-export KLINE_EXPORT_START_DATE=${KLINE_EXPORT_START_DATE:-$DEFAULT_START_DATE}
-export KLINE_EXPORT_END_DATE=${KLINE_EXPORT_END_DATE:-$(date -u '+%Y%m%d')}
 export BACKTEST_STRATEGY_NAME=${BACKTEST_STRATEGY_NAME:-"SafeReboundStrategy"}
 export BACKTEST_INITIAL_CAPITAL=${BACKTEST_INITIAL_CAPITAL:-100000}
 
@@ -116,8 +108,30 @@ function select_order_sizing_mode() {
     fi
 }
 
+function select_kline_export_date_range() {
+    echo ""
+    read -p "K線取得の開始日を入力してください（yyyyMMdd）: " input_start_date
+    read -p "K線取得の終了日を入力してください（yyyyMMdd）: " input_end_date
+
+    if ! [[ "$input_start_date" =~ ^[0-9]{8}$ ]]; then
+        echo "エラー: 開始日は yyyyMMdd 形式で入力してください。"
+        exit 1
+    fi
+
+    if ! [[ "$input_end_date" =~ ^[0-9]{8}$ ]]; then
+        echo "エラー: 終了日は yyyyMMdd 形式で入力してください。"
+        exit 1
+    fi
+
+    export KLINE_EXPORT_START_DATE="$input_start_date"
+    export KLINE_EXPORT_END_DATE="$input_end_date"
+
+    echo "K線取得期間: $KLINE_EXPORT_START_DATE 〜 $KLINE_EXPORT_END_DATE"
+}
+
 case "$exec_choice" in
   1)
+    select_kline_export_date_range
     run_csv_export
     ;;
   2)
@@ -128,6 +142,7 @@ case "$exec_choice" in
     run_backtest
     ;;
   4)
+    select_kline_export_date_range
     run_csv_export
 
     # APIキーが設定されていれば残高確認を実行
