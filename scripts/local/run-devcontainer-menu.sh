@@ -82,13 +82,38 @@ function run_backtest() {
     echo "=== バックテストが完了しました ==="
 }
 
-# 関数: 注文数量モードの選択
+# 関数: 注文数量モードの選択と反映
+function apply_order_sizing_mode() {
+    local mode="$1"
+
+    if grep -q "^[[:space:]]*#[[:space:]]*order_sizing_mode:" "$RUNTIME_CONFIG"; then
+        $SED_INPLACE "s/^[[:space:]]*#[[:space:]]*order_sizing_mode:.*/  order_sizing_mode: \"$mode\"/" "$RUNTIME_CONFIG"
+    elif grep -q "^[[:space:]]*order_sizing_mode:" "$RUNTIME_CONFIG"; then
+        $SED_INPLACE "s/^[[:space:]]*order_sizing_mode:.*/  order_sizing_mode: \"$mode\"/" "$RUNTIME_CONFIG"
+    else
+        if sed --version >/dev/null 2>&1; then
+            $SED_INPLACE "/^trading:/a\  order_sizing_mode: \"$mode\"" "$RUNTIME_CONFIG"
+        else
+            $SED_INPLACE "/^trading:/a\\"$'\n'"  order_sizing_mode: \"$mode\"" "$RUNTIME_CONFIG"
+        fi
+    fi
+}
+
 function select_order_sizing_mode() {
     echo ""
     echo "バックテストの買い方を選択してください:"
     echo "1) 金額指定"
     echo "2) 全買い"
     read -p "> " order_mode_choice
+
+    if [ "$order_mode_choice" == "1" ]; then
+        apply_order_sizing_mode "FIXED_AMOUNT"
+    elif [ "$order_mode_choice" == "2" ]; then
+        apply_order_sizing_mode "ALL_IN"
+    else
+        echo "無効な選択です。デフォルトの金額指定を使用します。"
+        apply_order_sizing_mode "FIXED_AMOUNT"
+    fi
 }
 
 case "$exec_choice" in
@@ -100,26 +125,6 @@ case "$exec_choice" in
     ;;
   3)
     select_order_sizing_mode
-    if [ "$order_mode_choice" == "1" ]; then
-        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"FIXED_AMOUNT\"/" "$RUNTIME_CONFIG"
-        # もし order_sizing_mode の設定行が存在しない場合のフォールバック（追加）
-        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
-            if sed --version >/dev/null 2>&1; then
-                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
-            else
-                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
-            fi
-        fi
-    elif [ "$order_mode_choice" == "2" ]; then
-        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"ALL_IN\"/" "$RUNTIME_CONFIG"
-        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
-            if sed --version >/dev/null 2>&1; then
-                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
-            else
-                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
-            fi
-        fi
-    fi
     run_backtest
     ;;
   4)
@@ -139,26 +144,6 @@ case "$exec_choice" in
     fi
 
     select_order_sizing_mode
-    if [ "$order_mode_choice" == "1" ]; then
-        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"FIXED_AMOUNT\"/" "$RUNTIME_CONFIG"
-        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
-            if sed --version >/dev/null 2>&1; then
-                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
-            else
-                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
-            fi
-        fi
-    elif [ "$order_mode_choice" == "2" ]; then
-        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"ALL_IN\"/" "$RUNTIME_CONFIG"
-        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
-            if sed --version >/dev/null 2>&1; then
-                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
-            else
-                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
-            fi
-        fi
-    fi
-
     run_backtest
     ;;
   *)
