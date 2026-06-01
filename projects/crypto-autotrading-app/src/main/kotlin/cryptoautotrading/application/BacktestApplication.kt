@@ -44,14 +44,18 @@ class BacktestApplication(
 
         // 入力チェック
         if (klineCsvPath.isNullOrBlank()) throw IllegalArgumentException("過去K線CSVファイルのパスが指定されていません")
-        if (initialCapitalStr.isNullOrBlank()) throw IllegalArgumentException("初期資金が指定されていません")
         if (summaryOutputPath.isNullOrBlank()) throw IllegalArgumentException("サマリー出力先パスが指定されていません")
         if (stepsOutputPath.isNullOrBlank()) throw IllegalArgumentException("明細出力先パスが指定されていません")
 
-        val initialCapital = try {
-            BigDecimal(initialCapitalStr)
-        } catch (e: NumberFormatException) {
-            throw IllegalArgumentException("初期資金が数値として解釈できません: $initialCapitalStr", e)
+        val initialCapital = if (!initialCapitalStr.isNullOrBlank()) {
+            try {
+                BigDecimal(initialCapitalStr)
+            } catch (e: NumberFormatException) {
+                throw IllegalArgumentException("初期資金が数値として解釈できません: $initialCapitalStr", e)
+            }
+        } else {
+            logger.info { "BACKTEST_INITIAL_CAPITALが未指定のため、設定ファイルの trading.initialCapital (${tradingConfig.initialCapital}) を使用します" }
+            BigDecimal(tradingConfig.initialCapital)
         }
 
         if (initialCapital <= BigDecimal.ZERO) {
