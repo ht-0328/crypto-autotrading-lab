@@ -74,7 +74,8 @@ class BacktestApplication(
             klines = klines,
             strategy = strategy,
             initialCapital = initialCapital,
-            tradeAmount = config.tradeAmount
+            tradeAmount = config.tradeAmount,
+            orderSizingMode = config.orderSizingMode
         )
 
         // 結果出力

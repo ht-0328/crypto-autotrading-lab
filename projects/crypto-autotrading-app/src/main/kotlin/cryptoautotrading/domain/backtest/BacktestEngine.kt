@@ -1,6 +1,7 @@
 package cryptoautotrading.domain.backtest
 
 import cryptoautotrading.domain.model.Kline
+import cryptoautotrading.domain.model.OrderSizingMode
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
 import cryptoautotrading.domain.simulation.SimulationService
@@ -24,15 +25,17 @@ class BacktestEngine {
      * @param strategy 使用する売買戦略
      * @param initialCapital 初期資金
      * @param tradeAmount 1回の取引額
+     * @param orderSizingMode 注文数量モード (デフォルト: FIXED_AMOUNT)
      * @return バックテスト結果
      */
     fun run(
         klines: List<Kline>,
         strategy: TradingStrategy,
         initialCapital: BigDecimal,
-        tradeAmount: Int
+        tradeAmount: Int,
+        orderSizingMode: OrderSizingMode = OrderSizingMode.FIXED_AMOUNT
     ): BacktestResult {
-        logger.info { "バックテストを開始します。データ件数: ${klines.size}, 初期資金: $initialCapital" }
+        logger.info { "バックテストを開始します。データ件数: ${klines.size}, 初期資金: $initialCapital, 注文数量モード: $orderSizingMode" }
 
         var currentState = SimulationState(cashBalance = initialCapital)
 
@@ -69,7 +72,8 @@ class BacktestEngine {
                 decision = decision,
                 currentPrice = currentPrice,
                 tradeAmount = tradeAmount,
-                eventTime = kline.openTime
+                eventTime = kline.openTime,
+                orderSizingMode = orderSizingMode
             )
 
             val previousRealizedProfitAndLoss = if (processedKlines.size == 1) {

@@ -3,6 +3,7 @@ package cryptoautotrading.domain.backtest
 import cryptoautotrading.domain.model.Kline
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
+import cryptoautotrading.domain.model.OrderSizingMode
 import cryptoautotrading.domain.model.TradeDecision
 import cryptoautotrading.domain.strategy.TradingStrategy
 import io.mockk.every
@@ -113,5 +114,48 @@ class BacktestEngineTest {
 
         // 最後はBuy 4で終わっているので、未売却のポジションがある
         assertEquals(true, summary.hasOpenPosition)
+    }
+
+    @Test
+    fun `OrderSizingModeがALL_INの場合、残高全てを使って購入が行われること`() {
+        // Arrange
+        val engine = BacktestEngine()
+        val mockStrategy = mockk<TradingStrategy>()
+
+        // 1回目: 買い (価格100) -> ALL_INなので10000円分すべて買うはず
+        // 2回目: ホールド
+        every { mockStrategy.judge(any(), any()) } returnsMany listOf(
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 1"),
+            TradeDecision(TradeAction.SKIP, "Skip")
+        )
+
+        val klines = listOf(
+            Kline("1", "100", "100", "100", "100", "10"),
+            Kline("2", "120", "120", "120", "120", "10")
+        )
+        val initialCapital = BigDecimal("10000")
+        val tradeAmount = 1000 // これは無視されるはず
+        val orderSizingMode = OrderSizingMode.ALL_IN
+
+        // Act
+        val result = engine.run(klines, mockStrategy, initialCapital, tradeAmount, orderSizingMode)
+
+        // Assert
+        assertEquals(2, result.steps.size)
+
+        // 1回目のステップ（購入）
+        val step1 = result.steps[0]
+        assertEquals(TradeAction.BUY_CANDIDATE, step1.action)
+        assertEquals(0, BigDecimal.ZERO.compareTo(step1.cashBalance)) // 残高は0になる
+        assertEquals(0, BigDecimal("100").compareTo(step1.holdingAmount)) // 10000 / 100 = 100
+        assertEquals(0, BigDecimal("100").compareTo(step1.buyPrice))
+
+        // 2回目のステップ（スキップ）
+        val step2 = result.steps[1]
+        assertEquals(TradeAction.SKIP, step2.action)
+        assertEquals(0, BigDecimal.ZERO.compareTo(step2.cashBalance)) // 残高は0のまま
+        assertEquals(0, BigDecimal("100").compareTo(step2.holdingAmount)) // 数量は100のまま
+        // 資産評価額は 100 * 120 = 12000 になる
+        assertEquals(0, BigDecimal("12000").compareTo(step2.totalAssetValue))
     }
 }

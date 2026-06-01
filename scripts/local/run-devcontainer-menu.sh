@@ -82,6 +82,15 @@ function run_backtest() {
     echo "=== バックテストが完了しました ==="
 }
 
+# 関数: 注文数量モードの選択
+function select_order_sizing_mode() {
+    echo ""
+    echo "バックテストの買い方を選択してください:"
+    echo "1) 金額指定"
+    echo "2) 全買い"
+    read -p "> " order_mode_choice
+}
+
 case "$exec_choice" in
   1)
     run_csv_export
@@ -90,6 +99,27 @@ case "$exec_choice" in
     run_balance_check
     ;;
   3)
+    select_order_sizing_mode
+    if [ "$order_mode_choice" == "1" ]; then
+        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"FIXED_AMOUNT\"/" "$RUNTIME_CONFIG"
+        # もし order_sizing_mode の設定行が存在しない場合のフォールバック（追加）
+        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
+            if sed --version >/dev/null 2>&1; then
+                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
+            else
+                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
+            fi
+        fi
+    elif [ "$order_mode_choice" == "2" ]; then
+        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"ALL_IN\"/" "$RUNTIME_CONFIG"
+        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
+            if sed --version >/dev/null 2>&1; then
+                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
+            else
+                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
+            fi
+        fi
+    fi
     run_backtest
     ;;
   4)
@@ -106,6 +136,27 @@ case "$exec_choice" in
     read -p "Private APIで確認したJPY残高を入力してください (未入力の場合はデフォルト $BACKTEST_INITIAL_CAPITAL を使用): " input_capital
     if [ -n "$input_capital" ]; then
         export BACKTEST_INITIAL_CAPITAL="$input_capital"
+    fi
+
+    select_order_sizing_mode
+    if [ "$order_mode_choice" == "1" ]; then
+        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"FIXED_AMOUNT\"/" "$RUNTIME_CONFIG"
+        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
+            if sed --version >/dev/null 2>&1; then
+                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
+            else
+                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"FIXED_AMOUNT\"" "$RUNTIME_CONFIG"
+            fi
+        fi
+    elif [ "$order_mode_choice" == "2" ]; then
+        $SED_INPLACE "s/order_sizing_mode: .*/order_sizing_mode: \"ALL_IN\"/" "$RUNTIME_CONFIG"
+        if ! grep -q "order_sizing_mode:" "$RUNTIME_CONFIG"; then
+            if sed --version >/dev/null 2>&1; then
+                $SED_INPLACE "/trading:/a\  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
+            else
+                $SED_INPLACE "/trading:/a\\"$'\n'"  order_sizing_mode: \"ALL_IN\"" "$RUNTIME_CONFIG"
+            fi
+        fi
     fi
 
     run_backtest
