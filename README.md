@@ -97,6 +97,30 @@ cd projects/crypto-autotrading-app
 ./gradlew test
 ```
 
+### DevContainer内でのメニュー実行
+
+DevContainer環境では、以下のスクリプトを実行することで、メニュー形式で各種実行を行うことができます。
+このスクリプトは、K線CSV取得・Private API残高確認・バックテストに必要な環境変数を自動設定して実行するためのものです。環境変数を毎回手入力せずにローカル実行を簡単に行えます。
+
+```bash
+./scripts/local/run-devcontainer-menu.sh
+```
+
+**メニューで選べる機能:**
+- **リアルPublic APIでK線CSV取得**: 本物のGMO Public APIを利用してK線データをCSVとして取得します。
+- **リアルPrivate APIで残高確認**: 実際の口座の残高や状態を確認します（`GMO_API_KEY` と `GMO_API_SECRET` の環境変数設定が必要です）。
+- **取得済みCSVでバックテスト**: 取得したCSVデータを使用してバックテストを実行します。
+- **CSV取得 → 残高確認 → バックテストをまとめて実行**: 上記の一連の処理をまとめて実行します。
+
+**自動設定される主な環境変数:**
+- **CSV取得用:** `KLINE_EXPORT_OUTPUT_PATH`, `KLINE_EXPORT_SYMBOL`, `KLINE_EXPORT_INTERVAL`, `KLINE_EXPORT_START_DATE`, `KLINE_EXPORT_END_DATE`
+- **バックテスト用:** `BACKTEST_KLINE_CSV_PATH`, `BACKTEST_STRATEGY_NAME`, `BACKTEST_INITIAL_CAPITAL`, `BACKTEST_SUMMARY_OUTPUT_PATH`, `BACKTEST_STEPS_OUTPUT_PATH`
+
+**設定ファイルの扱い:**
+- 元の設定ファイル（`config/application-gmo.yaml`）は直接書き換えられません。
+- 実行時に一時的な設定ファイルとして `data/local-devcontainer/application-runtime.yaml` が生成され、本物のAPI URL等の設定が反映されます。
+- 実行時のデータ（CSVなど）は `data/local-devcontainer` ディレクトリに出力されます。
+
 Docker Compose を使用する場合 (初回clone直後でもそのままビルド・起動できます):
 
 ```bash
