@@ -108,9 +108,12 @@ DevContainer環境では、以下のスクリプトを実行することで、�
 
 **メニューで選べる機能:**
 - **リアルPublic APIでK線CSV取得**: 本物のGMO Public APIを利用してK線データをCSVとして取得します。
+  - 実行時に取得期間の開始日・終了日を `yyyyMMdd` 形式（例: `20250101`）で入力する必要があります。指定した期間の範囲でK線CSVを取得します。
+  - 未入力や `yyyyMMdd` 以外の形式を入力した場合はエラーになります。
 - **リアルPrivate APIで残高確認**: 実際の口座の残高や状態を確認します（`GMO_API_KEY` と `GMO_API_SECRET` の環境変数設定が必要です）。
 - **取得済みCSVでバックテスト**: 取得したCSVデータを使用してバックテストを実行します。
 - **CSV取得 → 残高確認 → バックテストをまとめて実行**: 上記の一連の処理をまとめて実行します。
+  - 実行時に取得期間の開始日・終了日の入力が同様に求められます。
 
 **自動設定される主な環境変数:**
 - **CSV取得用:** `KLINE_EXPORT_OUTPUT_PATH`, `KLINE_EXPORT_SYMBOL`, `KLINE_EXPORT_INTERVAL`, `KLINE_EXPORT_START_DATE`, `KLINE_EXPORT_END_DATE`
