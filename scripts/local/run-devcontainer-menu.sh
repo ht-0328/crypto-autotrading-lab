@@ -8,7 +8,7 @@ REPO_ROOT=$(cd $(dirname $0)/../.. && pwd)
 cd "$REPO_ROOT"
 
 # デフォルト環境変数のセットアップ
-export APP_DATA_DIR="data/local-devcontainer"
+export APP_DATA_DIR="$REPO_ROOT/data/local-devcontainer"
 export KLINE_EXPORT_OUTPUT_PATH="$APP_DATA_DIR/klines.csv"
 export BACKTEST_KLINE_CSV_PATH="$KLINE_EXPORT_OUTPUT_PATH"
 export BACKTEST_SUMMARY_OUTPUT_PATH="$APP_DATA_DIR/backtest-summary.csv"
