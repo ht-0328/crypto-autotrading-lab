@@ -22,6 +22,42 @@ class BacktestApplicationTest {
     }
 
     @Test
+    fun `initialCapitalStrが未指定の場合にtradingConfig_initialCapitalが利用されること`() {
+        // Arrange
+        val mockReader = mockk<KlineCsvReader>()
+        val mockOutputPort = mockk<BacktestResultOutputPort>(relaxed = true)
+        val dummyConfig = cryptoautotrading.domain.model.TradingConfig(
+            strategyName = "TestStrategy",
+            symbol = "BTC",
+            initialCapital = 50000,
+            tradeAmount = 1000,
+            buyThreshold = 0.01,
+            sellThreshold = 0.01,
+            volatilityThreshold = 0.01,
+            sharpChangeThreshold = 0.01
+        )
+
+        every { mockReader.read(any()) } returns listOf(
+            Kline("202605010000", "100", "110", "90", "105", "10")
+        )
+
+        val application = BacktestApplication(mockReader, mockOutputPort, dummyConfig)
+
+        // Act
+        application.run(
+            klineCsvPath = "dummy.csv",
+            strategyName = "SafeReboundStrategy",
+            initialCapitalStr = null, // 未指定
+            summaryOutputPath = "summary.csv",
+            stepsOutputPath = "steps.csv"
+        )
+
+        // Assert
+        verify { mockReader.read("dummy.csv") }
+        verify { mockOutputPort.output(any(), "summary.csv", "steps.csv") }
+    }
+
+    @Test
     fun `正常な入力パラメータの場合はバックテストが実行され結果が出力されること`() {
         // Arrange
         val mockReader = mockk<KlineCsvReader>()

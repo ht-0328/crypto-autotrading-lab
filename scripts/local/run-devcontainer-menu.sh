@@ -18,7 +18,6 @@ export BACKTEST_STEPS_OUTPUT_PATH="$APP_DATA_DIR/backtest-steps.csv"
 export KLINE_EXPORT_SYMBOL=${KLINE_EXPORT_SYMBOL:-"BTC"}
 export KLINE_EXPORT_INTERVAL=${KLINE_EXPORT_INTERVAL:-"5min"}
 export BACKTEST_STRATEGY_NAME=${BACKTEST_STRATEGY_NAME:-"SafeReboundStrategy"}
-export BACKTEST_INITIAL_CAPITAL=${BACKTEST_INITIAL_CAPITAL:-100000}
 
 # アプリケーション設定としてPublic APIを本物に向けるため、一時設定を生成
 ORIGINAL_CONFIG="$REPO_ROOT/config/application-gmo.yaml"
@@ -64,6 +63,49 @@ function run_balance_check() {
     cd "$REPO_ROOT/projects/crypto-autotrading-app"
     ./gradlew checkPrivateApi
     echo "=== Private API残高確認が完了しました ==="
+}
+
+# 関数: JPY残高の取得と BACKTEST_INITIAL_CAPITAL への設定
+function fetch_jpy_available_balance() {
+    echo "=== Private API残高確認を開始します ==="
+    if [ -z "$GMO_API_KEY" ] || [ -z "$GMO_API_SECRET" ]; then
+        echo "エラー: GMO_API_KEY または GMO_API_SECRET が設定されていません。"
+        echo "環境変数を設定してから再度実行してください。"
+        exit 1
+    fi
+    cd "$REPO_ROOT/projects/crypto-autotrading-app"
+    local output
+    output=$(./gradlew checkPrivateApi -q 2>&1)
+
+    local jpy_available
+    jpy_available=$(echo "$output" | grep "JPY_AVAILABLE=" | cut -d'=' -f2 | tr -d '\r')
+
+    if [ -z "$jpy_available" ]; then
+        echo "エラー: JPY利用可能残高を取得できませんでした。"
+        exit 1
+    fi
+
+    echo "JPY利用可能残高を取得しました: $jpy_available"
+    export BACKTEST_INITIAL_CAPITAL="$jpy_available"
+}
+
+# 関数: バックテスト初期資金の取得元の選択
+function select_backtest_initial_capital_source() {
+    echo ""
+    echo "バックテストの初期資金の取得元を選択してください:"
+    echo "1) 設定ファイルの trading.initial_capital を使う"
+    echo "2) Private APIで取得したJPY利用可能残高を使う"
+    read -p "> " capital_source_choice
+
+    if [ "$capital_source_choice" == "1" ]; then
+        unset BACKTEST_INITIAL_CAPITAL
+        echo "設定ファイルの trading.initial_capital を使います。"
+    elif [ "$capital_source_choice" == "2" ]; then
+        fetch_jpy_available_balance
+    else
+        echo "エラー: 初期資金の取得元の選択が不正です。"
+        exit 1
+    fi
 }
 
 # 関数: バックテスト
@@ -138,26 +180,14 @@ case "$exec_choice" in
     run_balance_check
     ;;
   3)
+    select_backtest_initial_capital_source
     select_order_sizing_mode
     run_backtest
     ;;
   4)
     select_kline_export_date_range
     run_csv_export
-
-    # APIキーが設定されていれば残高確認を実行
-    if [ -n "$GMO_API_KEY" ] && [ -n "$GMO_API_SECRET" ]; then
-        run_balance_check
-    else
-        echo "GMO_API_KEY または GMO_API_SECRET が設定されていないため、残高確認をスキップします。"
-    fi
-
-    echo ""
-    read -p "Private APIで確認したJPY残高を入力してください (未入力の場合はデフォルト $BACKTEST_INITIAL_CAPITAL を使用): " input_capital
-    if [ -n "$input_capital" ]; then
-        export BACKTEST_INITIAL_CAPITAL="$input_capital"
-    fi
-
+    select_backtest_initial_capital_source
     select_order_sizing_mode
     run_backtest
     ;;

@@ -59,8 +59,11 @@ fun main() = runBlocking {
         val jpyAsset = assets.find { it.symbol == "JPY" }
         if (jpyAsset != null) {
             logger.info { "JPYの利用可能残高: ${jpyAsset.available}" }
+            // シェルスクリプト側で取得しやすいように標準出力へ直接出力する
+            println("JPY_AVAILABLE=${jpyAsset.available}")
         } else {
-            logger.info { "JPYの資産情報が見つかりませんでした" }
+            logger.error { "JPYの資産情報が見つかりませんでした" }
+            exitProcess(1)
         }
 
         // 2. 未約定注文取得API呼び出し
