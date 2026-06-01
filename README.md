@@ -100,20 +100,26 @@ cd projects/crypto-autotrading-app
 ### DevContainer内でのメニュー実行
 
 DevContainer環境では、以下のスクリプトを実行することで、メニュー形式で各種実行を行うことができます。
+このスクリプトは、K線CSV取得・Private API残高確認・バックテストに必要な環境変数を自動設定して実行するためのものです。環境変数を毎回手入力せずにローカル実行を簡単に行えます。
 
 ```bash
 ./scripts/local/run-devcontainer-menu.sh
 ```
 
 **メニューで選べる機能:**
-- **メイン実行**: ドライラン（シミュレーション）と実注文を選べます。また、購入時の注文サイズも「金額指定（FIXED_AMOUNT）」と「全買い（ALL_IN）」から選択できます。実注文を選択した場合は、安全のため実行前に `yes` の入力による最終確認が求められます。
-- **CSV取得**: 過去のチャートデータ（K線）をCSVとして取得します。
-- **バックテスト**: 取得したCSVデータを使用してバックテストを実行します。
+- **リアルPublic APIでK線CSV取得**: 本物のGMO Public APIを利用してK線データをCSVとして取得します。
+- **リアルPrivate APIで残高確認**: 実際の口座の残高や状態を確認します（`GMO_API_KEY` と `GMO_API_SECRET` の環境変数設定が必要です）。
+- **取得済みCSVでバックテスト**: 取得したCSVデータを使用してバックテストを実行します。
+- **CSV取得 → 残高確認 → バックテストをまとめて実行**: 上記の一連の処理をまとめて実行します。
+
+**自動設定される主な環境変数:**
+- **CSV取得用:** `KLINE_EXPORT_OUTPUT_PATH`, `KLINE_EXPORT_SYMBOL`, `KLINE_EXPORT_INTERVAL`, `KLINE_EXPORT_START_DATE`, `KLINE_EXPORT_END_DATE`
+- **バックテスト用:** `BACKTEST_KLINE_CSV_PATH`, `BACKTEST_STRATEGY_NAME`, `BACKTEST_INITIAL_CAPITAL`, `BACKTEST_SUMMARY_OUTPUT_PATH`, `BACKTEST_STEPS_OUTPUT_PATH`
 
 **設定ファイルの扱い:**
 - 元の設定ファイル（`config/application-gmo.yaml`）は直接書き換えられません。
-- 実行時に一時的な設定ファイルとして `data/local-devcontainer/application-runtime.yaml` が生成され、選択したモード（`dry_run`、`real_trade_enabled`、`order_sizing_mode`、`trade_amount` 等）が反映されます。
-- 実行時のデータ（`state.json`やCSVなど）は `data/local-devcontainer` ディレクトリに出力されます。
+- 実行時に一時的な設定ファイルとして `data/local-devcontainer/application-runtime.yaml` が生成され、本物のAPI URL等の設定が反映されます。
+- 実行時のデータ（CSVなど）は `data/local-devcontainer` ディレクトリに出力されます。
 
 Docker Compose を使用する場合 (初回clone直後でもそのままビルド・起動できます):
 
