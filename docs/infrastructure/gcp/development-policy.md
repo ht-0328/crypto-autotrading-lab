@@ -71,20 +71,20 @@ Deploy Service Account
 
 ## 5. Terraform ファイル構成案
 
-infra/
-  terraform/
-    gcp/
-      versions.tf
-      providers.tf
-      variables.tf
-      apis.tf
-      artifact-registry.tf
-      storage.tf
-      service-accounts.tf
-      iam.tf
-      cloud-run-job.tf
-      outputs.tf
-      terraform.tfvars.example
+- infra/
+  - terraform/
+    - gcp/
+      - versions.tf
+      - providers.tf
+      - variables.tf
+      - apis.tf
+      - artifact-registry.tf
+      - storage.tf
+      - service-accounts.tf
+      - iam.tf
+      - cloud-run-job.tf
+      - outputs.tf
+      - terraform.tfvars.example
 
 | ファイル | 役割 |
 |---|---|
