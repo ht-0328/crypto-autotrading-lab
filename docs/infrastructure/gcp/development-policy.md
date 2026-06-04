@@ -53,8 +53,10 @@ flowchart TD
 | Deploy Service Account | GitHub ActionsがGCPを操作するためのService Account | 接続基盤として別扱い |
 | Cloud Build Service Account | Docker image の build / push を行う実行主体 | 管理対象 |
 | Cloud Run Runtime Service Account | Cloud Run Job 実行時に使うService Account | 管理対象 |
+| Cloud Scheduler Service Account | Cloud Scheduler が Cloud Run Job を起動する際に使うService Account | 管理対象 |
 | Artifact Registry | Docker image の保存先 | 管理対象 |
-| GCS Bucket | シミュレーション結果や状態ファイルの保存先、およびTerraform stateの保存先 | 管理対象 |
+| アプリ用GCS Bucket | シミュレーション結果や状態ファイルの保存先 | 管理対象 |
+| state用GCS Bucket | Terraform stateの保存先 | Bootstrap用リソースとして別管理 |
 | Cloud Run Job | アプリを実行するジョブ | 管理対象 |
 | Cloud Scheduler | Cloud Run Jobの定期実行起点 | 管理対象 |
 | Secret Manager | APIキーや取引用Secretの保存先 | 管理対象 |
@@ -66,30 +68,75 @@ flowchart TD
 
 | 構成要素 | 何を定義するか | 用途 | Terraform管理方針 |
 |---|---|---|---|
-| GCP API | 利用するGCPサービスAPI | Cloud Build, Cloud Run, Artifact Registryなどを使えるようにする | 管理する |
+| GCP API | 利用するGCPサービスAPI | 各種GCPサービスを使えるようにする | 管理する |
 | Artifact Registry repository | Docker image の保存先リポジトリ | Cloud Run Jobにデプロイするimageを保存する | 管理する |
 | アプリ用 GCS Bucket | アプリデータの保存先 | シミュレーション結果やアプリの状態ファイルを保存する | 管理する |
-| state用 GCS Bucket | 管理情報の保存先 | terraform.tfstate を保存する | 管理する |
+| state用 GCS Bucket | 管理情報の保存先 | `terraform.tfstate` を保存する | Bootstrap用リソースとして分ける |
 | Secret Manager secret | Secretの入れ物 | Cloud Run Job が参照するAPIキーや取引用Secretの入れ物 | 管理する |
 | Cloud Build Service Account | build/push を実行する主体 | Docker imageを作成しArtifact Registryへpushする | 管理する |
 | Cloud Run Runtime Service Account | Cloud Run Job実行時の主体 | ジョブ実行時にGCSへ読み書きする | 管理する |
+| Cloud Scheduler Service Account | 定期実行のトリガー主体 | SchedulerがJobを起動するための権限を持つ | 管理する |
 | IAM binding | 誰にどの権限を与えるか | 各Service Accountの操作範囲を制御する | 管理する |
 | Cloud Run Job | アプリを実行するジョブ定義 | 定期または手動で売買ロジックを実行する | 管理する |
 | Cloud Scheduler | Cloud Run Jobの定期実行起点 | 決まった時刻にジョブを起動する | 管理する |
 
+### GCP API 設計
+
+Terraformで有効化するGCP API一覧は以下の通りです。
+
+- `serviceusage.googleapis.com`
+- `iam.googleapis.com`
+- `iamcredentials.googleapis.com`
+- `cloudbuild.googleapis.com`
+- `artifactregistry.googleapis.com`
+- `run.googleapis.com`
+- `storage.googleapis.com`
+- `secretmanager.googleapis.com`
+- `cloudscheduler.googleapis.com`
+
+### Cloud Run Job 設計
+
+Terraformで定義するCloud Run Jobの詳細は以下の通りです。
+
+| 設計項目 | Terraformで定義する内容 |
+|---|---|
+| image | Artifact Registry上のDocker image URIを指定する |
+| region | GCPリージョンを指定する |
+| runtime service account | Cloud Run Runtime Service Accountを指定する |
+| 通常環境変数 | `APP_DATA_DIR`, `APP_TRADING_STRATEGY_NAME`, `API_BASE_URL`, `API_RETRY_COUNT`, `APP_INTERVAL`, `OUTPUT_PATH`, `STATE_PATH`, `TRADING_*` 系の値を指定する |
+| Secret環境変数 | GMO APIキー、GMO API SecretなどをSecret Manager参照で指定する |
+| volume | アプリ用GCS BucketをCloud Run Jobにmountする |
+| mount path | `/mnt/gcs` を使用する |
+| tasks | 1 |
+| max retries | 0 |
+
+**補足事項:**
+- Docker image の build / push はTerraformではなくGitHub Actionsで実行する。
+- Terraformでは、Cloud Run Jobが参照する image URI を変数として受け取る。
+- image tag は latest ではなく、GitHub SHAなどを使った固定タグを前提にする。
+- Cloud Run Job の実行はTerraformではなく、GitHub ActionsまたはCloud Schedulerで行う。
+- APIキーやAPI Secretは通常の環境変数ではなく、Secret Manager参照で渡す。
+
 ### GCS Bucketの用途設計
 
-| Bucket | 用途 | Terraformで定義する内容 |
+| Bucket | 用途 | 管理方針 |
 |---|---|---|
-| アプリ用Bucket | シミュレーション結果やアプリ状態ファイルを保存する | bucket名、location、IAM |
-| state用Bucket | `terraform.tfstate` を保存する | bucket名、location、IAM、backend設定で参照する値 |
+| アプリ用Bucket | シミュレーション結果やアプリ状態ファイルを保存する | Terraformで管理する |
+| state用Bucket | `terraform.tfstate` を保存する | Terraform bootstrap用リソースとして分ける |
 
 ## 4. Terraform ファイル構成案
 
 この章では、Terraformのコードをどのように分割して配置するかを定義します。
+state用Bucketを作成するための初期化（bootstrap）構成と、本体の構成を分けます。
 
 - infra/
   - terraform/
+    - bootstrap/
+      - gcp/
+        - versions.tf
+        - providers.tf
+        - storage.tf
+        - outputs.tf
     - gcp/
       - versions.tf
       - providers.tf
@@ -99,9 +146,9 @@ flowchart TD
       - storage.tf
       - service-accounts.tf
       - iam.tf
+      - secrets.tf
       - cloud-run-job.tf
       - scheduler.tf
-      - secrets.tf
       - outputs.tf
       - terraform.tfvars.example
 
@@ -109,21 +156,22 @@ flowchart TD
 |---|---|
 | versions.tf | Terraform本体とGoogle providerのバージョンを固定する |
 | providers.tf | Google Cloud provider の設定を書く |
-| variables.tf | project_id, region など外から渡す値を定義する |
+| variables.tf | `project_id`, `region` など外から渡す値を定義する |
 | apis.tf | 有効化するGCP APIを定義する |
 | artifact-registry.tf | Artifact Registry を定義する |
-| storage.tf | アプリ用およびstate用のGCS Bucket を定義する |
+| storage.tf | アプリ用のGCS Bucket を定義する |
 | service-accounts.tf | Service Account を定義する |
 | iam.tf | IAM binding を定義する |
+| secrets.tf | Secret Manager のsecret本体（入れ物）を定義する |
 | cloud-run-job.tf | Cloud Run Job の定義を書く |
 | scheduler.tf | Cloud Scheduler の定義を書く |
-| secrets.tf | Secret Manager のsecret本体（入れ物）を定義する |
 | outputs.tf | 作成したリソース名などを出力する |
 | terraform.tfvars.example | 設定値の例を書く |
 
 ## 5. 変数設計
 
 この章では、インフラコードに渡す外部設定値を定義します。
+Secretの実値は変数に含めず、Secret名のみを変数として渡します。
 
 | 変数名 | 意味 | 例 |
 |---|---|---|
@@ -134,45 +182,51 @@ flowchart TD
 | state_bucket_name | Terraform state用GCS Bucket名 | crypto-autotrading-lab-tfstate |
 | build_service_account_name | Cloud Build用SA名 | cloud-build-builder |
 | runtime_service_account_name | Cloud Run実行用SA名 | crypto-autotrading-lab-runner |
+| scheduler_service_account_name | Cloud Scheduler実行用SA名 | cloud-scheduler-invoker |
 | deploy_service_account_email | GitHub Actions用SAメール | github-actions-deployer@crypto-autotrading-lab.iam.gserviceaccount.com |
+| secret_names | Secret ManagerのSecret名一覧 | `["gmo-api-key", "gmo-api-secret"]` |
 | cloud_run_job_name | Cloud Run Job名 | 既存のGitHub Actions varsに合わせる |
-| secret_names | Secret ManagerのSecret名一覧 | `["GMO_API_KEY", "GMO_API_SECRET"]` |
+| image_uri | Cloud Run Jobで実行するDocker image URI | asia-northeast1-docker.pkg.dev/crypto-autotrading-lab/crypto-autotrading-lab/app:xxxxxxx |
+| app_trading_strategy_name | 使用する売買戦略名 | SafeReboundStrategy |
+| api_base_url | API接続先URL | https://api.coin.z.com |
+| api_retry_count | APIリトライ回数 | 3 |
+| app_interval | アプリ実行間隔 | 60 |
+| output_path | 結果出力先 | /mnt/gcs/data/output.json |
+| state_path | 状態ファイル保存先 | /mnt/gcs/data/state.json |
+| trading_buy_threshold | 買い判定しきい値 | 既存設定に合わせる |
+| trading_sell_threshold | 売り判定しきい値 | 既存設定に合わせる |
+| trading_initial_capital | 初期資金 | 既存設定に合わせる |
+| trading_trade_amount | 1回あたりの取引金額 | 既存設定に合わせる |
+| trading_symbol | 取引対象 | BTC_JPY |
+| trading_volatility_threshold | ボラティリティ判定値 | 既存設定に合わせる |
+| trading_sharp_change_threshold | 急変判定値 | 既存設定に合わせる |
 | scheduler_job_name | Cloud Scheduler名 | crypto-autotrading-lab-scheduler |
 | scheduler_cron | 定期実行のcron式 | `0 9 * * *` |
 | scheduler_time_zone | 定期実行のタイムゾーン | `Asia/Tokyo` |
 
 ※ SA は Service Account の略です。
-Service Account は、GCP上でプログラムやGitHub Actionsが操作するときに使う専用アカウントです。
 
 ## 6. IAMリソース設計
 
 この章では、各Service Accountに対して、どのGCPリソースへの操作権限を付与するかを定義します。
 
-### Service Account同士の関係と権限
+| 操作主体 | 対象リソース | 権限 | 方針 |
+|---|---|---|---|
+| Terraform実行用Deploy Service Account | Terraform管理対象のGCPリソース | 作成・更新に必要な権限 | Terraform applyを実行できるようにする |
+| Terraform実行用Deploy Service Account | state用GCS Bucket | state読み書き権限 | backend stateを扱うため |
+| Cloud Build Service Account | Artifact Registry repository | roles/artifactregistry.writer | repository単位で付与 |
+| Cloud Build Service Account | Cloud Logging | roles/logging.logWriter | project単位で付与 |
+| Cloud Build Service Account | Cloud Buildのビルド入力読み取り | roles/storage.objectViewer | project単位、または専用staging bucket単位で付与 |
+| Cloud Run Runtime Service Account | アプリ用GCS Bucket | roles/storage.objectAdmin | bucket単位で付与 |
+| Cloud Run Runtime Service Account | Secret Manager secret | roles/secretmanager.secretAccessor | Secret単位で付与 |
+| Deploy Service Account | Cloud Build Service Account | roles/iam.serviceAccountUser | Service Account単位で付与 |
+| Deploy Service Account | Cloud Run Runtime Service Account | roles/iam.serviceAccountUser | Service Account単位で付与 |
+| Cloud Scheduler Service Account | Cloud Run Job | Cloud Run Jobを実行できる権限 | 必要最小限で付与 |
 
-- Deploy Service Account は、GitHub ActionsがGCPを操作するための入口である。
-- Deploy Service Account は、Cloud Build Service Accountを指定してbuildできる必要がある。
-- Deploy Service Account は、Cloud Run Runtime Service AccountをCloud Run Jobに設定できる必要がある。
-- Cloud Build Service Account は、Artifact RegistryへDocker imageをpushできる必要がある。
-- Cloud Run Runtime Service Account は、Cloud Run Job実行時にGCS Bucketへ読み書きできる必要がある。
-- Cloud Run Runtime Service Account は、Cloud Run Job実行時にSecret ManagerからAPIキーなどを読める必要がある。
-
-### 権限一覧
-
-| 操作主体 | 対象リソース | 付与する権限 | Terraform resource候補 | 理由 |
-|---|---|---|---|---|
-| Cloud Build Service Account | Artifact Registry repository | roles/artifactregistry.writer | google_artifact_registry_repository_iam_member | Docker imageをpushするため |
-| Cloud Build Service Account | Cloud Logging | roles/logging.logWriter | google_project_iam_member | buildログを書き込むため |
-| Cloud Build Service Account | GCS Bucket | roles/storage.objectViewer | google_storage_bucket_iam_member | build時に必要なファイルを読むため |
-| Cloud Run Runtime Service Account | GCS Bucket | roles/storage.objectAdmin | google_storage_bucket_iam_member | 実行結果や状態ファイルを読み書きするため |
-| Cloud Run Runtime Service Account | Secret Manager secret | roles/secretmanager.secretAccessor | google_secret_manager_secret_iam_member | 実行時に必要なSecretを読むため |
-| Deploy Service Account | Cloud Build Service Account | roles/iam.serviceAccountUser | google_service_account_iam_member | Cloud Build用Service Accountを指定してbuildするため |
-| Deploy Service Account | Cloud Run Runtime Service Account | roles/iam.serviceAccountUser | google_service_account_iam_member | Cloud Run JobにRuntime Service Accountを設定するため |
-
+**禁止事項と付与方針:**
 - project全体に広く付ける権限と、特定リソースにだけ付ける権限を分ける。
 - 可能なものは project IAM ではなく、Artifact Registry、GCS Bucket、Secret単位で付与する。
-- `google_project_iam_policy` は使わない。
-- 理由は、プロジェクト全体のIAMを上書きして既存権限を壊す可能性があるため。
+- `google_project_iam_policy` は使わない。理由は、プロジェクト全体のIAMを上書きして既存権限を壊す可能性があるため。
 - 基本は `google_project_iam_member`、`google_storage_bucket_iam_member`、`google_artifact_registry_repository_iam_member`、`google_secret_manager_secret_iam_member`、`google_service_account_iam_member` を使う。
 
 ## 7. state設計
@@ -184,46 +238,42 @@ Service Account は、GCP上でプログラムやGitHub Actionsが操作する�
 | stateの役割 | Terraformが管理するGCPリソースの状態を記録する |
 | 保存先 | GCS backend |
 | state用Bucket | アプリ用Bucketとは分ける |
-| state用Bucketに保存するもの | terraform.tfstate |
+| state用Bucketに保存するもの | `terraform.tfstate` |
 | アプリ用Bucketに保存するもの | シミュレーション結果やアプリの状態ファイル |
-| prefix | terraform/gcp |
+| prefix | `terraform/gcp` |
 | stateを読み書きする主体 | Terraformを実行するService Account |
 | Git管理 | `terraform.tfstate` はGit管理しない |
 | Secret対策 | Secret実値をTerraform管理に含めない |
 
-- state用Bucketとアプリ用Bucketは用途が違うため分ける。
+- state用Bucketとアプリ用Bucketは用途が違うため明確に分ける。
 - stateにはTerraformが管理するリソース情報が入る。
 - Secret実値をTerraformで扱うとstateに残る可能性がある。
-- そのため、Secret実値はTerraformコード、terraform.tfvars、stateに含めない設計にする。
+- そのため、Secret実値はTerraformコード、`terraform.tfvars`、stateに含めない設計にする。
 
 ## 8. Secretリソース設計
 
-この章では、APIキーや取引用Secretなどの機密情報を、GCP上でどのリソースとして定義し、Cloud Run Jobからどう参照するかを定義します。
+この章では、APIキーや取引用Secretなどの機密情報を、GCP上でどのリソースとして定義し、Cloud Run Jobからどう参照するかを定義します。リアルAPI接続で使うAPIキー/API Secretは、Secret Managerで扱う設計にします。
 
-| 設計項目 | 定義内容 |
+| 項目 | 内容 |
 |---|---|
 | 利用するGCPサービス | Secret Manager |
-| Terraformで定義するもの | Secret Manager の secret本体、必要なIAM、Cloud Run Jobからの参照設定 |
+| 保存する値 | GMO APIキー、GMO API Secretなど |
+| Terraformで定義するもの | Secretの入れ物、IAM、Cloud Run Jobからの参照設定 |
 | Terraformで定義しないもの | Secretの実値 |
-| Secretの実値の登録 | Terraformとは別の安全な手段で登録する |
-| Secretを参照する主体 | Cloud Run Runtime Service Account |
-| Cloud Run Jobからの参照方法 | 環境変数またはSecret参照設定として参照する |
-| GitHub Actions secretsの用途 | GitHub Actions自身がGCPへ接続・デプロイするために使う値を扱う |
-| GCP Secret Managerの用途 | Cloud Run Jobが実行時に使うAPIキーや取引用Secretを扱う |
+| 参照する主体 | Cloud Run Runtime Service Account |
+| Cloud Run Jobからの参照方法 | Secret Manager参照の環境変数 |
 
-- TerraformではSecretの「入れ物」を作る。
-- Secretの値そのものはTerraformコードや `terraform.tfvars` には書かない。
-- Secretの値をTerraformに渡すとstateに残る可能性があるため、Secret実値はTerraform管理に含めない。
-- Cloud Run Jobは、Secret値を直接ファイルやコードに持たず、Secret Managerを参照して利用する。
-- Cloud Run Runtime Service Accountには、必要なSecretを読む権限を付与する。
+- `google_secret_manager_secret` でSecretの「入れ物」を作る。
+- `google_secret_manager_secret_iam_member` で参照権限を付与する。
+- `google_secret_manager_secret_version` でSecret実値をTerraform管理しない。
+- Secret実値はTerraform stateに残さない。Terraformとは別の安全な手段で登録する。
 
-| Terraform resource候補 | 用途 |
-|---|---|
-| google_secret_manager_secret | Secretの入れ物を作る |
-| google_secret_manager_secret_iam_member | Cloud Run Runtime Service AccountにSecret参照権限を付与する |
-| google_cloud_run_v2_job | Cloud Run JobからSecretを参照する設定を書く |
+### Secret名と環境変数名のマッピング
 
-※ `google_secret_manager_secret_version` でSecret実値をTerraform管理する設計にはしない（Secret実値がstateに残る可能性があるため）。
+| 用途 | Secret名 | Cloud Run Job側の環境変数名 |
+|---|---|---|
+| GMO APIキー | gmo-api-key | GMO_API_KEY |
+| GMO API Secret | gmo-api-secret | GMO_API_SECRET |
 
 ### 値の置き場所と用途の整理
 
