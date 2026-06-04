@@ -46,17 +46,18 @@ flowchart TD
 
 ### 各要素の役割
 
-| 要素 | 役割 | インフラコードで定義する内容 |
+| 要素 | 役割 | Terraform管理対象 |
 |---|---|---|
-| GitHub Actions | デプロイやジョブ実行の起点 | インフラコードでは定義しない。workflow側で管理する |
-| Workload Identity Federation | GitHub Actions からGCPへ安全に接続する仕組み | providerや接続先として参照する |
-| Deploy Service Account | GitHub Actions がGCPを操作するときに使うService Account | メールアドレスを変数として扱う |
-| Cloud Build Service Account | Docker image の build / push を行う実行主体 | Service Account と必要なIAMを定義する |
-| Cloud Run Runtime Service Account | Cloud Run Job 実行時に使うService Account | Service Account と必要なIAMを定義する |
-| Artifact Registry | Docker image の保存先 | repository名、region、形式を定義する |
-| GCS Bucket | シミュレーション結果や状態ファイルの保存先 | bucket名、location、権限を定義する |
-| Cloud Run Job | アプリを実行するジョブ | job名、region、実行Service Account、環境変数、volume設定などを定義する |
-| Cloud Scheduler | Cloud Run Jobの定期実行起点 | job名、スケジュール、実行先を定義する |
+| GitHub Actions | デプロイやジョブ実行の起点 | 定義しない。workflow側で管理する |
+| Workload Identity Federation | GitHub ActionsからGCPへ接続するための認証基盤 | 接続基盤として別扱い |
+| Deploy Service Account | GitHub ActionsがGCPを操作するためのService Account | 接続基盤として別扱い |
+| Cloud Build Service Account | Docker image の build / push を行う実行主体 | 管理対象 |
+| Cloud Run Runtime Service Account | Cloud Run Job 実行時に使うService Account | 管理対象 |
+| Artifact Registry | Docker image の保存先 | 管理対象 |
+| GCS Bucket | シミュレーション結果や状態ファイルの保存先、およびTerraform stateの保存先 | 管理対象 |
+| Cloud Run Job | アプリを実行するジョブ | 管理対象 |
+| Cloud Scheduler | Cloud Run Jobの定期実行起点 | 管理対象 |
+| Secret Manager | APIキーや取引用Secretの保存先 | 管理対象 |
 
 ## 3. リソース設計
 
@@ -67,12 +68,21 @@ flowchart TD
 |---|---|---|---|
 | GCP API | 利用するGCPサービスAPI | Cloud Build, Cloud Run, Artifact Registryなどを使えるようにする | 管理する |
 | Artifact Registry repository | Docker image の保存先リポジトリ | Cloud Run Jobにデプロイするimageを保存する | 管理する |
-| GCS Bucket | 結果・状態ファイルの保存先 | シミュレーション結果や状態ファイルを保存する | 管理する |
+| アプリ用 GCS Bucket | アプリデータの保存先 | シミュレーション結果やアプリの状態ファイルを保存する | 管理する |
+| state用 GCS Bucket | 管理情報の保存先 | terraform.tfstate を保存する | 管理する |
+| Secret Manager secret | Secretの入れ物 | Cloud Run Job が参照するAPIキーや取引用Secretの入れ物 | 管理する |
 | Cloud Build Service Account | build/push を実行する主体 | Docker imageを作成しArtifact Registryへpushする | 管理する |
 | Cloud Run Runtime Service Account | Cloud Run Job実行時の主体 | ジョブ実行時にGCSへ読み書きする | 管理する |
 | IAM binding | 誰にどの権限を与えるか | 各Service Accountの操作範囲を制御する | 管理する |
 | Cloud Run Job | アプリを実行するジョブ定義 | 定期または手動で売買ロジックを実行する | 管理する |
 | Cloud Scheduler | Cloud Run Jobの定期実行起点 | 決まった時刻にジョブを起動する | 管理する |
+
+### GCS Bucketの用途設計
+
+| Bucket | 用途 | Terraformで定義する内容 |
+|---|---|---|
+| アプリ用Bucket | シミュレーション結果やアプリ状態ファイルを保存する | bucket名、location、IAM |
+| state用Bucket | `terraform.tfstate` を保存する | bucket名、location、IAM、backend設定で参照する値 |
 
 ## 4. Terraform ファイル構成案
 
@@ -90,6 +100,8 @@ flowchart TD
       - service-accounts.tf
       - iam.tf
       - cloud-run-job.tf
+      - scheduler.tf
+      - secrets.tf
       - outputs.tf
       - terraform.tfvars.example
 
@@ -100,10 +112,12 @@ flowchart TD
 | variables.tf | project_id, region など外から渡す値を定義する |
 | apis.tf | 有効化するGCP APIを定義する |
 | artifact-registry.tf | Artifact Registry を定義する |
-| storage.tf | GCS Bucket を定義する |
+| storage.tf | アプリ用およびstate用のGCS Bucket を定義する |
 | service-accounts.tf | Service Account を定義する |
 | iam.tf | IAM binding を定義する |
 | cloud-run-job.tf | Cloud Run Job の定義を書く |
+| scheduler.tf | Cloud Scheduler の定義を書く |
+| secrets.tf | Secret Manager のsecret本体（入れ物）を定義する |
 | outputs.tf | 作成したリソース名などを出力する |
 | terraform.tfvars.example | 設定値の例を書く |
 
@@ -116,11 +130,16 @@ flowchart TD
 | project_id | GCPプロジェクトID | crypto-autotrading-lab |
 | region | GCPリージョン | asia-northeast1 |
 | artifact_repository_name | Artifact Registry名 | crypto-autotrading-lab |
-| gcs_bucket_name | GCS Bucket名 | crypto-autotrading-lab |
+| gcs_bucket_name | アプリ用GCS Bucket名 | crypto-autotrading-lab |
+| state_bucket_name | Terraform state用GCS Bucket名 | crypto-autotrading-lab-tfstate |
 | build_service_account_name | Cloud Build用SA名 | cloud-build-builder |
 | runtime_service_account_name | Cloud Run実行用SA名 | crypto-autotrading-lab-runner |
 | deploy_service_account_email | GitHub Actions用SAメール | github-actions-deployer@crypto-autotrading-lab.iam.gserviceaccount.com |
 | cloud_run_job_name | Cloud Run Job名 | 既存のGitHub Actions varsに合わせる |
+| secret_names | Secret ManagerのSecret名一覧 | `["GMO_API_KEY", "GMO_API_SECRET"]` |
+| scheduler_job_name | Cloud Scheduler名 | crypto-autotrading-lab-scheduler |
+| scheduler_cron | 定期実行のcron式 | `0 9 * * *` |
+| scheduler_time_zone | 定期実行のタイムゾーン | `Asia/Tokyo` |
 
 ※ SA は Service Account の略です。
 Service Account は、GCP上でプログラムやGitHub Actionsが操作するときに使う専用アカウントです。
@@ -128,6 +147,17 @@ Service Account は、GCP上でプログラムやGitHub Actionsが操作する�
 ## 6. IAMリソース設計
 
 この章では、各Service Accountに対して、どのGCPリソースへの操作権限を付与するかを定義します。
+
+### Service Account同士の関係と権限
+
+- Deploy Service Account は、GitHub ActionsがGCPを操作するための入口である。
+- Deploy Service Account は、Cloud Build Service Accountを指定してbuildできる必要がある。
+- Deploy Service Account は、Cloud Run Runtime Service AccountをCloud Run Jobに設定できる必要がある。
+- Cloud Build Service Account は、Artifact RegistryへDocker imageをpushできる必要がある。
+- Cloud Run Runtime Service Account は、Cloud Run Job実行時にGCS Bucketへ読み書きできる必要がある。
+- Cloud Run Runtime Service Account は、Cloud Run Job実行時にSecret ManagerからAPIキーなどを読める必要がある。
+
+### 権限一覧
 
 | 操作主体 | 対象リソース | 付与する権限 | Terraform resource候補 | 理由 |
 |---|---|---|---|---|
@@ -158,7 +188,7 @@ Service Account は、GCP上でプログラムやGitHub Actionsが操作する�
 | アプリ用Bucketに保存するもの | シミュレーション結果やアプリの状態ファイル |
 | prefix | terraform/gcp |
 | stateを読み書きする主体 | Terraformを実行するService Account |
-| Git管理 | terraform.tfstate はGit管理しない |
+| Git管理 | `terraform.tfstate` はGit管理しない |
 | Secret対策 | Secret実値をTerraform管理に含めない |
 
 - state用Bucketとアプリ用Bucketは用途が違うため分ける。
