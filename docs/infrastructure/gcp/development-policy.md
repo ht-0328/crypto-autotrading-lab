@@ -1,6 +1,6 @@
 # GCP インフラコード設計書
 
-このドキュメントは、TerraformなどでGCPインフラをコード化するための設計書です。
+このドキュメントは、TerraformなどでGCPインフラを0からコード化して作成するための設計書です。
 
 ## 1. 設計の目的
 
@@ -46,14 +46,17 @@ flowchart TD
 
 ### 各要素の役割
 
-- **GitHub Actions**: デプロイやジョブ実行の起点になる。
-- **Workload Identity Federation**: GitHub Actions からGCPへ安全に接続するための仕組み。
-- **Deploy Service Account**: GitHub Actions がGCPを操作するときに使うサービスアカウント。
-- **Cloud Build Service Account**: Docker image の build / push を行う実行主体。
-- **Cloud Run Runtime Service Account**: Cloud Run Job の実行時に使うサービスアカウント。
-- **Artifact Registry**: Docker image の保存先。
-- **GCS Bucket**: シミュレーション結果や状態ファイルの保存先。
-- **Cloud Scheduler**: 将来的な定期実行の起点。
+| 要素 | 役割 | インフラコードで定義する内容 |
+|---|---|---|
+| GitHub Actions | デプロイやジョブ実行の起点 | インフラコードでは定義しない。workflow側で管理する |
+| Workload Identity Federation | GitHub Actions からGCPへ安全に接続する仕組み | providerや接続先として参照する |
+| Deploy Service Account | GitHub Actions がGCPを操作するときに使うService Account | メールアドレスを変数として扱う |
+| Cloud Build Service Account | Docker image の build / push を行う実行主体 | Service Account と必要なIAMを定義する |
+| Cloud Run Runtime Service Account | Cloud Run Job 実行時に使うService Account | Service Account と必要なIAMを定義する |
+| Artifact Registry | Docker image の保存先 | repository名、region、形式を定義する |
+| GCS Bucket | シミュレーション結果や状態ファイルの保存先 | bucket名、location、権限を定義する |
+| Cloud Run Job | アプリを実行するジョブ | job名、region、実行Service Account、環境変数、volume設定などを定義する |
+| Cloud Scheduler | Cloud Run Jobの定期実行起点 | job名、スケジュール、実行先を定義する |
 
 ## 3. リソース設計
 
@@ -68,8 +71,8 @@ flowchart TD
 | Cloud Build Service Account | build/push を実行する主体 | Docker imageを作成しArtifact Registryへpushする | 管理する |
 | Cloud Run Runtime Service Account | Cloud Run Job実行時の主体 | ジョブ実行時にGCSへ読み書きする | 管理する |
 | IAM binding | 誰にどの権限を与えるか | 各Service Accountの操作範囲を制御する | 管理する |
-| Cloud Run Job | アプリを実行するジョブ定義 | 定期または手動で売買ロジックを実行する | 将来的に管理する |
-| Cloud Scheduler | Cloud Run Jobの定期実行起点 | 決まった時刻にジョブを起動する | 将来的に管理する |
+| Cloud Run Job | アプリを実行するジョブ定義 | 定期または手動で売買ロジックを実行する | 管理する |
+| Cloud Scheduler | Cloud Run Jobの定期実行起点 | 決まった時刻にジョブを起動する | 管理する |
 
 ## 4. Terraform ファイル構成案
 
@@ -126,6 +129,16 @@ Service Account は、GCP上でプログラムやGitHub Actionsが操作する�
 
 この章では、どのサービスアカウントに何の権限を与えるかのIAM割り当て方針を定義します。
 
+### Service Account同士の関係と権限
+
+- Deploy Service Account は、GitHub ActionsがGCPを操作するための入口である。
+- Deploy Service Account は、Cloud Build Service Accountを指定してbuildできる必要がある。
+- Deploy Service Account は、Cloud Run Runtime Service AccountをCloud Run Jobに設定できる必要がある。
+- Cloud Build Service Account は、Artifact RegistryへDocker imageをpushできる必要がある。
+- Cloud Run Runtime Service Account は、Cloud Run Job実行時にGCS Bucketへ読み書きできる必要がある。
+
+### 権限一覧
+
 | 付与先 | 権限 | 目的 |
 |---|---|---|
 | Cloud Build Service Account | roles/artifactregistry.writer | Docker image を Artifact Registry にpushするため |
@@ -145,55 +158,52 @@ Service Account は、GCP上でプログラムやGitHub Actionsが操作する�
 
 ## 7. state設計
 
-この章では、Terraformが管理するリソースの現在の状態（state）の扱いを定義します。
+この章では、Terraformのstateをどこに保存し、誰が扱い、どのように保護するかを定義します。
 
-- stateとは、Terraformが「どのGCPリソースを管理しているか」を記録する情報である。
-- state はローカルPCだけに置かない。
-- `terraform.tfstate` をGitで管理してはいけない（機密情報が含まれる可能性があるため）。
-- GCS Bucket を backend として使う想定である。
-- state の保存先 prefix は `terraform/gcp` のようにする。
-- 今回のPRでは backend の実装コードは追加しない。
+| 設計項目 | 方針 |
+|---|---|
+| 保存先 | ローカルPCではなくGCS backendを使う |
+| state用Bucket | アプリの実行結果保存用Bucketとは分ける方針にする |
+| prefix | terraform/gcp を基本にする |
+| 管理主体 | Terraformを実行するGitHub Actions用Service Accountがstateを読み書きする |
+| Git管理 | `terraform.tfstate` はGit管理しない |
+| Secret混入対策 | APIキーやSecret値をTerraform変数やstateに含めない設計にする |
+| このPRでやること | backendの実装コードは追加せず、設計方針のみを書く |
+
+補足として、アプリ用Bucketとstate用Bucketは用途が違うため、同じBucketにしない方針にします。
+- アプリ用Bucket: シミュレーション結果や状態ファイルを保存する
+- state用Bucket: Terraformの管理情報を保存する
 
 ## 8. Secret管理方針
 
 この章では、APIキーや認証情報など、コードに直接書いてはいけない値の扱いを定義します。
 
-- APIキーやSecret値などの機密情報は、Terraformコードに直接書かない。
-- `terraform.tfvars` にも実Secret値を書かない。
-- Secretの保存先は、将来的にGCP Secret Managerを候補とする。
+- Secret値をTerraform変数に直接渡すと、stateに残る可能性がある。
+- そのため、APIキーや取引用SecretはTerraformコードや `terraform.tfvars` に直接書かない。
+- Secret本体は将来的にGCP Secret Managerで管理する。
+- TerraformではSecretの「入れ物」や参照関係だけを管理する方針にする。
 - GitHub Actionsのvars/secretsとGCP Secret Managerの責務を分ける。
 - 今回のPRではSecret ManagerのTerraform実装は追加しない。
 
-## 9. 既存リソース取り込み設計
-
-この章では、既に手動等で作成された既存リソースをTerraformの管理下に移す方針を定義します。
-
-- importとは、すでにGCP上に存在するリソースをTerraform管理へ取り込む作業である。
-- 取り込み対象:
-  - Artifact Registry
-  - GCS Bucket
-  - Cloud Build Service Account
-  - Cloud Run Runtime Service Account
-  - 必要な IAM binding
-- importせずに `terraform apply` すると、同じ名前のリソースを新規作成しようとして失敗する可能性があるため必ず行う。
-
-## 10. GitHub Actionsとの責務分離
+## 9. GitHub Actionsとの責務分離
 
 この章では、TerraformとGitHub Actionsの間でインフラ操作の責務をどのように分担するかを定義します。
+Terraformで「ジョブ定義」を管理し、GitHub Actionsでは「実行」を担当する責務にしています。
 
 | 対象 | Terraform側 | GitHub Actions側 |
 |---|---|---|
-| GCP API有効化 | 管理する | 原則やらない |
-| Artifact Registry作成 | 管理する | 原則やらない |
-| GCS Bucket作成 | 管理する | 原則やらない |
-| Service Account作成 | 管理する | 原則やらない |
-| IAM付与 | 管理する | 原則やらない |
-| Docker image build | 管理しない | 実行する |
-| Docker image push | 管理しない | 実行する |
-| Cloud Run Job deploy | 将来的に管理候補 | 当面実行する |
-| Cloud Run Job execute | 管理しない | 実行する |
+| GCP API有効化 | 定義する | 原則やらない |
+| Artifact Registry作成 | 定義する | 原則やらない |
+| GCS Bucket作成 | 定義する | 原則やらない |
+| Service Account作成 | 定義する | 原則やらない |
+| IAM付与 | 定義する | 原則やらない |
+| Cloud Run Job定義 | 定義する | 原則やらない |
+| Cloud Scheduler定義 | 定義する | 原則やらない |
+| Docker image build | 定義しない | 実行する |
+| Docker image push | 定義しない | 実行する |
+| Cloud Run Job execute | 定義しない | 実行する |
 
-## 11. 命名設計
+## 10. 命名設計
 
 この章では、TerraformコードやGCPリソースの命名規則を定義します。
 
