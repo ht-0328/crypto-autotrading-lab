@@ -1,11 +1,9 @@
-# GCP インフラ開発ドキュメント
+# GCP インフラコード設計書
 
-このディレクトリには、GCP インフラの設計方針・開発方針をまとめます。
+このディレクトリは、GCP インフラをコード化するための設計書を置く場所です。
 
-`docs/operations/gcp` は、GitHub Actions の実行手順やデプロイ手順など、運用作業のためのドキュメントです。
+`docs/operations/gcp` は運用手順（GitHub Actions の実行手順やデプロイ作業など）のためのドキュメントですが、`docs/infrastructure/gcp` はインフラの設計情報そのものを扱います。
 
-一方で、このディレクトリでは、GCP のリソースや IAM 権限をどのように管理するか、Terraform をどの範囲で使うか、といったインフラ開発の判断基準を扱います。
+最初に読むべきファイルは `development-policy.md` です。
 
-## ドキュメント一覧
-
-- [development-policy.md](development-policy.md): GCP インフラ開発方針
+なお、現時点（Phase 1）では Terraform 実装ファイルはまだ追加されていません。
