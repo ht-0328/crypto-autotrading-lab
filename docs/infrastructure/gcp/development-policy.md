@@ -125,65 +125,84 @@ flowchart TD
 ※ SA は Service Account の略です。
 Service Account は、GCP上でプログラムやGitHub Actionsが操作するときに使う専用アカウントです。
 
-## 6. IAM設計
+## 6. IAMリソース設計
 
-この章では、どのサービスアカウントに何の権限を与えるかのIAM割り当て方針を定義します。
+この章では、各Service Accountに対して、どのGCPリソースへの操作権限を付与するかを定義します。
 
-### Service Account同士の関係と権限
+| 操作主体 | 対象リソース | 付与する権限 | Terraform resource候補 | 理由 |
+|---|---|---|---|---|
+| Cloud Build Service Account | Artifact Registry repository | roles/artifactregistry.writer | google_artifact_registry_repository_iam_member | Docker imageをpushするため |
+| Cloud Build Service Account | Cloud Logging | roles/logging.logWriter | google_project_iam_member | buildログを書き込むため |
+| Cloud Build Service Account | GCS Bucket | roles/storage.objectViewer | google_storage_bucket_iam_member | build時に必要なファイルを読むため |
+| Cloud Run Runtime Service Account | GCS Bucket | roles/storage.objectAdmin | google_storage_bucket_iam_member | 実行結果や状態ファイルを読み書きするため |
+| Cloud Run Runtime Service Account | Secret Manager secret | roles/secretmanager.secretAccessor | google_secret_manager_secret_iam_member | 実行時に必要なSecretを読むため |
+| Deploy Service Account | Cloud Build Service Account | roles/iam.serviceAccountUser | google_service_account_iam_member | Cloud Build用Service Accountを指定してbuildするため |
+| Deploy Service Account | Cloud Run Runtime Service Account | roles/iam.serviceAccountUser | google_service_account_iam_member | Cloud Run JobにRuntime Service Accountを設定するため |
 
-- Deploy Service Account は、GitHub ActionsがGCPを操作するための入口である。
-- Deploy Service Account は、Cloud Build Service Accountを指定してbuildできる必要がある。
-- Deploy Service Account は、Cloud Run Runtime Service AccountをCloud Run Jobに設定できる必要がある。
-- Cloud Build Service Account は、Artifact RegistryへDocker imageをpushできる必要がある。
-- Cloud Run Runtime Service Account は、Cloud Run Job実行時にGCS Bucketへ読み書きできる必要がある。
-
-### 権限一覧
-
-| 付与先 | 権限 | 目的 |
-|---|---|---|
-| Cloud Build Service Account | roles/artifactregistry.writer | Docker image を Artifact Registry にpushするため |
-| Cloud Build Service Account | roles/logging.logWriter | buildログを書き込むため |
-| Cloud Build Service Account | roles/storage.objectViewer | build時に必要なオブジェクトを読むため |
-| Cloud Run Runtime Service Account | roles/storage.objectAdmin on GCS Bucket | 実行結果や状態ファイルを読み書きするため |
-| Deploy Service Account | roles/iam.serviceAccountUser on Cloud Build SA | Cloud Build用SAを指定してbuildするため |
-| Deploy Service Account | roles/iam.serviceAccountUser on Runtime SA | Cloud Run Jobに実行用SAを指定するため |
-
-**禁止事項:**
-- IAM全体を上書きしないこと。
-- `google_project_iam_policy` は使わない（プロジェクト全体のIAMを上書きして既存権限を壊す危険があるため）。
-- IAMは以下の個別付与で管理すること。
-  - `google_project_iam_member`
-  - `google_storage_bucket_iam_member`
-  - `google_service_account_iam_member`
+- project全体に広く付ける権限と、特定リソースにだけ付ける権限を分ける。
+- 可能なものは project IAM ではなく、Artifact Registry、GCS Bucket、Secret単位で付与する。
+- `google_project_iam_policy` は使わない。
+- 理由は、プロジェクト全体のIAMを上書きして既存権限を壊す可能性があるため。
+- 基本は `google_project_iam_member`、`google_storage_bucket_iam_member`、`google_artifact_registry_repository_iam_member`、`google_secret_manager_secret_iam_member`、`google_service_account_iam_member` を使う。
 
 ## 7. state設計
 
 この章では、Terraformのstateをどこに保存し、誰が扱い、どのように保護するかを定義します。
 
-| 設計項目 | 方針 |
+| 設計項目 | 定義内容 |
 |---|---|
-| 保存先 | ローカルPCではなくGCS backendを使う |
-| state用Bucket | アプリの実行結果保存用Bucketとは分ける方針にする |
-| prefix | terraform/gcp を基本にする |
-| 管理主体 | Terraformを実行するGitHub Actions用Service Accountがstateを読み書きする |
-| Git管理 | `terraform.tfstate` はGit管理しない |
-| Secret混入対策 | APIキーやSecret値をTerraform変数やstateに含めない設計にする |
-| このPRでやること | backendの実装コードは追加せず、設計方針のみを書く |
+| stateの役割 | Terraformが管理するGCPリソースの状態を記録する |
+| 保存先 | GCS backend |
+| state用Bucket | アプリ用Bucketとは分ける |
+| state用Bucketに保存するもの | terraform.tfstate |
+| アプリ用Bucketに保存するもの | シミュレーション結果やアプリの状態ファイル |
+| prefix | terraform/gcp |
+| stateを読み書きする主体 | Terraformを実行するService Account |
+| Git管理 | terraform.tfstate はGit管理しない |
+| Secret対策 | Secret実値をTerraform管理に含めない |
 
-補足として、アプリ用Bucketとstate用Bucketは用途が違うため、同じBucketにしない方針にします。
-- アプリ用Bucket: シミュレーション結果や状態ファイルを保存する
-- state用Bucket: Terraformの管理情報を保存する
+- state用Bucketとアプリ用Bucketは用途が違うため分ける。
+- stateにはTerraformが管理するリソース情報が入る。
+- Secret実値をTerraformで扱うとstateに残る可能性がある。
+- そのため、Secret実値はTerraformコード、terraform.tfvars、stateに含めない設計にする。
 
-## 8. Secret管理方針
+## 8. Secretリソース設計
 
-この章では、APIキーや認証情報など、コードに直接書いてはいけない値の扱いを定義します。
+この章では、APIキーや取引用Secretなどの機密情報を、GCP上でどのリソースとして定義し、Cloud Run Jobからどう参照するかを定義します。
 
-- Secret値をTerraform変数に直接渡すと、stateに残る可能性がある。
-- そのため、APIキーや取引用SecretはTerraformコードや `terraform.tfvars` に直接書かない。
-- Secret本体は将来的にGCP Secret Managerで管理する。
-- TerraformではSecretの「入れ物」や参照関係だけを管理する方針にする。
-- GitHub Actionsのvars/secretsとGCP Secret Managerの責務を分ける。
-- 今回のPRではSecret ManagerのTerraform実装は追加しない。
+| 設計項目 | 定義内容 |
+|---|---|
+| 利用するGCPサービス | Secret Manager |
+| Terraformで定義するもの | Secret Manager の secret本体、必要なIAM、Cloud Run Jobからの参照設定 |
+| Terraformで定義しないもの | Secretの実値 |
+| Secretの実値の登録 | Terraformとは別の安全な手段で登録する |
+| Secretを参照する主体 | Cloud Run Runtime Service Account |
+| Cloud Run Jobからの参照方法 | 環境変数またはSecret参照設定として参照する |
+| GitHub Actions secretsの用途 | GitHub Actions自身がGCPへ接続・デプロイするために使う値を扱う |
+| GCP Secret Managerの用途 | Cloud Run Jobが実行時に使うAPIキーや取引用Secretを扱う |
+
+- TerraformではSecretの「入れ物」を作る。
+- Secretの値そのものはTerraformコードや `terraform.tfvars` には書かない。
+- Secretの値をTerraformに渡すとstateに残る可能性があるため、Secret実値はTerraform管理に含めない。
+- Cloud Run Jobは、Secret値を直接ファイルやコードに持たず、Secret Managerを参照して利用する。
+- Cloud Run Runtime Service Accountには、必要なSecretを読む権限を付与する。
+
+| Terraform resource候補 | 用途 |
+|---|---|
+| google_secret_manager_secret | Secretの入れ物を作る |
+| google_secret_manager_secret_iam_member | Cloud Run Runtime Service AccountにSecret参照権限を付与する |
+| google_cloud_run_v2_job | Cloud Run JobからSecretを参照する設定を書く |
+
+※ `google_secret_manager_secret_version` でSecret実値をTerraform管理する設計にはしない（Secret実値がstateに残る可能性があるため）。
+
+### 値の置き場所と用途の整理
+
+| 置き場所 | 置くもの | 使う主体 |
+|---|---|---|
+| GitHub Actions secrets | GitHub ActionsがGCPへ接続するために必要な値 | GitHub Actions |
+| GitHub Actions vars | project_id、region、job名など、機密ではない設定値 | GitHub Actions |
+| GCP Secret Manager | Cloud Run Jobが実行時に使うAPIキー、取引用Secretなど | Cloud Run Job |
+| Terraform variables | project_id、region、resource名、Secret名など、機密ではない設計値 | Terraform |
 
 ## 9. GitHub Actionsとの責務分離
 
