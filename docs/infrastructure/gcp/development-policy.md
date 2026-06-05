@@ -27,21 +27,27 @@ flowchart TD
     RuntimeSA[Cloud Run Runtime Service Account]
     ArtifactRegistry[Artifact Registry]
     CloudRunJob[Cloud Run Job]
-    GCSBucket[GCS Bucket]
+    AppGCSBucket[アプリ用GCS Bucket]
+    StateGCSBucket[state用GCS Bucket]
+    SecretManager[Secret Manager]
     CloudScheduler[Cloud Scheduler]
+    SchedulerSA[Cloud Scheduler Service Account]
 
     GitHubActions --> WorkloadIdentity
     WorkloadIdentity --> DeploySA
 
     DeploySA --> CloudBuildSA
     DeploySA --> RuntimeSA
+    DeploySA -.->|terraform.tfstate読み書き| StateGCSBucket
 
     CloudBuildSA --> ArtifactRegistry
 
     RuntimeSA --> CloudRunJob
-    CloudRunJob --> GCSBucket
+    CloudRunJob --> AppGCSBucket
+    CloudRunJob --> SecretManager
 
-    CloudScheduler --> CloudRunJob
+    CloudScheduler --> SchedulerSA
+    SchedulerSA --> CloudRunJob
 ```
 
 ### 各要素の役割
