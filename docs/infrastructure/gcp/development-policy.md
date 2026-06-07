@@ -109,7 +109,7 @@ Terraformで定義するCloud Run Jobの詳細は以下の通りです。
 | image | Artifact Registry上のDocker image URIを指定する |
 | region | GCPリージョンを指定する |
 | runtime service account | Cloud Run Runtime Service Accountを指定する |
-| 通常環境変数 | `APP_DATA_DIR`, `APP_TRADING_STRATEGY_NAME`, `API_BASE_URL`, `API_RETRY_COUNT`, `APP_INTERVAL`, `OUTPUT_PATH`, `STATE_PATH`, `TRADING_*` 系の値を指定する |
+| 通常環境変数 | `APP_INTERVAL`, `APP_TRADING_STRATEGY_NAME`, `TRADING_SYMBOL`, `TRADING_INITIAL_CAPITAL`, `TRADING_TRADE_AMOUNT`, `TRADING_BUY_THRESHOLD`, `TRADING_SELL_THRESHOLD`, `TRADING_VOLATILITY_THRESHOLD`, `TRADING_SHARP_CHANGE_THRESHOLD`, `TRADING_COOLDOWN_LENGTH`, `TRADING_ATR_LENGTH`, `TRADING_ATR_PROFIT_MULTIPLIER`, `TRADING_ATR_LOSS_MULTIPLIER`, `API_RETRY_COUNT`, `API_PUBLIC_BASE_URL`, `API_PRIVATE_BASE_URL`, `OUTPUT_PATH`, `STATE_PATH`, `REAL_TRADING_DRY_RUN`, `REAL_TRADING_ENABLED`, `REAL_TRADING_STOP_ON_UNCONFIRMED_ORDER`, `REAL_TRADING_MAX_ORDER_JPY`, `REAL_TRADING_MAX_DAILY_ORDER_JPY`, `REAL_TRADING_MAX_POSITION_JPY` などを指定する |
 | Secret環境変数 | GMO APIキー、GMO API SecretなどをSecret Manager参照で指定する |
 | volume | アプリ用GCS BucketをCloud Run Jobにmountする |
 | mount path | `/mnt/gcs` を使用する |
@@ -194,7 +194,8 @@ Secretの実値は変数に含めず、Secret名のみを変数として渡し�
 | cloud_run_job_name | Cloud Run Job名 | 既存のGitHub Actions varsに合わせる |
 | image_uri | Cloud Run Jobで実行するDocker image URI | asia-northeast1-docker.pkg.dev/crypto-autotrading-lab/crypto-autotrading-lab/app:xxxxxxx |
 | app_trading_strategy_name | 使用する売買戦略名 | SafeReboundStrategy |
-| api_base_url | API接続先URL | https://api.coin.z.com |
+| api_public_base_url | パブリックAPI接続先URL | https://api.coin.z.com/public |
+| api_private_base_url | プライベートAPI接続先URL | https://api.coin.z.com/private |
 | api_retry_count | APIリトライ回数 | 3 |
 | app_interval | アプリ実行間隔 | 60 |
 | output_path | 結果出力先 | /mnt/gcs/data/output.json |
