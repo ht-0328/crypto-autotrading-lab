@@ -1,9 +1,12 @@
+# Terraform State 管理用 GCS Bucket の定義
+
+# Terraform state を保存するための GCS Bucket を作成する
 resource "google_storage_bucket" "terraform_state" {
   name          = var.state_bucket_name
   location      = var.region
   force_destroy = false
 
-  # terraform.tfstate のバックアップ/復旧のためにバージョニングを有効化する
+  # terraform.tfstate の誤更新・破損時に復旧できるようバージョニングを有効化する
   versioning {
     enabled = true
   }

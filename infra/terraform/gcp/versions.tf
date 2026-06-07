@@ -1,8 +1,10 @@
+# Terraform 本体および Provider のバージョン・Backend 設定
+
 terraform {
   required_version = ">= 1.5.0"
 
+  # Backend として GCS を使用する（バケット名は init 時に backend-config で渡す）
   backend "gcs" {
-    # bucket name is passed via backend-config during terraform init
     prefix = "terraform/gcp"
   }
 

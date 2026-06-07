@@ -1,3 +1,6 @@
+# アプリケーションを実行する Cloud Run Job の定義
+
+# 売買ロジックを実行する Cloud Run Job を作成する
 resource "google_cloud_run_v2_job" "app_job" {
   name     = var.cloud_run_job_name
   location = var.region
@@ -6,8 +9,10 @@ resource "google_cloud_run_v2_job" "app_job" {
     template {
       max_retries = 0
 
+      # 実行主体となる Service Account を指定
       service_account = google_service_account.runtime_sa.email
 
+      # アプリケーションデータを読み書きする GCS バケットのマウント設定
       volumes {
         name = "gcs"
         gcs {
@@ -24,6 +29,7 @@ resource "google_cloud_run_v2_job" "app_job" {
           mount_path = "/mnt/gcs"
         }
 
+        # アプリケーションの設定値（環境変数）
         env {
           name  = "APP_INTERVAL"
           value = var.app_interval

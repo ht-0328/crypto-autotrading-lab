@@ -1,3 +1,5 @@
+# プロジェクトで利用する GCP API の有効化設定
+
 locals {
   services = [
     "serviceusage.googleapis.com",
@@ -12,6 +14,7 @@ locals {
   ]
 }
 
+# 必要な API を一括で有効化する
 resource "google_project_service" "enabled_apis" {
   for_each = toset(local.services)
   project  = var.project_id
