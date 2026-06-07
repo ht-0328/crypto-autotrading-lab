@@ -169,3 +169,27 @@ variable "scheduler_time_zone" {
   type        = string
   default     = "Asia/Tokyo"
 }
+
+variable "real_trading_stop_on_unconfirmed_order" {
+  description = "Real trading stop on unconfirmed order"
+  type        = string
+  default     = "true"
+}
+
+variable "real_trading_max_order_jpy" {
+  description = "Real trading max order jpy"
+  type        = string
+  default     = "0"
+}
+
+variable "real_trading_max_daily_order_jpy" {
+  description = "Real trading max daily order jpy"
+  type        = string
+  default     = "0"
+}
+
+variable "real_trading_max_position_jpy" {
+  description = "Real trading max position jpy"
+  type        = string
+  default     = "0"
+}

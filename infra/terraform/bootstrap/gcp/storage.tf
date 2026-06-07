@@ -3,14 +3,14 @@ resource "google_storage_bucket" "terraform_state" {
   location      = var.region
   force_destroy = false
 
-  # Enable versioning for terraform.tfstate backup/recovery
+  # terraform.tfstate のバックアップ/復旧のためにバージョニングを有効化する
   versioning {
     enabled = true
   }
 
   uniform_bucket_level_access = true
 
-  # Ignore changes to lifecycle rules or other settings that might be added externally
+  # 外部から追加される可能性のあるライフサイクルルール等の変更を無視し、誤削除を防止する
   lifecycle {
     prevent_destroy = true
   }

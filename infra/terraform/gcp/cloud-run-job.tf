@@ -97,8 +97,7 @@ resource "google_cloud_run_v2_job" "app_job" {
           value = var.state_path
         }
 
-        # Real trading configs, can be parameterized further if needed.
-        # Default to safe values for simulation phase.
+        # リアル取引の設定値（シミュレーションフェーズのデフォルトは安全側に倒す）
         env {
           name  = "REAL_TRADING_DRY_RUN"
           value = "true"
@@ -107,8 +106,24 @@ resource "google_cloud_run_v2_job" "app_job" {
           name  = "REAL_TRADING_ENABLED"
           value = "false"
         }
+        env {
+          name  = "REAL_TRADING_STOP_ON_UNCONFIRMED_ORDER"
+          value = var.real_trading_stop_on_unconfirmed_order
+        }
+        env {
+          name  = "REAL_TRADING_MAX_ORDER_JPY"
+          value = var.real_trading_max_order_jpy
+        }
+        env {
+          name  = "REAL_TRADING_MAX_DAILY_ORDER_JPY"
+          value = var.real_trading_max_daily_order_jpy
+        }
+        env {
+          name  = "REAL_TRADING_MAX_POSITION_JPY"
+          value = var.real_trading_max_position_jpy
+        }
 
-        # Secrets via Secret Manager reference
+        # Secret Manager 参照経由での機密情報の取得
         env {
           name = "GMO_API_KEY"
           value_source {
@@ -136,7 +151,7 @@ resource "google_cloud_run_v2_job" "app_job" {
   ]
 }
 
-# Grant Cloud Scheduler SA permission to invoke this specific Cloud Run Job
+# Cloud Scheduler SA に対して、この Cloud Run Job を起動する権限を付与する
 resource "google_cloud_run_v2_job_iam_member" "scheduler_invoker" {
   project  = google_cloud_run_v2_job.app_job.project
   location = google_cloud_run_v2_job.app_job.location
