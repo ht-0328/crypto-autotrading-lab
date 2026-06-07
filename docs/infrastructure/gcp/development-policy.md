@@ -227,7 +227,7 @@ Secretの実値は変数に含めず、Secret名のみを変数として渡し�
 | Cloud Run Runtime Service Account | Secret Manager secret | roles/secretmanager.secretAccessor | Secret単位で付与 |
 | Deploy Service Account | Cloud Build Service Account | roles/iam.serviceAccountUser | Service Account単位で付与 |
 | Deploy Service Account | Cloud Run Runtime Service Account | roles/iam.serviceAccountUser | Service Account単位で付与 |
-| Cloud Scheduler Service Account | Cloud Run Job | Cloud Run Jobを実行できる権限 | 必要最小限で付与 |
+| Cloud Scheduler Service Account | Cloud Run Job | roles/run.invoker | Cloud Run Job単位で付与 |
 
 **禁止事項と付与方針:**
 - project全体に広く付ける権限と、特定リソースにだけ付ける権限を分ける。
