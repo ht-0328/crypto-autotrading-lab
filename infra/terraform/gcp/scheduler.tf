@@ -2,11 +2,11 @@
 
 # 指定したスケジュール（Cron）で Cloud Run Job を起動するジョブを作成する
 resource "google_cloud_scheduler_job" "job" {
-  name             = var.scheduler_job_name
-  description      = "Trigger for Cloud Run Job"
-  schedule         = var.scheduler_cron
-  time_zone        = var.scheduler_time_zone
-  region           = var.region
+  name        = var.scheduler_job_name
+  description = "Trigger for Cloud Run Job"
+  schedule    = var.scheduler_cron
+  time_zone   = var.scheduler_time_zone
+  region      = var.region
 
   http_target {
     http_method = "POST"
