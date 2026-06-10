@@ -1,14 +1,41 @@
 name: Terraform Validate
 
 on:
-  # 次のPRでの検証や動作確認を容易にするため、現時点では手動実行のみ可能にする
+  pull_request:
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform-validate.yml'
   workflow_dispatch:
 
 jobs:
-  placeholder:
-    name: Placeholder
+  validate:
+    name: Validate Terraform
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory:
+          - 'infra/terraform/bootstrap/gcp'
+          - 'infra/terraform/gcp'
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+
     steps:
-      - name: Placeholder
-        # 今回のPRではTerraform検証を実行せず、次PRで terraform fmt / init -backend=false / validate の処理に差し替える
-        run: echo "Terraform CI の本実装（fmt, init, validate）は次のPRで行います。"
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@v4
+
+      - name: Terraformのセットアップ
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform フォーマットチェック
+        # Terraformコードのフォーマットが正しいか確認します
+        run: terraform fmt -check
+
+      - name: Terraform 初期化 (backendなし)
+        # backend=falseで初期化し、GCP認証を回避しつつプロバイダープラグインのみダウンロードします
+        run: terraform init -backend=false
+
+      - name: Terraform 検証
+        # Terraformコードの構文と構成の有効性を検証します
+        run: terraform validate
