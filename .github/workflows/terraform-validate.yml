@@ -1,0 +1,14 @@
+name: Terraform Validate
+
+on:
+  # 次のPRでの検証や動作確認を容易にするため、現時点では手動実行のみ可能にする
+  workflow_dispatch:
+
+jobs:
+  placeholder:
+    name: Placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Placeholder
+        # 今回のPRではTerraform検証を実行せず、次PRで terraform fmt / init -backend=false / validate の処理に差し替える
+        run: echo "Terraform CI の本実装（fmt, init, validate）は次のPRで行います。"
