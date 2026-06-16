@@ -22,20 +22,20 @@ jobs:
         working-directory: ${{ matrix.directory }}
 
     steps:
-      - name: リポジトリのチェックアウト
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Terraformのセットアップ
+      - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform フォーマットチェック
+      - name: Check Terraform formatting
         # Terraformコードのフォーマットが正しいか確認します
         run: terraform fmt -check
 
-      - name: Terraform 初期化 (backendなし)
+      - name: Initialize Terraform
         # backend=falseで初期化し、GCP認証を回避しつつプロバイダープラグインのみダウンロードします
         run: terraform init -backend=false
 
-      - name: Terraform 検証
+      - name: Validate Terraform
         # Terraformコードの構文と構成の有効性を検証します
         run: terraform validate
