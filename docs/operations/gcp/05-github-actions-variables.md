@@ -61,6 +61,28 @@ GitHub の画面から設定値を登録します。
 > **(※1) サービスアカウント名に関する注意**:
 > `BUILD_SERVICE_ACCOUNT_NAME` などの値は、メールアドレスではなく「ID部分のみ（6〜30文字）」を指定してください。（例: `crypto-build-sa`）
 
+### アプリの動作設定（任意）
+
+以下は [deploy-gcp.yml](../../../.github/workflows/deploy-gcp.yml) が Cloud Run Job の環境変数として渡すものです。**未登録でも構いません。** その場合は空文字が渡り、コンテナに同梱された `config/application-gmo.yaml` の値が使われます。
+
+| Name                             | 設定する値の例                                                            |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `API_PUBLIC_BASE_URL`            | `https://api.coin.z.com/public`                                           |
+| `API_PRIVATE_BASE_URL`           | `https://api.coin.z.com/private`                                          |
+| `API_RETRY_COUNT`                | `3`                                                                       |
+| `APP_INTERVAL`                   | `5min`                                                                    |
+| `OUTPUT_PATH`                    | `trades.csv`                                                              |
+| `STATE_PATH`                     | `state.json`                                                              |
+| `TRADING_INITIAL_CAPITAL`        | `10000`                                                                   |
+| `TRADING_TRADE_AMOUNT`           | `1000`                                                                    |
+| `TRADING_BUY_THRESHOLD`          | `0.005`                                                                   |
+| `TRADING_SELL_THRESHOLD`         | `0.005`                                                                   |
+| `TRADING_VOLATILITY_THRESHOLD`   | `0.003`                                                                   |
+| `TRADING_SHARP_CHANGE_THRESHOLD` | `0.01`                                                                    |
+
+> **`API_BASE_URL` は使われません**:
+> 以前は `API_BASE_URL` を登録する運用でしたが、アプリはこの名前を読みません。`API_PUBLIC_BASE_URL` と `API_PRIVATE_BASE_URL` に登録し直し、古い `API_BASE_URL` は削除してください。
+
 > **取引戦略 (strategy_name) について**:
 > 取引戦略はここでは設定しません。デプロイを実行する際（workflow_dispatch）の画面で選択します。
 

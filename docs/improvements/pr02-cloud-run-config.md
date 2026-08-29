@@ -1,6 +1,6 @@
 # PR02: Cloud Run で設定が効かない・ログが残らない問題を直す
 
-**状態**: 未着手（[pr03-private-api-log-leak.md](pr03-private-api-log-leak.md) の後に実施すること）
+**状態**: 実施済み（ブランチ `fix/cloud-run-config`）
 
 ## 対象の指摘
 
