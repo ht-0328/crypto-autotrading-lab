@@ -112,10 +112,6 @@ cd projects/crypto-autotrading-app
 ./gradlew build
 ```
 
-## 積み残し
-
-- **WireMock のK線スタブが 2021 年の日付で固定されています。** 市場データの検証を入れたことで、CI の `docker-run` ジョブは常に「データが古い」として見送りになります。出力ファイルの存在確認は通るため CI は成功しますが、売買経路を通す検証にはなっていません。スタブが実行時刻に追従するよう直す必要があります（`mocks/wiremock/` と CI の変更なので別PR）。
-
 ## 分割の目安
 
 このファイルは1つのPRには大きすぎます。着手時に少なくとも次に割ってください（[pr-and-commit](../../.agents/skills/pr-and-commit/SKILL.md)）。
