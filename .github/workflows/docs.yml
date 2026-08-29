@@ -1,0 +1,91 @@
+# docs/ 配下の Markdown を Zensical で静的サイト化し、GitHub Pages へ公開する。
+#
+# 事前準備（リポジトリ管理者が一度だけ実施）:
+#   Settings > Pages > Build and deployment > Source を「GitHub Actions」にする。
+#
+# 手順の詳細は docs/development/setup.md の「ドキュメントサイト」を参照。
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "zensical.toml"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "zensical.toml"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+# ワークフロー全体では読み取りのみ。公開に必要な権限は deploy ジョブだけに与える。
+permissions:
+  contents: read
+
+jobs:
+  # PR の時点でビルドが壊れていないかを確認する。公開はしない。
+  build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      # Zensical は 0.0.x のため、意図しない差分が出ないようバージョンを固定する。
+      # 更新するときは、ローカルで `zensical build` を通してからこの行を変更する。
+      - name: Install Zensical
+        run: pip install zensical==0.0.57
+
+      - name: Build documentation
+        run: zensical build --clean
+
+  # main への push でのみ公開する。
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    # Pages への公開は同時に1つだけ。実行中のデプロイは中断せず、順番に流す。
+    # PR のビルド確認は待たせたくないので、この concurrency は deploy だけに付ける。
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Install Zensical
+        run: pip install zensical==0.0.57
+
+      - name: Build documentation
+        run: zensical build --clean
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

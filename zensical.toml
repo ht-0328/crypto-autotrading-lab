@@ -1,0 +1,172 @@
+# Zensical の設定ファイル
+#
+# docs/ 配下の Markdown を静的サイトへ変換し、GitHub Pages で公開するための設定です。
+# ビルドとデプロイは .github/workflows/docs.yml が実行します。
+# ローカルでの確認手順は docs/development/setup.md を参照してください。
+
+[project]
+site_name = "crypto-autotrading-lab ドキュメント"
+site_url = "https://ht-0328.github.io/crypto-autotrading-lab/"
+site_description = "仮想通貨の自動売買アプリ crypto-autotrading-lab の仕様・設計・運用ドキュメント"
+site_author = "ht-0328"
+
+repo_url = "https://github.com/ht-0328/crypto-autotrading-lab"
+repo_name = "ht-0328/crypto-autotrading-lab"
+edit_uri = "edit/main/docs/"
+
+# docs/ 配下のディレクトリ構成をそのまま章立てにしています。
+# 各章の先頭に置いた README.md が、その章のトップページになります。
+nav = [
+  { "はじめに" = "README.md" },
+  { "全体像" = [
+    "overview/README.md",
+    "overview/product.md",
+    "overview/roadmap.md",
+  ] },
+  { "仕様書" = [
+    "specifications/README.md",
+    "specifications/phase1-simulation.md",
+    { "機能" = [
+      "specifications/features/backtest.md",
+      "specifications/features/kline-csv-export.md",
+      "specifications/features/kline-csv-import.md",
+      "specifications/features/real-trading-gmo-order.md",
+    ] },
+    { "戦略" = [
+      "specifications/strategies/cooldown-rebound-strategy.md",
+      "specifications/strategies/trend-confirm-rebound-strategy.md",
+      "specifications/strategies/atr-trend-confirm-rebound-strategy.md",
+    ] },
+  ] },
+  { "設計" = [
+    "architecture/README.md",
+    "architecture/system-overview.md",
+    "architecture/trading-logic.md",
+    "architecture/trading-strategy-design.md",
+    "architecture/backtest-design.md",
+    "architecture/kline-csv-export-design.md",
+    "architecture/kline-csv-import-design.md",
+    "architecture/real-trading-gmo-order-design.md",
+    "architecture/real-trading-gmo-order-detailed-design.md",
+  ] },
+  { "開発" = [
+    "development/README.md",
+    "development/setup.md",
+    "development/workflow.md",
+  ] },
+  { "運用" = [
+    "operations/README.md",
+    "operations/go-live-runbook.md",
+    "operations/real-trading-recovery.md",
+    { "GCP 手順" = [
+      "operations/gcp/README.md",
+      "operations/gcp/01-account-and-project.md",
+      "operations/gcp/02-gcloud-cli.md",
+      "operations/gcp/03-workload-identity-federation.md",
+      "operations/gcp/04-service-accounts-and-iam.md",
+      "operations/gcp/05-github-actions-variables.md",
+      "operations/gcp/06-deploy-cloud-run-job.md",
+      "operations/gcp/07-scheduler.md",
+      "operations/gcp/08-cleanup.md",
+    ] },
+  ] },
+  { "インフラ設計" = [
+    "infrastructure/gcp/README.md",
+    "infrastructure/gcp/development-policy.md",
+  ] },
+  { "実注文までの作業計画" = [
+    "plans/README.md",
+    "plans/plan00-phase-and-safety-contract.md",
+    "plans/plan01-real-sell-order.md",
+    "plans/plan02-order-safety-guards.md",
+    "plans/plan03-notification.md",
+    "plans/plan04-production-wiring-and-rehearsal.md",
+    "plans/plan05-canary-with-real-money.md",
+    "plans/plan06-unattended-trading.md",
+  ] },
+  { "改善計画" = [
+    "improvements/README.md",
+    "improvements/findings.md",
+    "improvements/backlog.md",
+    "improvements/pr01-docker-clean-scope.md",
+    "improvements/pr02-cloud-run-config.md",
+    "improvements/pr03-private-api-log-leak.md",
+    "improvements/pr04-state-repository-crash-safe.md",
+    "improvements/pr05-phase1-real-order-guard.md",
+    "improvements/pr06-backtest-execution-model.md",
+    "improvements/pr07-real-order-spec-separation.md",
+    "improvements/pr08-doc-consistency.md",
+    "improvements/pr09-ci-compose-consistency.md",
+    "improvements/pr10-config-fail-fast.md",
+  ] },
+  { "テンプレート" = [
+    "templates/README.md",
+    "templates/specification-template.md",
+    "templates/design-template.md",
+  ] },
+]
+
+[project.theme]
+language = "ja"
+features = [
+  "announce.dismiss",
+  "content.action.edit",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.instant.prefetch",
+  "navigation.sections",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "ライトモードに切り替える"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "ダークモードに切り替える"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "OS の設定に合わせる"
+
+[project.markdown_extensions]
+abbr = {}
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
+pymdownx.betterem = {}
+pymdownx.caret = {}
+pymdownx.details = {}
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = {}
+pymdownx.keys = {}
+pymdownx.mark = {}
+pymdownx.smartsymbols = {}
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+pymdownx.tabbed.alternate_style = true
+pymdownx.tasklist.custom_checkbox = true
+pymdownx.tilde = {}
