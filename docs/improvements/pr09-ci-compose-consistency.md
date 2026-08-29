@@ -8,7 +8,7 @@
 
 ## なぜ直すか
 
-- **U（重要度: 高）**: README が案内する `docker compose -f docker/compose/local.yml up --build` が危険です。アプリは1回実行して終了するバッチなのに `restart: unless-stopped` が付いているため無限に再起動し、設定は本物の GMO Public API を向いています（`API_BASE_URL` は実装が読まないため無視され、[application-gmo.yaml](../../config/application-gmo.yaml) の `https://api.coin.z.com/public` が使われる）。同時に起動する WireMock は Public API には使われません。
+- **U（重要度: 高）**: README が案内する `docker compose -f docker/compose/local.yml up --build` が危険です。アプリは1回実行して終了するバッチなのに `restart: unless-stopped` が付いているため無限に再起動し、設定は本物の GMO Public API を向いています（`API_BASE_URL` は実装が読まないため無視され、[application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) の `https://api.coin.z.com/public` が使われる）。同時に起動する WireMock は Public API には使われません。
 - **G（重要度: 中）**: ワークフローの `strategy_name` 選択肢が実装済み5戦略とズレています。`ci.yml` は2件、`deploy-gcp.yml` と `backtest-smoke.yml` は `AtrTrendConfirmReboundStrategy` が欠落。
 - **AA（重要度: 低）**: `ci.yml` が `./gradlew build`（テスト込み）の直後に `./gradlew test --tests "*Architecture*"` を再実行していて二重です。
 
@@ -16,12 +16,12 @@
 
 | ファイル | 変更内容 |
 | --- | --- |
-| [docker/compose/local.yml](../../docker/compose/local.yml) | `restart` / `version` 削除、WireMock をピン留め、環境変数名を修正、既定を WireMock 向けに |
-| [.github/workflows/ci.yml](../../.github/workflows/ci.yml) | 戦略の選択肢を5件に、重複ステップを削除 |
-| [.github/workflows/deploy-gcp.yml](../../.github/workflows/deploy-gcp.yml) | 戦略の選択肢を5件に |
-| [.github/workflows/backtest-smoke.yml](../../.github/workflows/backtest-smoke.yml) | 戦略の選択肢を5件に |
-| [TradingApplicationTest.kt](../../projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/application/TradingApplicationTest.kt) | 戦略生成のテストを追加 |
-| [README.md](../../README.md) | Docker Compose 手順を更新 |
+| [docker/compose/local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) | `restart` / `version` 削除、WireMock をピン留め、環境変数名を修正、既定を WireMock 向けに |
+| [.github/workflows/ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) | 戦略の選択肢を5件に、重複ステップを削除 |
+| [.github/workflows/deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) | 戦略の選択肢を5件に |
+| [.github/workflows/backtest-smoke.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/backtest-smoke.yml) | 戦略の選択肢を5件に |
+| [TradingApplicationTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/application/TradingApplicationTest.kt) | 戦略生成のテストを追加 |
+| [README.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/README.md) | Docker Compose 手順を更新 |
 
 ## 実施手順
 
@@ -29,7 +29,7 @@
 
 - `version: "3.8"` を削除する（現行の Compose では不要かつ警告が出る）。
 - `restart: unless-stopped` を削除する。1回実行して終了するバッチであり、無限再起動して本物の API を叩き続けるため。
-- `wiremock/wiremock:latest` を `wiremock/wiremock:3.5.2` にピン留めする（[ci.yml](../../.github/workflows/ci.yml) と揃える）。
+- `wiremock/wiremock:latest` を `wiremock/wiremock:3.5.2` にピン留めする（[ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) と揃える）。
 - 実装が読まない環境変数を修正する。
 
   ```yaml
@@ -54,11 +54,11 @@ options:
   - SimpleContrarianStrategy
 ```
 
-正は [TradingApplication.createStrategy()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `when` 式です。
+正は [TradingApplication.createStrategy()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `when` 式です。
 
 ### 3. ズレを検知するテストを用意する
 
-選択肢と実装が再びズレないよう、[TradingApplicationTest.kt](../../projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/application/TradingApplicationTest.kt) で次を確認する。
+選択肢と実装が再びズレないよう、[TradingApplicationTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/application/TradingApplicationTest.kt) で次を確認する。
 
 - 5つの戦略名すべてで対応する Strategy が生成されること
 - 未知の戦略名を渡すと例外になること（現在は `error()`）
@@ -67,7 +67,7 @@ options:
 
 ### 4. 重複した CI ステップを削除する
 
-[ci.yml](../../.github/workflows/ci.yml) の「Run Architecture Rule Tests」ステップを削除する。`./gradlew build` に Konsist の `ArchitectureTest` が含まれているため。
+[ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) の「Run Architecture Rule Tests」ステップを削除する。`./gradlew build` に Konsist の `ArchitectureTest` が含まれているため。
 
 ### 5. README を更新する
 

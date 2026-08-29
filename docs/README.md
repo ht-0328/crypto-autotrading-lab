@@ -13,7 +13,7 @@
 
 まずはプロジェクトの目的や全体像を把握してください。
 
-1. [リポジトリの全体像](../README.md)
+1. [リポジトリの全体像](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/README.md)
 2. [アプリの目的と一番大事な方針 (overview/product.md)](overview/product.md)
 3. [Phase1 の仕様と全体像 (specifications/phase1-simulation.md)](specifications/phase1-simulation.md)
 4. [システム全体構成 設計書 (architecture/system-overview.md)](architecture/system-overview.md)
@@ -69,9 +69,9 @@ GCPへのデプロイ準備は、以下の順番で進めてください。
 
 AIエージェントに開発を依頼する前に、人間が内容を把握しておくべきルールです。
 
-1. [AIエージェント用の共通ルール (../AGENTS.md)](../AGENTS.md)
-2. [作業別の詳細ルール（スキル） (../.agents/skills/)](../.agents/skills/)
-3. [3ツール共用の仕組みと編集方法 (../.agents/README.md)](../.agents/README.md)
+1. [AIエージェント用の共通ルール (../AGENTS.md)](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md)
+2. [作業別の詳細ルール（スキル） (../.agents/skills/)](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/.agents/skills/)
+3. [3ツール共用の仕組みと編集方法 (../.agents/README.md)](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/README.md)
 
 ## ディレクトリ構成
 
@@ -92,9 +92,14 @@ AIエージェントに開発を依頼する前に、人間が内容を把握し
   - 単なるファイル名（例: `phase1-overview.md`）として記述せず、必ず `[phase1-overview.md](phase1-overview.md)` のようにリンク化してください。
 - **ファイル名だけを文字列で書かない**
   - コードブロック内などを除き、文中で他のドキュメントに言及する場合はリンクを使用してください。
-- **相対パスでリンクする**
+- **`docs/` の中は相対パスでリンクする**
   - リポジトリの構造変更に強くなるよう、絶対パスではなく相対パス（例: `../development/setup.md`）を使用してください。
+- **`docs/` の外は GitHub の絶対URLでリンクする**
+  - 公開サイト（[GitHub Pages](https://ht-0328.github.io/crypto-autotrading-lab/)）がビルドするのは `docs/` 配下だけです。Kotlin ソース、ワークフロー、Terraform、`AGENTS.md`、`.agents/` などを `../../projects/...` のような相対パスで参照すると、**サイト上ではリンク切れになります**。
+  - ファイルは `https://github.com/ht-0328/crypto-autotrading-lab/blob/main/<パス>`、ディレクトリは `blob` の代わりに `tree` を使ってください。
+  - 例: `[TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt)`
 - **外部URLには目的が分かるラベルを付ける**
   - 直接 `https://...` と書くのではなく、`[GCP公式ドキュメント](https://...)` のようにラベルを付けてください。
 - **リンク切れを増やさない**
   - ファイル名の変更や移動を行った際は、必ず関連するドキュメント内のリンクも修正してください。
+  - コミット前に `python3 scripts/check-doc-links.py` を実行してください。`docs/` の外を指す相対リンクが残っていると、検出されて終了コード 1 を返します。

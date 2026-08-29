@@ -44,8 +44,9 @@ jobs:
       - name: Install Zensical
         run: pip install zensical==0.0.57
 
+      # --strict: リンク切れなどの警告が1件でもあればビルドを失敗させる
       - name: Build documentation
-        run: zensical build --clean
+        run: zensical build --clean --strict
 
   # main への push でのみ公開する。
   deploy:
@@ -78,8 +79,9 @@ jobs:
       - name: Install Zensical
         run: pip install zensical==0.0.57
 
+      # --strict: リンク切れなどの警告が1件でもあればビルドを失敗させる
       - name: Build documentation
-        run: zensical build --clean
+        run: zensical build --clean --strict
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5

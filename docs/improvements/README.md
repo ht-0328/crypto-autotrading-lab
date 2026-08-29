@@ -13,7 +13,7 @@
 
 - [指摘一覧と根拠 (findings.md)](findings.md)
 - [第3波バックログ (backlog.md)](backlog.md)
-- [PRとコミットのルール (.agents/skills/pr-and-commit/SKILL.md)](../../.agents/skills/pr-and-commit/SKILL.md)
+- [PRとコミットのルール (.agents/skills/pr-and-commit/SKILL.md)](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md)
 
 ## 使い方
 
@@ -23,7 +23,7 @@
 docs/improvements/pr03-private-api-log-leak.md の内容を実施して
 ```
 
-- 1ファイル = 1PR です。複数を1つのPRにまとめないでください（[pr-and-commit](../../.agents/skills/pr-and-commit/SKILL.md)）。
+- 1ファイル = 1PR です。複数を1つのPRにまとめないでください（[pr-and-commit](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md)）。
 - 着手したら、下の一覧の「状態」を更新してください。
 
 ## この計画の背景
@@ -69,7 +69,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 
 | 状態 | ファイル | 内容 | 重要度 |
 | --- | --- | --- | --- |
-| 未着手 | [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) | 公開サイトのリンク切れ198件を解消し、再発をCIで止める | 高 |
+| 実施済み | [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) | 公開サイトのリンク切れ197件を解消し、再発をCIで止める | 高 |
 | 未着手 | [pr12-zensical-readability.md](pr12-zensical-readability.md) | 安全上の警告を admonition にし、章タイトルと目次の食い違いを直す | 中 |
 
 **[pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) を先に実施してください。** 両方とも同じファイルを触るため、順序を逆にすると衝突します。
@@ -92,5 +92,5 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 - **実注文機能（SELL 自動化・Private API 拡張）の作り込み**: Phase1 では起動時ガードで封じるのが先。誤発注リスクを増やすだけ。
 - **`ALL_IN` の高度化（動的ポジションサイジング）**: Phase1 の目的は損益シミュレーションの検証。`FIXED_AMOUNT` 中心で足りる。
 - **新しい Strategy の追加・パラメータ最適化**: [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md) で約定モデルを直すまで比較結果が信頼できない。
-- **detekt / ktlint の導入**: [AGENTS.md](../../AGENTS.md) が「導入されていない」と明記しており今回のスコープ外。
+- **detekt / ktlint の導入**: [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) が「導入されていない」と明記しており今回のスコープ外。
 - **Kafka / 分散トランザクション / マイクロサービス化**: Phase1 には過剰。アトミックなファイル保存で足りる。

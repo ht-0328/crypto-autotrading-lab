@@ -6,8 +6,8 @@
 
 **これが終わるまで、実注文は絶対に有効化できません。** 現在の実装は「買うが、売れない」状態です。
 
-- [RealTradingService.executeOrderIfNeeded()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は `SELL_CANDIDATE` を受け取ってもログを1行出すだけで、取引所には何も送りません。
-- [TradingApplication](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は実取引モードのとき、SELL でシミュレーション状態を更新しないよう意図的にバイパスしています（[PR05](../improvements/pr05-phase1-real-order-guard.md) で入れた安全措置）。つまり保有状態は「保有中」のまま固定されます。
+- [RealTradingService.executeOrderIfNeeded()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は `SELL_CANDIDATE` を受け取ってもログを1行出すだけで、取引所には何も送りません。
+- [TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は実取引モードのとき、SELL でシミュレーション状態を更新しないよう意図的にバイパスしています（[PR05](../improvements/pr05-phase1-real-order-guard.md) で入れた安全措置）。つまり保有状態は「保有中」のまま固定されます。
 - 結果として、この状態で実注文を有効にすると次が起きます。
   1. 買い注文だけが約定し、BTC を保有する。
   2. Strategy が利確・損切りの `SELL_CANDIDATE` を出しても、注文は送られない。
@@ -24,9 +24,9 @@
 
 | ファイル | 変更内容 |
 | --- | --- |
-| [RealTradingService.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) | `SELL_CANDIDATE` の実注文処理を追加。約定反映を売買区分で分岐 |
-| [RealTradingSafetyChecker.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) | 売り注文用の安全チェックを追加 |
-| [TradingApplication.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) | SELL のバイパス条件を、約定確認済みなら状態を進める形に見直す |
+| [RealTradingService.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) | `SELL_CANDIDATE` の実注文処理を追加。約定反映を売買区分で分岐 |
+| [RealTradingSafetyChecker.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) | 売り注文用の安全チェックを追加 |
+| [TradingApplication.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) | SELL のバイパス条件を、約定確認済みなら状態を進める形に見直す |
 | [real-trading-gmo-order.md](../specifications/features/real-trading-gmo-order.md) | 「売り注文（SELL）の自動化」を対象外から対象へ移す |
 | [real-trading-gmo-order-design.md](../architecture/real-trading-gmo-order-design.md) / [同 詳細設計](../architecture/real-trading-gmo-order-detailed-design.md) | 売り注文のフローを追記 |
 | 各テスト | 下記の受け入れ条件に対応するケース |
@@ -35,7 +35,7 @@
 
 ### 1. 約定反映が買い専用になっている
 
-[RealTradingService.handleExecutedOrder()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は約定を確認すると無条件に次を返します。
+[RealTradingService.handleExecutedOrder()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は約定を確認すると無条件に次を返します。
 
 ```kotlin
 return currentState.copy(
@@ -50,7 +50,7 @@ return currentState.copy(
 
 ### 2. 安全チェックが買い専用になっている
 
-[RealTradingSafetyChecker.checkPreOrderSafety()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は `state.isHolding || currentHoldingAssets.isNotEmpty()` で注文を止めます。これは二重買いを防ぐための条件なので、**そのまま売りに使うと、保有しているときだけ売れないという逆の挙動になります**。売り用のチェックを別に用意してください。売りで確認すべきことは次です。
+[RealTradingSafetyChecker.checkPreOrderSafety()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は `state.isHolding || currentHoldingAssets.isNotEmpty()` で注文を止めます。これは二重買いを防ぐための条件なので、**そのまま売りに使うと、保有しているときだけ売れないという逆の挙動になります**。売り用のチェックを別に用意してください。売りで確認すべきことは次です。
 
 - 取引所側の実残高が、売ろうとしている数量以上あること（`state` ではなく取引所の値を正とする）
 - 未約定注文が無いこと
@@ -60,7 +60,7 @@ return currentState.copy(
 
 現在の [復旧手順](../operations/real-trading-recovery.md) のとおり、例外が起きると `realTrading.isStopped=true` になり新規注文が止まります。ここで**売りまで止めると、ポジションを抱えたまま損切り不能になります**。
 
-推奨: `isStopped` は**新規の買いだけを止め、保有解消の売りは通す**。ただし売りでも例外が起きた場合は通知して人間の判断を仰ぎます。これは「迷ったら止まる側」の原則に対する明示的な例外なので、[trading-safety-review](../../.agents/skills/trading-safety-review/SKILL.md) の観点でレビューし、決めた理由を仕様書に残してください。
+推奨: `isStopped` は**新規の買いだけを止め、保有解消の売りは通す**。ただし売りでも例外が起きた場合は通知して人間の判断を仰ぎます。これは「迷ったら止まる側」の原則に対する明示的な例外なので、[trading-safety-review](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/trading-safety-review/SKILL.md) の観点でレビューし、決めた理由を仕様書に残してください。
 
 ### 4. 売る数量（取引所の残高をそのまま全量売ってはいけない）
 
@@ -74,7 +74,7 @@ return currentState.copy(
 
 ### 5. 発注の「意図」を送信前に保存する
 
-現在は注文が受け付けられてから `orderId` を保存します（[buildOrderedState()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt)）。POST 送信後・保存前に落ちると、取引所には注文があるのにアプリ側に記録が無い状態になります。
+現在は注文が受け付けられてから `orderId` を保存します（[buildOrderedState()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt)）。POST 送信後・保存前に落ちると、取引所には注文があるのにアプリ側に記録が無い状態になります。
 
 **発注する直前に「これから何を注文するか」を state に書いてから POST する**（意図の先行保存）ようにしてください。次回起動時に、意図が残っていて結果が未確認なら、注文照会で照合してから次に進みます。これは SELL だけの話ではなく BUY にも必要ですが、SELL の実装で注文の状態遷移に手を入れるこの計画でまとめて直すのが自然です。
 
@@ -106,11 +106,11 @@ cd projects/crypto-autotrading-app
 ./gradlew build
 ```
 
-加えて、WireMock を使った結合確認で「買い → 約定 → 保有 → 売り → 約定 → 未保有」の一巡が通ることを確認します。売り用のスタブは [mocks/wiremock/](../../mocks/wiremock/) に追加が必要です。
+加えて、WireMock を使った結合確認で「買い → 約定 → 保有 → 売り → 約定 → 未保有」の一巡が通ることを確認します。売り用のスタブは [mocks/wiremock/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/mocks/wiremock/) に追加が必要です。
 
 ## 積み残し（別PRに分離）
 
-論点5の**発注意図の先行保存は、このPRには含めていません。** 注文の送信前に状態を保存するには、ドメインサービスから状態リポジトリを呼ぶ必要があり、売り注文の実装とは独立した変更になるためです（[pr-and-commit](../../.agents/skills/pr-and-commit/SKILL.md) の1PR1変更）。**[PLAN05](plan05-canary-with-real-money.md) の着手条件には含まれるので、実資金を入れる前に必ず実施してください。**
+論点5の**発注意図の先行保存は、このPRには含めていません。** 注文の送信前に状態を保存するには、ドメインサービスから状態リポジトリを呼ぶ必要があり、売り注文の実装とは独立した変更になるためです（[pr-and-commit](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md) の1PR1変更）。**[PLAN05](plan05-canary-with-real-money.md) の着手条件には含まれるので、実資金を入れる前に必ず実施してください。**
 
 実装後に判明した制約も、[PLAN02](plan02-order-safety-guards.md) までに解消が必要です。
 

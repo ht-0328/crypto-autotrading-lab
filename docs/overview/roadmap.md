@@ -149,7 +149,7 @@ Phase3 のスコープのうち、次はすでにコードに存在します。�
 
 止める手順は次です。**実資金を入れる前に、実際に一度試して止まることを確認してください。**
 
-1. **Cloud Scheduler を停止する**（[scheduler-gcp.yml](../../.github/workflows/scheduler-gcp.yml) の `pause`）。新規の実行が止まります。ここまでで新しい注文は出なくなります。
+1. **Cloud Scheduler を停止する**（[scheduler-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/scheduler-gcp.yml) の `pause`）。新規の実行が止まります。ここまでで新しい注文は出なくなります。
 2. **`real_trade_enabled: false` に戻して再デプロイする。** 実行が再開されても注文が出ない状態に戻します。
 3. **保有しているポジションの決済は、取引所の画面から手動で行います。** アプリは停止済みなので売りません。
 

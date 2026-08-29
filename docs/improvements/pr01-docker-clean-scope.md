@@ -8,14 +8,14 @@
 
 ## なぜ直すか
 
-[scripts/docker-clean.sh](../../scripts/docker-clean.sh) が、ホスト上の全コンテナ・全イメージ・全ボリューム・全カスタムネットワーク・全ビルドキャッシュを確認なしで削除していました（`docker system prune -a --volumes -f` まで実行）。他プロジェクトのデータも消え、DevContainer 内から実行すれば開発環境自体も削除対象になります。README にも説明がなく、実行1回で被害が出ます。
+[scripts/docker-clean.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/scripts/docker-clean.sh) が、ホスト上の全コンテナ・全イメージ・全ボリューム・全カスタムネットワーク・全ビルドキャッシュを確認なしで削除していました（`docker system prune -a --volumes -f` まで実行）。他プロジェクトのデータも消え、DevContainer 内から実行すれば開発環境自体も削除対象になります。README にも説明がなく、実行1回で被害が出ます。
 
 ## 変更対象
 
 | ファイル | 変更内容 |
 | --- | --- |
-| [scripts/docker-clean.sh](../../scripts/docker-clean.sh) | 削除範囲をこのリポジトリの Compose プロジェクトに限定。`--dry-run` / `-y` / `--all` / `--help` を追加 |
-| [README.md](../../README.md) | `scripts/` をリポジトリ構成に追記し、クリーンアップ手順と `--all` の危険性を明記 |
+| [scripts/docker-clean.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/scripts/docker-clean.sh) | 削除範囲をこのリポジトリの Compose プロジェクトに限定。`--dry-run` / `-y` / `--all` / `--help` を追加 |
+| [README.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/README.md) | `scripts/` をリポジトリ構成に追記し、クリーンアップ手順と `--all` の危険性を明記 |
 
 ## 実施手順
 
@@ -64,4 +64,4 @@ docker rm -f unrelated-check
 
 ## スコープ外
 
-- [docker/compose/local.yml](../../docker/compose/local.yml) 自体の修正（`restart: unless-stopped` の削除など）は [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md) で行う。
+- [docker/compose/local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) 自体の修正（`restart: unless-stopped` の削除など）は [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md) で行う。

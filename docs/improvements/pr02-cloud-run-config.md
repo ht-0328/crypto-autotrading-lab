@@ -10,20 +10,20 @@
 
 Cloud Run 上のアプリが、意図した設定でまったく動いていません。
 
-- **A**: [deploy-gcp.yml](../../.github/workflows/deploy-gcp.yml) と [local.yml](../../docker/compose/local.yml) は `API_BASE_URL` / `GMO_PRIVATE_API_BASE_URL` を渡しますが、[ConfigLoader.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が読むのは `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` です。指定した URL は無視され、隠れたデフォルト（本物の GMO API）に繋ぎます。
-- **B**: [Dockerfile](../../docker/app/Dockerfile) は jar しかコピーせず、`APP_CONFIG_PATH` も未設定です。そのため Cloud Run では設定ファイルが常に見つからず `createDefaultConfig()` にフォールバックします。
-- **F**: [logback.xml](../../projects/crypto-autotrading-app/src/main/resources/logback.xml) がファイル出力のみのため、Cloud Logging にアプリログが残りません。
-- **H**: [cloud-run-job.tf](../../infra/terraform/gcp/cloud-run-job.tf) に `APP_DATA_DIR` が無いため、`app.log` だけがコンテナローカルの `/app/data` に出て Job 終了時に消えます（`state.json` と結果ファイルは `output_path` / `state_path` が絶対パスなので残ります）。
+- **A**: [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) と [local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) は `API_BASE_URL` / `GMO_PRIVATE_API_BASE_URL` を渡しますが、[ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が読むのは `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` です。指定した URL は無視され、隠れたデフォルト（本物の GMO API）に繋ぎます。
+- **B**: [Dockerfile](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/app/Dockerfile) は jar しかコピーせず、`APP_CONFIG_PATH` も未設定です。そのため Cloud Run では設定ファイルが常に見つからず `createDefaultConfig()` にフォールバックします。
+- **F**: [logback.xml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/resources/logback.xml) がファイル出力のみのため、Cloud Logging にアプリログが残りません。
+- **H**: [cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) に `APP_DATA_DIR` が無いため、`app.log` だけがコンテナローカルの `/app/data` に出て Job 終了時に消えます（`state.json` と結果ファイルは `output_path` / `state_path` が絶対パスなので残ります）。
 
 ## 変更対象
 
 | ファイル | 変更内容 |
 | --- | --- |
-| [.github/workflows/deploy-gcp.yml](../../.github/workflows/deploy-gcp.yml) | `API_BASE_URL` を `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` に置き換える |
+| [.github/workflows/deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) | `API_BASE_URL` を `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` に置き換える |
 | [docs/operations/gcp/05-github-actions-variables.md](../operations/gcp/05-github-actions-variables.md) | GitHub Variables の変数名変更を反映 |
-| [infra/terraform/gcp/cloud-run-job.tf](../../infra/terraform/gcp/cloud-run-job.tf) | `env` に `APP_DATA_DIR = "/mnt/gcs/data"` を追加 |
-| [docker/app/Dockerfile](../../docker/app/Dockerfile) | ランタイムステージに `COPY config/ /app/config/` と `ENV APP_CONFIG_PATH=/app/config/application-gmo.yaml` を追加 |
-| [projects/.../logback.xml](../../projects/crypto-autotrading-app/src/main/resources/logback.xml) | `ConsoleAppender`（STDOUT）を追加し `root` に紐づける |
+| [infra/terraform/gcp/cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) | `env` に `APP_DATA_DIR = "/mnt/gcs/data"` を追加 |
+| [docker/app/Dockerfile](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/app/Dockerfile) | ランタイムステージに `COPY config/ /app/config/` と `ENV APP_CONFIG_PATH=/app/config/application-gmo.yaml` を追加 |
+| [projects/.../logback.xml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/resources/logback.xml) | `ConsoleAppender`（STDOUT）を追加し `root` に紐づける |
 
 ## 実施手順
 
@@ -54,7 +54,7 @@ Cloud Run 上のアプリが、意図した設定でまったく動いていま�
    ENV APP_CONFIG_PATH=/app/config/application-gmo.yaml
    ```
 
-   `ConfigLoader` は「設定ファイルを土台にして環境変数で上書きする」設計なので、土台を欠いたまま運用するのは設計と食い違います。同梱する [application-gmo.yaml](../../config/application-gmo.yaml) は `dry_run: true` / `real_trade_enabled: false` なので安全側です。
+   `ConfigLoader` は「設定ファイルを土台にして環境変数で上書きする」設計なので、土台を欠いたまま運用するのは設計と食い違います。同梱する [application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) は `dry_run: true` / `real_trade_enabled: false` なので安全側です。
 
 4. **logback.xml に標準出力を追加する**。既存の `FileAppender` は残す。
 
@@ -116,4 +116,4 @@ terraform validate
 
 - `order_sizing_mode` の環境変数上書き追加（[pr10-config-fail-fast.md](pr10-config-fail-fast.md)）
 - gcloud と Terraform の環境変数集合の突き合わせ（[pr10-config-fail-fast.md](pr10-config-fail-fast.md)）
-- [docker/compose/local.yml](../../docker/compose/local.yml) の修正（[pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md)）
+- [docker/compose/local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) の修正（[pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md)）

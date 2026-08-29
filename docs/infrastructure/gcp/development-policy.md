@@ -20,7 +20,7 @@
 | リソースの作成 | Terraform | GitHub Actions の `gcloud`（`bootstrap-create-gcp.yml` / `bootstrap-grant-iam.yml`） |
 | Cloud Run Job のデプロイ | Terraform | GitHub Actions の `gcloud run jobs deploy`（`deploy-gcp.yml`） |
 | Cloud Scheduler の管理 | Terraform | GitHub Actions の `gcloud`（`scheduler-gcp.yml`） |
-| Terraform コード | 正 | [infra/terraform/gcp/](../../../infra/terraform/gcp/) に存在するが `terraform apply` は運用していない。環境変数の集合は gcloud 側と一致させている |
+| Terraform コード | 正 | [infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に存在するが `terraform apply` は運用していない。環境変数の集合は gcloud 側と一致させている |
 
 **現時点で正となるのは GitHub Actions（gcloud）側です。** 一本化するかどうかの判断と、既存リソースの `terraform import` を含む移行は今後の課題として [改善計画のバックログ](../../improvements/backlog.md) に登録しています。
 

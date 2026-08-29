@@ -37,4 +37,4 @@
 
 - **5分間隔・API停止中・朝6時前後は、アプリ側の損切りが動きません。** 取引所側の逆指値などが使えないなら、その空白時間に耐えられる金額でしか運用できません。これは実装で消せるリスクではなく、**投入額で管理するリスク**です。
 - 成行注文である以上、急変時のスリッページは避けられません。
-- 相場が想定と違う動きをしたときに Strategy が損を出すことは、この計画の対象外です（[trading-safety-review](../../.agents/skills/trading-safety-review/SKILL.md) は「儲かるか」を扱いません）。
+- 相場が想定と違う動きをしたときに Strategy が損を出すことは、この計画の対象外です（[trading-safety-review](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/trading-safety-review/SKILL.md) は「儲かるか」を扱いません）。

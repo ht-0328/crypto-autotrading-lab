@@ -46,7 +46,7 @@
 
 ### 3. 安全ルールの数字を確定する
 
-現在の [config/application-gmo.yaml](../../config/application-gmo.yaml) の値は、実運用を想定した数字になっていません（`max_order_jpy: 1000` は BTC の最小注文数量を満たせない可能性があります。[PLAN02](plan02-order-safety-guards.md) の A 参照）。
+現在の [config/application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) の値は、実運用を想定した数字になっていません（`max_order_jpy: 1000` は BTC の最小注文数量を満たせない可能性があります。[PLAN02](plan02-order-safety-guards.md) の A 参照）。
 
 決めるもの:
 
@@ -72,7 +72,7 @@
 
 **決定済み: Cloud Scheduler の停止と設定フラグを正とする。**（オーナー判断 / 2026-08-29）
 
-手順は [ロードマップ](../overview/roadmap.md) の「緊急停止（kill switch）」に記載しました。既存の [scheduler-gcp.yml](../../.github/workflows/scheduler-gcp.yml) に `pause` があるため、追加の実装は不要です。
+手順は [ロードマップ](../overview/roadmap.md) の「緊急停止（kill switch）」に記載しました。既存の [scheduler-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/scheduler-gcp.yml) に `pause` があるため、追加の実装は不要です。
 
 **注意: Scheduler を止めても、すでに保有しているポジションはそのまま残ります。** 決済は取引所の画面から手動で行います。急いで損失を止めたい場合は、Scheduler の停止と並行して手動決済してください。
 
@@ -85,7 +85,7 @@
 | [roadmap.md](../overview/roadmap.md) | Phase2 の分割、Phase3 禁止事項からの「手動承認なしの注文」の削除と代替する安全ルールの明記、各フェーズの着手・完了条件の更新 |
 | [product.md](../overview/product.md) | 安全ルールの数値、緊急停止手段 |
 | [real-trading-gmo-order.md](../specifications/features/real-trading-gmo-order.md) | 売り注文・承認・安全ルールを対象に含める |
-| [config/application-gmo.yaml](../../config/application-gmo.yaml) | 上限値の見直し（実装は各計画で行う） |
+| [config/application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) | 上限値の見直し（実装は各計画で行う） |
 
 ## 受け入れ条件
 
@@ -96,7 +96,7 @@
 
 ## 検証手順
 
-`config/` を変更するため、ビルドを実行します（[AGENTS.md](../../AGENTS.md) の検証ルール）。
+`config/` を変更するため、ビルドを実行します（[AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) の検証ルール）。
 
 ```bash
 cd projects/crypto-autotrading-app
@@ -105,6 +105,6 @@ cd projects/crypto-autotrading-app
 
 あわせて文書のリンク切れが無いことを確認してください。
 
-## 補足: この計画は [spec-writer](../../.agents/skills/spec-writer/SKILL.md) の対象です
+## 補足: この計画は [spec-writer](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/spec-writer/SKILL.md) の対象です
 
 曖昧な要望を仕様に落とす作業なので、着手前にスキルを読んでください。

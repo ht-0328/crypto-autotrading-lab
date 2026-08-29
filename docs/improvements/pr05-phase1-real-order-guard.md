@@ -10,8 +10,8 @@
 
 [roadmap.md](../overview/roadmap.md) の Phase1 禁止事項は「実際の注文を送ること」ですが、それを担保しているのは変更可能な2つの Boolean（`real_trade_enabled` と `dry_run`）だけです。
 
-- **O**: [Main.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) は、この2つが揃うだけで Private API クライアントを構築します。設定ミスや新しいデプロイ経路の追加だけで禁止事項を破れます。
-- **K**: [ci.yml](../../.github/workflows/ci.yml) の `dry_run: false` を選ぶと [prepare-ci-config.sh](../../ci/prepare-ci-config.sh) が `real_trade_enabled: true` を生成します。現状は Private API が WireMock 固定なので実発注は届きませんが、Phase1 の CI に実取引経路を有効化する選択肢があること自体が禁止事項と衝突します。
+- **O**: [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) は、この2つが揃うだけで Private API クライアントを構築します。設定ミスや新しいデプロイ経路の追加だけで禁止事項を破れます。
+- **K**: [ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) の `dry_run: false` を選ぶと [prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) が `real_trade_enabled: true` を生成します。現状は Private API が WireMock 固定なので実発注は届きませんが、Phase1 の CI に実取引経路を有効化する選択肢があること自体が禁止事項と衝突します。
 - **L**: 実取引モードで SELL 判定が出ると、`RealTradingService` はログを出すだけなのに `SimulationService` が仮想売却して `isHolding=false` にします。取引所には BTC が残ったまま state が「未保有」になり、以降の損切り・保有上限判断がすべて狂います。
 - **S**: 注文 POST 後、コンソール・CSV 出力を経てから最後に state を保存します。POST 後・保存前に落ちると orderId を失い、再発注につながります。
 
@@ -19,13 +19,13 @@
 
 | ファイル | 変更内容 |
 | --- | --- |
-| [AppSettings.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/AppSettings.kt) | `phase` 設定を追加（既定 `1`） |
-| [ConfigLoader.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) | `phase` の読み込みと環境変数 `APP_PHASE` の上書き |
-| [Main.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) | Phase1 で `real_trade_enabled=true` を検出したら異常終了 |
-| [TradingApplication.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) | SELL の状態不整合を修正。実注文時の保存順序を変更 |
-| [.github/workflows/ci.yml](../../.github/workflows/ci.yml) | `dry_run` 入力を削除 |
-| [ci/prepare-ci-config.sh](../../ci/prepare-ci-config.sh) | 常に `dry_run: true` / `real_trade_enabled: false` 固定 |
-| [config/application-gmo.yaml](../../config/application-gmo.yaml) | `app.phase: 1` を明示 |
+| [AppSettings.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/AppSettings.kt) | `phase` 設定を追加（既定 `1`） |
+| [ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) | `phase` の読み込みと環境変数 `APP_PHASE` の上書き |
+| [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) | Phase1 で `real_trade_enabled=true` を検出したら異常終了 |
+| [TradingApplication.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) | SELL の状態不整合を修正。実注文時の保存順序を変更 |
+| [.github/workflows/ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) | `dry_run` 入力を削除 |
+| [ci/prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) | 常に `dry_run: true` / `real_trade_enabled: false` 固定 |
+| [config/application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) | `app.phase: 1` を明示 |
 | 各テスト | 下記の受け入れ条件に対応するケース |
 
 ## 実施手順
@@ -52,7 +52,7 @@
 
 ### 2. SELL の状態不整合を直す
 
-[TradingApplication.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の 125 行付近。
+[TradingApplication.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の 125 行付近。
 
 ```kotlin
 // 変更前
