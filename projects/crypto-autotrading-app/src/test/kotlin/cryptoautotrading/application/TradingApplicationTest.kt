@@ -11,6 +11,7 @@ import cryptoautotrading.domain.strategy.SimpleContrarianStrategy
 import cryptoautotrading.domain.strategy.TrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import io.mockk.mockk
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -33,6 +34,55 @@ class TradingApplicationTest {
             api = ApiConfig(retryCount = 3, publicBaseUrl = ""),
             output = OutputConfig(outputPath = "", statePath = "")
         )
+    }
+
+    /**
+     * 固定した時刻の時計を作る。日付境界の挙動を実行時刻に依存せず検証するために使う。
+     */
+    private fun fixedJstClock(isoJstDateTime: String): java.time.Clock {
+        val zone = cryptoautotrading.domain.time.TradingTime.ZONE
+        val instant = java.time.LocalDateTime.parse(isoJstDateTime).atZone(zone).toInstant()
+        return java.time.Clock.fixed(instant, zone)
+    }
+
+    // Access private method via reflection for testing
+    private fun invokeResolveKlineTargetDate(app: TradingApplication): String {
+        val method = TradingApplication::class.java.getDeclaredMethod("resolveKlineTargetDate")
+        method.isAccessible = true
+        return method.invoke(app) as String
+    }
+
+    private fun createApp(clock: java.time.Clock): TradingApplication {
+        return TradingApplication(
+            config = createAppConfig("SafeReboundStrategy"),
+            marketDataClient = mockk(),
+            stateRepository = mockk(),
+            tradeHistoryRepository = mockk(),
+            resultOutputPort = mockk(),
+            realTradingExchangeClient = null,
+            clock = clock
+        )
+    }
+
+    @Test
+    fun `朝6時より前は前日の日付でK線を取得すること`() {
+        val app = createApp(fixedJstClock("2026-08-29T05:59:59"))
+
+        assertEquals("20260828", invokeResolveKlineTargetDate(app))
+    }
+
+    @Test
+    fun `朝6時ちょうどは当日の日付でK線を取得すること`() {
+        val app = createApp(fixedJstClock("2026-08-29T06:00:00"))
+
+        assertEquals("20260829", invokeResolveKlineTargetDate(app))
+    }
+
+    @Test
+    fun `月をまたぐ日付境界でも前日の日付が使われること`() {
+        val app = createApp(fixedJstClock("2026-09-01T03:00:00"))
+
+        assertEquals("20260831", invokeResolveKlineTargetDate(app))
     }
 
     // Access private method via reflection for testing

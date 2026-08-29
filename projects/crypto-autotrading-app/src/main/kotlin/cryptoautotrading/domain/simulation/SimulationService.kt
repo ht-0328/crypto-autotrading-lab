@@ -7,13 +7,19 @@ import cryptoautotrading.domain.model.TradeDecision
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
 import java.math.RoundingMode
+import cryptoautotrading.domain.time.TradingTime
+import java.time.Clock
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
  * シミュレーションの状態を更新するサービス
+ *
+ * @property clock 記録する時刻を決める時計。テストでは固定した時刻に差し替える
  */
-class SimulationService {
+class SimulationService(
+    private val clock: Clock = TradingTime.systemClock()
+) {
 
     private val logger = KotlinLogging.logger {}
 
@@ -38,7 +44,7 @@ class SimulationService {
         logger.debug { "シミュレーション状態の更新処理を開始します" }
         logger.debug { "更新前状態: $currentState, 判定結果: ${decision.action}, 現在価格: $currentPrice, 取引額: $tradeAmount, イベント時刻: $eventTime, orderSizingMode: $orderSizingMode" }
 
-        val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        val nowStr = LocalDateTime.now(clock).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         val timeToRecord = if (eventTime.isNotBlank()) eventTime else nowStr
 
         val nextState = when (decision.action) {

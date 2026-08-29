@@ -18,9 +18,10 @@ import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
 import cryptoautotrading.domain.realtrading.RealTradingService
 import cryptoautotrading.domain.realtrading.RealTradingClient
+import cryptoautotrading.domain.time.TradingTime
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.time.Clock
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -32,6 +33,8 @@ import java.time.format.DateTimeFormatter
  * @property stateRepository 状態リポジトリ
  * @property tradeHistoryRepository 取引履歴リポジトリ
  * @property resultOutputPort 結果出力ポート
+ * @property realTradingExchangeClient リアル取引の取引所操作を行うクライアント
+ * @property clock 時刻の取得に使う時計。テストでは固定した時刻に差し替える
  */
 class TradingApplication(
     private val config: AppConfig,
@@ -39,12 +42,13 @@ class TradingApplication(
     private val stateRepository: SimulationStateRepository,
     private val tradeHistoryRepository: TradeHistoryRepository,
     private val resultOutputPort: ResultOutputPort,
-    private val realTradingExchangeClient: RealTradingClient? = null
+    private val realTradingExchangeClient: RealTradingClient? = null,
+    private val clock: Clock = TradingTime.systemClock()
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val simulationService = SimulationService()
-    private val realTradingService = RealTradingService(exchangeClient = realTradingExchangeClient)
+    private val simulationService = SimulationService(clock)
+    private val realTradingService = RealTradingService(exchangeClient = realTradingExchangeClient, clock = clock)
     private val pnlCalculator = ProfitAndLossCalculator()
 
 /**
@@ -181,7 +185,7 @@ class TradingApplication(
             )
 
             // CSV出力
-            val nowStr = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            val nowStr = LocalDateTime.now(clock).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             tradeHistoryRepository.append(
                 datetime = nowStr,
                 price = currentPrice,
@@ -264,7 +268,7 @@ class TradingApplication(
      * @return 対象日付の文字列（形式: yyyyMMdd）
      */
     private fun resolveKlineTargetDate(): String {
-        val nowJst = ZonedDateTime.now(ZoneId.of("Asia/Tokyo"))
+        val nowJst = ZonedDateTime.now(clock)
         val date = if (nowJst.hour < 6) {
             nowJst.minusDays(1)
         } else {

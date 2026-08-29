@@ -63,6 +63,7 @@
 - **方向性**: 依存方向を application → domain、infrastructure → domain、presentation → 各層に限定する。`Clock` / `TimeProvider` を注入し、日付境界と再起動を固定時刻で検証できるようにする。
 - **重要度**: 中 / **工数感**: M
 - **注意**: [kotlin-layer-boundaries](../../.agents/skills/kotlin-layer-boundaries/SKILL.md) を読んでから着手すること。
+- **状態**: `Clock` 注入は実施済み（[PLAN02](../plans/plan02-order-safety-guards.md) の一環）。**依存方向の厳格化は未実施。**
 
 ### 7. gcloud / Terraform を一本化する
 

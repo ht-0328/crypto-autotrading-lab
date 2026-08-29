@@ -24,4 +24,19 @@ data class RealTradingState(
 
     @Serializable(with = BigDecimalSerializer::class)
     val dailyOrderedJpy: BigDecimal = BigDecimal.ZERO
-)
+) {
+
+    /**
+     * 指定した日付時点での、その日の累計注文額を返す。
+     *
+     * 記録されている日付が指定した日付と違えば、その日はまだ1件も注文していないので0を返す。
+     * 日付を見ずに [dailyOrderedJpy] をそのまま使うと、前日の累計が翌日に持ち越され、
+     * 上限に近づいた翌日以降は1件も注文できなくなる。
+     *
+     * @param date 判定したい日付（ISO形式の日付文字列）
+     * @return その日の累計注文額
+     */
+    fun dailyOrderedJpyOn(date: String): BigDecimal {
+        return if (dailyOrderedDate == date) dailyOrderedJpy else BigDecimal.ZERO
+    }
+}

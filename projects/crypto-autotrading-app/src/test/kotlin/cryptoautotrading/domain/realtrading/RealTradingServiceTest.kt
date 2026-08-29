@@ -337,7 +337,14 @@ class RealTradingServiceTest {
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
-        val state = SimulationState(realTrading = cryptoautotrading.domain.model.realtrading.RealTradingState(dailyOrderedJpy = BigDecimal("40000")))
+        // 当日すでに 40000 円注文している状態。日付を入れないと当日分とみなされない
+        val today = java.time.LocalDate.now(cryptoautotrading.domain.time.TradingTime.ZONE).toString()
+        val state = SimulationState(
+            realTrading = cryptoautotrading.domain.model.realtrading.RealTradingState(
+                dailyOrderedDate = today,
+                dailyOrderedJpy = BigDecimal("40000")
+            )
+        )
 
         val newState = service.executeOrderIfNeeded(decision, config, 15000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
@@ -1025,6 +1032,123 @@ class RealTradingServiceTest {
 
         assertFalse(mockClient.placeOrderCalled)
     }
+
+    @Test
+    fun `同じ日に注文すると日次累計が加算されること`() = runBlocking {
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                dailyOrderedDate = "2026-08-29",
+                dailyOrderedJpy = BigDecimal("10005")
+            )
+        )
+
+        val newState = serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertEquals("2026-08-29", newState.realTrading.dailyOrderedDate)
+        assertEquals(0, BigDecimal("20010").compareTo(newState.realTrading.dailyOrderedJpy))
+    }
+
+    @Test
+    fun `日付が変わると日次累計がリセットされること`() = runBlocking {
+        // 日本時間の日付境界をまたいだ状態を固定した時刻で再現する
+        val clock = fixedJstClock("2026-08-30T00:05:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 20000, maxPositionJpy = 50000)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                dailyOrderedDate = "2026-08-29",
+                dailyOrderedJpy = BigDecimal("19000")
+            )
+        )
+
+        val newState = serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertTrue(mockClient.placeOrderCalled)
+        assertEquals("2026-08-30", newState.realTrading.dailyOrderedDate)
+        // 前日の 19000 は繰り越さず、当日分の 10005 のみになる
+        assertEquals(0, BigDecimal("10005").compareTo(newState.realTrading.dailyOrderedJpy))
+    }
+
+    @Test
+    fun `停止時刻が時計の時刻で記録されること`() = runBlocking {
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.001"), BigDecimal("0.001"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
+        val config = tradingConfig()
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("1000000"),
+            holdingAmount = BigDecimal("0.01")
+        )
+
+        // 取引所の残高が記録より少ないため停止する
+        val newState = serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertTrue(newState.realTrading.isStopped)
+        assertEquals("2026-08-29T10:00:00", newState.realTrading.stoppedAt)
+    }
+
+    @Test
+    fun `注文時刻が時計の時刻で記録されること`() = runBlocking {
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+
+        val newState = serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = SimulationState(),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertEquals("2026-08-29T10:00:00", newState.realTrading.latestOrder?.orderedAt)
+    }
+}
+
+/**
+ * 固定した時刻の時計を作る。日付境界の挙動を実行時刻に依存せず検証するために使う。
+ */
+private fun fixedJstClock(isoJstDateTime: String): java.time.Clock {
+    val zone = cryptoautotrading.domain.time.TradingTime.ZONE
+    val instant = java.time.LocalDateTime.parse(isoJstDateTime).atZone(zone).toInstant()
+    return java.time.Clock.fixed(instant, zone)
 }
 
 /**
