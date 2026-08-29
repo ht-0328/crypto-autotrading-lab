@@ -130,9 +130,10 @@ class TradingApplication(
             val fee = java.math.BigDecimal.ZERO // 手数料は現時点ではゼロとして扱う
 
             // 実取引モードでは、取引所側で約定を確認できたもの以外で保有状態を動かさない。
-            // 売りも対象に含める。現行フェーズでは売り注文を出さないため、
-            // 仮想売却して保有なしにすると、取引所には残っているのに state が未保有になり、
+            // 売りも対象に含める。注文の受付と約定は別のため、仮想売却して保有なしにすると、
+            // 取引所には残っているのに state が未保有になり、
             // 以降の損切り・保有上限の判断がすべて狂う。
+            // 約定の反映は次回以降の実行で RealTradingService が注文照会を経て行う。
             val shouldBypassSimulationStateUpdate = isRealTradeActive &&
                 (decision.action == TradeAction.BUY_CANDIDATE || decision.action == TradeAction.SELL_CANDIDATE)
 
@@ -143,7 +144,7 @@ class TradingApplication(
                         "シミュレーションによる即時の保有状態更新をバイパスします"
                 }
                 if (decision.action == TradeAction.SELL_CANDIDATE) {
-                    logger.warn { "実取引モードでは売り注文を実行しません。保有状態は維持されます。" }
+                    logger.info { "実取引モードの売り注文は、約定を確認できるまで保有状態を維持します。" }
                 }
                 currentState
             } else {
