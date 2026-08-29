@@ -80,6 +80,7 @@ trading:
 - `config/`: 実行環境ごとの設定ファイル（GMO API / WireMock）
 - `mocks/wiremock/`: WireMock のスタブ定義
 - `docker/`: ローカル実行用の Dockerfile / Compose 定義
+- `scripts/`: ローカル実行やクリーンアップ用のシェルスクリプト
 - `docs/overview/`, `docs/architecture/`, `docs/development/`, `docs/operations/`: 人間向けの各種ドキュメント
 - `AGENTS.md`, `.agents/`: AIエージェント向けの共通ルールとスキル（構成の説明は [.agents/README.md](.agents/README.md)）
 
@@ -129,3 +130,18 @@ Docker Compose を使用する場合 (初回clone直後でもそのままビル�
 ```bash
 docker compose -f docker/compose/local.yml up --build
 ```
+
+### Docker リソースのクリーンアップ
+
+`docker/compose/local.yml` で起動したコンテナ・ネットワーク・ボリュームと、Compose がビルドしたイメージを削除します。
+
+```bash
+# 削除対象を表示するだけ（削除しない）
+./scripts/docker-clean.sh --dry-run
+
+# 確認プロンプトを出したうえで削除する
+./scripts/docker-clean.sh
+```
+
+- 既定ではこのリポジトリの Compose プロジェクトだけが対象です。他プロジェクトのコンテナやイメージ、DevContainer 自身は削除しません。
+- `--all` を付けるとホスト上のすべての Docker リソースを削除します。**他プロジェクトのデータも消え、DevContainer 内で実行した場合は開発環境自体も削除対象になります。** 実行前に `DELETE-ALL` の入力を求められます。
