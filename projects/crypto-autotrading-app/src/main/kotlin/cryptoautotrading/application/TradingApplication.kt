@@ -18,6 +18,8 @@ import cryptoautotrading.domain.strategy.AtrTrendConfirmReboundStrategy
 import cryptoautotrading.domain.strategy.TradingStrategy
 import cryptoautotrading.domain.realtrading.RealTradingService
 import cryptoautotrading.domain.realtrading.RealTradingClient
+import cryptoautotrading.domain.marketdata.MarketDataValidator
+import cryptoautotrading.domain.model.TradeDecision
 import cryptoautotrading.domain.time.TradingTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.Clock
@@ -48,6 +50,7 @@ class TradingApplication(
 
     private val logger = KotlinLogging.logger {}
     private val simulationService = SimulationService(clock)
+    private val marketDataValidator = MarketDataValidator(clock)
     private val realTradingService = RealTradingService(exchangeClient = realTradingExchangeClient, clock = clock)
     private val pnlCalculator = ProfitAndLossCalculator()
 
@@ -91,17 +94,25 @@ class TradingApplication(
             val tickerPrice = fetchTickerPrice()
             val klineData = fetchKlineData()
 
-            // 3. 売買判定
-            val strategy = createStrategy(config.trading)
-            val decision = strategy.judge(klineData, currentState)
-            logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
-
-            // 4. 状態の更新
-            // 最新のK線の終値を現在価格とする。データが空の場合は終了する
+            // データが空の場合は価格も決められないため、ここで終了する
             if (klineData.isEmpty()) {
                 logger.warn { "Klines data is empty. Skipping this run." }
                 return
             }
+
+            // 3. 売買判定
+            // 壊れたデータや古いデータで判定すると誤った売買サインが出る。
+            // 実注文ではそれがそのまま誤発注になるため、判定の前にデータ自体を確認する。
+            val validationResult = marketDataValidator.validate(klineData, config.app.interval)
+            val decision = if (validationResult.isValid) {
+                createStrategy(config.trading).judge(klineData, currentState)
+            } else {
+                logger.warn { "市場データが信用できないため、売買判定を見送ります。理由: ${validationResult.reason}" }
+                TradeDecision(TradeAction.SKIP, "市場データの検証に失敗: ${validationResult.reason}")
+            }
+            logger.info { "Trade Decision: ${decision.action.description}, Reason: ${decision.reason}" }
+
+            // 4. 状態の更新
             val latestKline = klineData.sortedBy { it.openTime }.last()
             val currentPrice = latestKline.close.toBigDecimal()
 

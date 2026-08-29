@@ -234,10 +234,16 @@ class TradingApplicationTest {
      * 利確ライン（買値の +5%）を超えた終値のK線を12本作る。
      * SafeReboundStrategy が SELL_CANDIDATE を返す状態にするためのヘルパー。
      */
+    /** 2026-01-01T00:00:00Z のエポックミリ秒。GMO API の openTime はこの形式で返る */
+    private val sellScenarioBaseOpenTime = 1767225600000L
+
+    /** 5分足の間隔（ミリ秒） */
+    private val fiveMinutesMillis = 5 * 60 * 1000L
+
     private fun createSellSignalKlines(): List<cryptoautotrading.domain.model.Kline> {
-        return (1..12).map { index ->
+        return (0 until 12).map { index ->
             cryptoautotrading.domain.model.Kline(
-                openTime = "2026-01-01T00:%02d:00Z".format(index),
+                openTime = (sellScenarioBaseOpenTime + index * fiveMinutesMillis).toString(),
                 open = "1100",
                 high = "1100",
                 low = "1100",
@@ -285,12 +291,22 @@ class TradingApplicationTest {
         io.mockk.coEvery { marketDataClient.getKlines(any(), any(), any()) } returns
             cryptoautotrading.domain.model.KlineResponse(status = 0, data = createSellSignalKlines(), responsetime = "2026-01-01")
 
+        // K線データが古すぎると市場データの検証で見送りになるため、
+        // 最新の足の直後を指す時計を渡す
+        val latestOpenTime = sellScenarioBaseOpenTime + 11 * fiveMinutesMillis
+        val clock = java.time.Clock.fixed(
+            java.time.Instant.ofEpochMilli(latestOpenTime + fiveMinutesMillis),
+            cryptoautotrading.domain.time.TradingTime.ZONE
+        )
+
         val app = TradingApplication(
             config = config,
             marketDataClient = marketDataClient,
             stateRepository = stateRepository,
             tradeHistoryRepository = mockk(relaxed = true),
-            resultOutputPort = mockk(relaxed = true)
+            resultOutputPort = mockk(relaxed = true),
+            realTradingExchangeClient = null,
+            clock = clock
         )
 
         app.run()

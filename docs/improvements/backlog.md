@@ -20,12 +20,13 @@
 
 ## 一覧
 
-### 1. 市場データの妥当性検証を Strategy の前段に置く
+### 1. 市場データの妥当性検証を Strategy の前段に置く（実施済み）
 
 - **対象**: [findings.md](findings.md) の Q(1)
 - **問題**: [product.md](../overview/product.md) は「データが足りない、APIが失敗した、時刻がズレているなど、危ない状態では売買判断を見送ります」「システムの時刻と市場データの時刻にズレがある場合（例: ±60秒以上）、警告を出します。ズレが続く場合は売買を止めて見送りにします」と宣言しているが、実装されていない。[TradingApplication](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は Ticker を取得してログに出すだけで、K線の鮮度や整合性の検証に使っていない。[Kline.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/Kline.kt) は全フィールドが未検証の String で、[KlineCsvFileReader.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/KlineCsvFileReader.kt) は `openTime` を文字列としてソートしている。
 - **方向性**: `MarketDataValidator` を Strategy の前段に置き、API ステータス・銘柄・時刻の鮮度・間隔の連続性・重複・価格が正であること・`high >= open/close`・`low <= open/close`・Ticker との乖離を検証する。失敗時は状態を変えず `SKIP` にする。
 - **重要度**: 高 / **工数感**: M
+- **状態**: 実施済み（[PLAN02](../plans/plan02-order-safety-guards.md) の一環）。Ticker との乖離は注文価格の決定時に別途チェックしている。
 
 ### 2. API リトライを指数バックオフ＋HTTP ステータス検証に統一する
 
