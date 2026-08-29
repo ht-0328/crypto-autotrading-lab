@@ -135,7 +135,9 @@ python3 -m venv .venv
 
 ビルドは成功しますが、`docs/` の外を指す相対リンク（リポジトリ直下の Markdown、Kotlin のソースコード、ワークフロー定義など）はサイト上でリンク切れになります。GitHub 上で Markdown を直接読む分には正しく動くリンクです。
 
-解消は別途対応します。ドキュメントを新しく書くときは、`docs/` の外を参照する場合に GitHub の URL を使ってください。
+解消の計画は [公開サイトのリンク切れを解消する (improvements/pr11-zensical-broken-links.md)](../improvements/pr11-zensical-broken-links.md) にまとめています。あわせて、公開サイトでの読みやすさの改善を [公開サイトでの読みやすさを Zensical に合わせる (improvements/pr12-zensical-readability.md)](../improvements/pr12-zensical-readability.md) に整理しています。
+
+ドキュメントを新しく書くときは、`docs/` の外を参照する場合に GitHub の絶対URLを使ってください。
 
 ## 用語補足
 

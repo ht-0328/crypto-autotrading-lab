@@ -63,6 +63,17 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 | 実施済み | [pr08-doc-consistency.md](pr08-doc-consistency.md) | 仕様書・設計書の食い違いを解消する | 中 |
 | 実施済み | [pr10-config-fail-fast.md](pr10-config-fail-fast.md) | 設定の fail-fast と環境変数契約の統一 | 中 |
 
+## 第4波: ドキュメントサイト（Zensical）への対応
+
+`docs/` 配下を [Zensical](https://zensical.org/) で静的サイト化し、[GitHub Pages](https://ht-0328.github.io/crypto-autotrading-lab/) で公開しました。これにより、これまで問題にならなかった書き方が公開サイト上で実害を出しています。
+
+| 状態 | ファイル | 内容 | 重要度 |
+| --- | --- | --- | --- |
+| 未着手 | [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) | 公開サイトのリンク切れ198件を解消し、再発をCIで止める | 高 |
+| 未着手 | [pr12-zensical-readability.md](pr12-zensical-readability.md) | 安全上の警告を admonition にし、章タイトルと目次の食い違いを直す | 中 |
+
+**[pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) を先に実施してください。** 両方とも同じファイルを触るため、順序を逆にすると衝突します。
+
 ## 推奨する着手順
 
 1. [pr01-docker-clean-scope.md](pr01-docker-clean-scope.md)（実行1回で被害が出るため最優先）
@@ -72,6 +83,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 5. [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md)
 6. [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md)
 7. [pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md) → [pr08-doc-consistency.md](pr08-doc-consistency.md) → [pr10-config-fail-fast.md](pr10-config-fail-fast.md)
+8. [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) → [pr12-zensical-readability.md](pr12-zensical-readability.md)（どちらも実装には影響しないため、第1波・第2波とは独立に進められる）
 
 ## 今回やらないこと
 

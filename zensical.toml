@@ -98,6 +98,8 @@ nav = [
     "improvements/pr08-doc-consistency.md",
     "improvements/pr09-ci-compose-consistency.md",
     "improvements/pr10-config-fail-fast.md",
+    "improvements/pr11-zensical-broken-links.md",
+    "improvements/pr12-zensical-readability.md",
   ] },
   { "テンプレート" = [
     "templates/README.md",
