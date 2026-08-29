@@ -19,23 +19,16 @@ export KLINE_EXPORT_SYMBOL=${KLINE_EXPORT_SYMBOL:-"BTC"}
 export KLINE_EXPORT_INTERVAL=${KLINE_EXPORT_INTERVAL:-"5min"}
 export BACKTEST_STRATEGY_NAME=${BACKTEST_STRATEGY_NAME:-"SafeReboundStrategy"}
 
-# アプリケーション設定としてPublic APIを本物に向けるため、一時設定を生成
-ORIGINAL_CONFIG="$REPO_ROOT/config/application-gmo.yaml"
-RUNTIME_CONFIG="$APP_DATA_DIR/application-runtime.yaml"
-
 # 出力先ディレクトリの作成
 mkdir -p "$APP_DATA_DIR"
 
-# 実行時設定ファイルの生成 (public_base_urlを本物に向ける)
-cp "$ORIGINAL_CONFIG" "$RUNTIME_CONFIG"
-if sed --version >/dev/null 2>&1; then
-  SED_INPLACE="sed -i"
-else
-  SED_INPLACE="sed -i ''"
-fi
-$SED_INPLACE "s|public_base_url: .*|public_base_url: \"https://api.coin.z.com/public\"|" "$RUNTIME_CONFIG"
+# 設定ファイルはそのまま使い、変えたい項目は環境変数で上書きする。
+# ConfigLoader が「設定ファイルを土台に環境変数で上書きする」設計のため、
+# YAML を書き換えた一時ファイルを作る必要はない。
+export APP_CONFIG_PATH="$REPO_ROOT/config/application-gmo.yaml"
 
-export APP_CONFIG_PATH="$RUNTIME_CONFIG"
+# Public API は本物に向ける（K線の実データを取得するため）
+export API_PUBLIC_BASE_URL="https://api.coin.z.com/public"
 
 echo "実行内容を選択してください:"
 echo "1) リアルPublic APIでK線CSV取得"
@@ -119,18 +112,8 @@ function run_backtest() {
 # 関数: 注文数量モードの選択と反映
 function apply_order_sizing_mode() {
     local mode="$1"
-
-    if grep -q "^[[:space:]]*#[[:space:]]*order_sizing_mode:" "$RUNTIME_CONFIG"; then
-        $SED_INPLACE "s/^[[:space:]]*#[[:space:]]*order_sizing_mode:.*/  order_sizing_mode: \"$mode\"/" "$RUNTIME_CONFIG"
-    elif grep -q "^[[:space:]]*order_sizing_mode:" "$RUNTIME_CONFIG"; then
-        $SED_INPLACE "s/^[[:space:]]*order_sizing_mode:.*/  order_sizing_mode: \"$mode\"/" "$RUNTIME_CONFIG"
-    else
-        if sed --version >/dev/null 2>&1; then
-            $SED_INPLACE "/^trading:/a\  order_sizing_mode: \"$mode\"" "$RUNTIME_CONFIG"
-        else
-            $SED_INPLACE "/^trading:/a\\"$'\n'"  order_sizing_mode: \"$mode\"" "$RUNTIME_CONFIG"
-        fi
-    fi
+    export TRADING_ORDER_SIZING_MODE="$mode"
+    echo "注文数量モード: $mode"
 }
 
 function select_order_sizing_mode() {

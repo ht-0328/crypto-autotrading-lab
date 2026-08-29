@@ -1,10 +1,10 @@
 # PR10: 設定の fail-fast と環境変数契約の統一
 
-**状態**: 未着手
+**状態**: 実施済み（ブランチ `fix/config-fail-fast`）
 
 ## 対象の指摘
 
-[findings.md](findings.md) の **T** / **B**（残り） / **D** / **Z** / **C**（乖離解消のみ）
+[findings.md](findings.md) の **T** / **B**（残り） / **D** / **Z** / **C**（乖離解消のみ） / **AD** / **AE**（作業中に発見）
 
 ## なぜ直すか
 
@@ -13,6 +13,8 @@
 - **D（低）**: `stop_on_unconfirmed_order` は読み込まれるだけで、どの判定にも使われていません（[RealTradingSafetyChecker](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は値に関係なく常に停止する）。設定項目の意味と実装が一致していません。
 - **Z（低）**: 設定の切り替えが sed による YAML 書き換えで2箇所に散在しています。`ConfigLoader` は環境変数上書きに対応済みなので sed は不要です。
 - **C（中、乖離解消のみ）**: gcloud と Terraform で Cloud Run Job に渡す環境変数の集合が食い違っています。一本化は [backlog.md](backlog.md) 送りですが、食い違いだけは消します。
+- **AD（中、作業中に発見）**: Terraform の `output_path` / `state_path` の既定値が絶対パスですが、アプリは `Paths.get(APP_DATA_DIR, statePath)` で連結するため `/mnt/gcs/data/mnt/gcs/data/state.json` になります。`terraform apply` を運用していないため実害は出ていません。
+- **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡すため、[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を実際に読むようにしたことで「API のベースURLが空のまま起動する」経路ができていました。
 
 ## 変更対象
 
