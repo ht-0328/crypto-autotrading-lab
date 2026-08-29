@@ -3,6 +3,7 @@ package cryptoautotrading.presentation
 import cryptoautotrading.application.TradingApplication
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.infrastructure.config.ConfigLoader
+import cryptoautotrading.infrastructure.exchange.gmo.GmoHttpClientFactory
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import cryptoautotrading.infrastructure.exchange.gmo.auth.DummyGmoCredentialProvider
@@ -12,8 +13,6 @@ import cryptoautotrading.infrastructure.output.ConsoleOutput
 import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.math.BigDecimal
@@ -97,7 +96,7 @@ fun main() = runBlocking {
                 EnvGmoCredentialProvider()
             }
 
-            HttpClient(CIO).use { httpClient ->
+            GmoHttpClientFactory.create().use { httpClient ->
                 val privateApiClient = GmoPrivateApiClientImpl(
                     httpClient = httpClient,
                     baseUrl = privateBaseUrl,

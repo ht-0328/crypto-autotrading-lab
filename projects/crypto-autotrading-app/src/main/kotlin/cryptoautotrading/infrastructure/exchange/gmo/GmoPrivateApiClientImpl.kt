@@ -46,6 +46,35 @@ class GmoPrivateApiClientImpl(
     }
 
     /**
+     * HTTP ステータスを検証し、想定外なら例外にする。
+     *
+     * 検証せずに本文を解析すると、エラーページの内容を注文結果として読もうとしたり、
+     * 空の応答を正常として扱ったりする。実注文では、それが状態の食い違いにつながる。
+     *
+     * **ここでは再試行しない。** 特に POST（発注）は、実際には届いていた注文を
+     * もう一度送ることになり二重注文になる。失敗は呼び出し元に返し、
+     * 注文照合を経てから判断する。
+     *
+     * @param response 受け取った応答
+     * @param path 呼び出したパス
+     * @param method HTTP メソッド
+     * @throws GmoApiHttpException ステータスが成功でない場合
+     */
+    private fun validateHttpStatus(response: HttpResponse, path: String, method: String) {
+        val statusCode = response.status.value
+        if (statusCode in HTTP_SUCCESS_RANGE) {
+            return
+        }
+
+        throw GmoApiHttpException(
+            statusCode = statusCode,
+            retryable = false,
+            message = "GMO Private API が想定外の HTTP ステータスを返しました。" +
+                "method=$method, path=$path, httpStatus=$statusCode"
+        )
+    }
+
+    /**
      * APIエラーの内容を、ログや例外メッセージに出しても安全な形に要約する。
      *
      * Private API のレスポンス本文には口座残高や注文内容が含まれるため、本文そのものは含めない。
@@ -252,6 +281,7 @@ class GmoPrivateApiClientImpl(
         }
 
         logger.info { "GMO Private API (GET) の応答を受信しました: path=$path, httpStatus=${response.status.value}" }
+        validateHttpStatus(response, path, "GET")
 
         return response.bodyAsText()
     }
@@ -288,7 +318,13 @@ class GmoPrivateApiClientImpl(
         }
 
         logger.info { "GMO Private API (POST) の応答を受信しました: path=$path, httpStatus=${response.status.value}" }
+        validateHttpStatus(response, path, "POST")
 
         return response.bodyAsText()
+    }
+
+    private companion object {
+        /** 成功とみなす HTTP ステータスの範囲 */
+        val HTTP_SUCCESS_RANGE = 200..299
     }
 }
