@@ -91,6 +91,16 @@ RUN set -eux && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+###### Antigravity CLIのインストール ######
+
+ENV PATH="/root/.local/bin:${PATH}"
+
+RUN set -eux && \
+    curl -fsSL https://antigravity.google/cli/install.sh -o /tmp/install-antigravity.sh && \
+    bash /tmp/install-antigravity.sh --dir /root/.local/bin && \
+    rm /tmp/install-antigravity.sh && \
+    agy --version
+
 # 作業ディレクトリの設定
 WORKDIR /workspace
 

@@ -9,6 +9,10 @@ services:
     volumes:
       - ../../:/workspace
       - ${HOME}/.ssh:/root/.ssh:ro
+      # AI CLIの認証情報をDev Containerのrebuild後も保持する
+      - ${HOME}/.claude:/root/.claude
+      - ${HOME}/.codex:/root/.codex
+      - ${HOME}/.gemini:/root/.gemini
     working_dir: /workspace
     environment:
       - APP_DATA_DIR=/workspace/data
