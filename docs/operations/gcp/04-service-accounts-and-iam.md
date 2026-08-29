@@ -94,9 +94,11 @@ gcloud iam service-accounts add-iam-policy-binding "crypto-autotrading-lab-runne
   --role="roles/iam.serviceAccountUser"
 ```
 
-> **Note:** 初期構築（`bootstrap-create-gcp.yml` および `bootstrap-grant-iam.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。
->
-> 現在は動作確認のため `github-actions-deployer` に一時的に強めの権限が残っています。Bootstrap Create → Grant IAM → Deploy の一連の流れが main ブランチで安定して通ることを確認した後、別作業としてこの権限を段階的に削減・最小化する方針です。
+!!! note "初期構築時に必要な一時的な権限"
+
+    初期構築（`bootstrap-create-gcp.yml` および `bootstrap-grant-iam.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。
+
+    現在は動作確認のため `github-actions-deployer` に一時的に強めの権限が残っています。Bootstrap Create → Grant IAM → Deploy の一連の流れが main ブランチで安定して通ることを確認した後、別作業としてこの権限を段階的に削減・最小化する方針です。
 
 ## 4. Workload Identity とサービスアカウントを繋ぐ
 

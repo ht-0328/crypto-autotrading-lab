@@ -58,8 +58,9 @@ GitHub の画面から設定値を登録します。
 | `SCHEDULER_TIME_ZONE`            | `Asia/Tokyo`                                                              |
 | `TRADING_SYMBOL`                 | `BTC`                                                                     |
 
-> **(※1) サービスアカウント名に関する注意**:
-> `BUILD_SERVICE_ACCOUNT_NAME` などの値は、メールアドレスではなく「ID部分のみ（6〜30文字）」を指定してください。（例: `crypto-build-sa`）
+!!! note "（※1）サービスアカウント名に関する注意"
+
+    `BUILD_SERVICE_ACCOUNT_NAME` などの値は、メールアドレスではなく「ID部分のみ（6〜30文字）」を指定してください。（例: `crypto-build-sa`）
 
 ### アプリの動作設定（任意）
 
@@ -80,14 +81,17 @@ GitHub の画面から設定値を登録します。
 | `TRADING_VOLATILITY_THRESHOLD`   | `0.003`                                                                   |
 | `TRADING_SHARP_CHANGE_THRESHOLD` | `0.01`                                                                    |
 
-> **`API_BASE_URL` は使われません**:
-> 以前は `API_BASE_URL` を登録する運用でしたが、アプリはこの名前を読みません。`API_PUBLIC_BASE_URL` と `API_PRIVATE_BASE_URL` に登録し直し、古い `API_BASE_URL` は削除してください。
+!!! warning "API_BASE_URL は使われません"
 
-> **取引戦略 (strategy_name) について**:
-> 取引戦略はここでは設定しません。デプロイを実行する際（workflow_dispatch）の画面で選択します。
+    以前は `API_BASE_URL` を登録する運用でしたが、アプリはこの名前を読みません。`API_PUBLIC_BASE_URL` と `API_PRIVATE_BASE_URL` に登録し直し、古い `API_BASE_URL` は削除してください。
 
-> **秘密情報について**:
-> API キーやシークレットなどの秘密情報は、ここ（Variables）ではなく、隣の **Secrets** タブに登録してください。
+!!! note "取引戦略（strategy_name）について"
+
+    取引戦略はここでは設定しません。デプロイを実行する際（workflow_dispatch）の画面で選択します。
+
+!!! warning "秘密情報について"
+
+    API キーやシークレットなどの秘密情報は、ここ（Variables）ではなく、隣の **Secrets** タブに登録してください。
 
 ## 完了条件チェックリスト
 

@@ -1,11 +1,12 @@
-# GCP インフラコード設計書
+# インフラ設計 (Infrastructure)
 
-このディレクトリは「インフラ設計書」の置き場です。
+このディレクトリには、GCP インフラをコードで構築するための「設計情報」が含まれています。
+実際の操作手順（GitHub Actions の実行やデプロイ作業）については、[GCP 運用・デプロイガイド](../../operations/gcp/README.md) を参照してください。
 
-`docs/operations/gcp` は運用手順（GitHub Actions の実行手順やデプロイ作業など）のためのドキュメントですが、`docs/infrastructure/gcp` はインフラの設計情報そのものを扱います。
+## ドキュメント一覧
 
-最初に読むべきファイルである `development-policy.md` は、TerraformなどでGCPインフラコードを書く前提となる設計書です。
+- [GCP インフラコード設計書](development-policy.md): Terraform などで GCP インフラをコード化するための設計。全体構成、リソース定義、IAM 方針、現状との差を扱います。
 
-Terraform の実装ファイルは [infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に追加済みです。ただし現時点では `terraform apply` を運用しておらず、GCP リソースの構築とデプロイは GitHub Actions の `gcloud` コマンドが正です。一本化は今後の課題として [改善計画のバックログ](../../improvements/backlog.md) に登録しています。
+!!! note "Terraform の現状"
 
-運用手順や具体的なデプロイ方法を探す場合は、`docs/operations/gcp` を参照してください。
+    Terraform の実装ファイルは [infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に追加済みです。ただし現時点では `terraform apply` を運用しておらず、GCP リソースの構築とデプロイは GitHub Actions の `gcloud` コマンドが正です。一本化は今後の課題として [改善計画のバックログ](../../improvements/backlog.md) に登録しています。
