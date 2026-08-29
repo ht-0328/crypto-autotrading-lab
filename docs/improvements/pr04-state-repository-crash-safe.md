@@ -79,7 +79,7 @@ cd projects/crypto-autotrading-app
 
 ## 補足: 呼び出し元への影響
 
-`save()` が例外を投げるようになると、[TradingApplication.run()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `catch` を経由して [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) まで伝播し、プロセスが異常終了します。これは仕様どおりの動作です。Cloud Run Job は `max_retries = 0` なので再実行はされません。
+`save()` が例外を投げるようになると、[run()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `catch` を経由して [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) まで伝播し、プロセスが異常終了します。これは仕様どおりの動作です。Cloud Run Job は `max_retries = 0` なので再実行はされません。
 
 ## スコープ外
 

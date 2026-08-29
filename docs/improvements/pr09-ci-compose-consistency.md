@@ -65,7 +65,7 @@ options:
   - SimpleContrarianStrategy
 ```
 
-正は [TradingApplication.createStrategy()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `when` 式である。
+正は [createStrategy()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `when` 式である。
 
 ### 3. ズレを検知するテストを用意する
 

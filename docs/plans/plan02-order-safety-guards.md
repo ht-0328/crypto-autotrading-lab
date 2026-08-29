@@ -33,7 +33,7 @@
 
 **実施済み。** 以下は着手前の記録です。
 
-[RealTradingService.calculateOrderSize()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は次の計算をするだけです。
+[calculateOrderSize()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は次の計算をするだけです。
 
 ```kotlin
 return BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)

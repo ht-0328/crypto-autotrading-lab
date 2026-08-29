@@ -56,7 +56,7 @@
 
 - **処理仕様（7章）**: 朝6時境界の既知の挙動を追加する。
 
-  > K線の取得対象日は、取引所の営業日区切り（朝6時）に合わせて切り替わります（[TradingApplication.resolveKlineTargetDate()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt)）。そのため毎日 6:00 以降しばらくは判定に必要な本数（戦略により最大15本＝約75分）が揃わず、判定は「データ不足」としてスキップされます。保有中でも利確・損切りの判定は行われません。
+  > K線の取得対象日は、取引所の営業日区切り（朝6時）に合わせて切り替わります（[resolveKlineTargetDate()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt)）。そのため毎日 6:00 以降しばらくは判定に必要な本数（戦略により最大15本＝約75分）が揃わず、判定は「データ不足」としてスキップされます。保有中でも利確・損切りの判定は行われません。
 
 ### 2. 設計書の修正
 
@@ -74,7 +74,7 @@
 
 含める内容:
 
-- どういうときに `realTrading.isStopped` が `true` になるか（[RealTradingService.stopRealTrading()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) が呼ばれる条件）
+- どういうときに `realTrading.isStopped` が `true` になるか（[stopRealTrading()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) が呼ばれる条件）
 - 停止理由の確認方法（`stopReason` / `stoppedAt` / `latestOrder`）
 - GCS 上の `state.json` の取得方法（`gcloud storage cp`）
 - 再開前に確認すること（取引所側の未約定注文の有無、実際の保有数量と `state.json` の一致）
