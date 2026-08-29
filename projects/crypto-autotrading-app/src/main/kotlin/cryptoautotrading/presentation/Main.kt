@@ -1,6 +1,7 @@
 package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
+import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.infrastructure.config.ConfigLoader
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
@@ -15,13 +16,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.math.BigDecimal
 import java.nio.file.Paths
 
 private val logger = KotlinLogging.logger {}
 
 /**
  * 実注文が許可される最小のフェーズ。
- * ロードマップ上、実注文は Phase3（通知 → 手動承認 → 実注文）のスコープ。
+ * ロードマップ上、実注文は Phase3（実注文 + 安全制御）のスコープ。
  */
 private const val REAL_TRADING_ALLOWED_PHASE = 3
 
@@ -78,6 +80,12 @@ fun main() = runBlocking {
             error("Phase${config.app.phase} で実注文が有効化されています")
         }
 
+        // 注文数量の制約が未設定のまま実注文すると、取引所の刻みに合わない数量を送って
+        // 拒否され続ける。設定漏れは起動時に気づけるようにする。
+        if (isRealTradeActive) {
+            validateOrderSizeSettings(config.realTrading)
+        }
+
         if (isRealTradeActive) {
             val isWireMockPrivateApi = privateBaseUrl.contains("wiremock") ||
                 privateBaseUrl.contains("localhost")
@@ -132,5 +140,37 @@ fun main() = runBlocking {
         throw e
     } finally {
         logger.info { "Crypto Auto-Trading Lab 起動処理が終了しました" }
+    }
+}
+
+/**
+ * 実注文に必要な注文数量の設定が揃っているかを検証する。
+ *
+ * 取引所は最小注文数量と数量の刻みを持つ。刻みに合わない数量を送ると注文は拒否されるため、
+ * 設定が無いまま実注文を有効にすると、注文のたびに失敗して停止することになる。
+ * 設定漏れは実行時ではなく起動時に気づけるようにする。
+ *
+ * @param realTradingConfig リアル取引設定
+ * @throws IllegalStateException 最小注文数量または刻みが未設定、もしくは正の数でない場合
+ */
+private fun validateOrderSizeSettings(realTradingConfig: RealTradingConfig) {
+    val minOrderSize = realTradingConfig.minOrderSize
+    val sizeStep = realTradingConfig.sizeStep
+
+    if (minOrderSize == null || sizeStep == null) {
+        logger.error {
+            "実注文には min_order_size と size_step の設定が必要です。" +
+                "取引所の銘柄情報（GMOコインの場合は GET /public/v1/symbols）で確認して設定してください。" +
+                "min_order_size=$minOrderSize, size_step=$sizeStep"
+        }
+        error("実注文に必要な注文数量の設定が不足しています")
+    }
+
+    if (minOrderSize <= BigDecimal.ZERO || sizeStep <= BigDecimal.ZERO) {
+        logger.error {
+            "min_order_size と size_step は正の数である必要があります。" +
+                "min_order_size=$minOrderSize, size_step=$sizeStep"
+        }
+        error("注文数量の設定が正の数ではありません")
     }
 }

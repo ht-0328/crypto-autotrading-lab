@@ -67,6 +67,18 @@
   6. 通過した場合のみ `/private/v1/order` に `side=SELL` / `executionType=MARKET` で送信し、`orderId` を `state.json` に保存する。
   7. **保有状態はこの時点では変更しない。** 次回以降の実行で注文照会と約定照会を経て反映する。
 
+### 8.0 注文数量の丸め（`OrderSizeSpec`）
+
+取引所の注文数量の制約は、`domain/realtrading/OrderSizeSpec.kt` の値オブジェクトで表す。`min_order_size` / `size_step` の設定から組み立て、買い・売りの両方で使う。
+
+| メソッド | 役割 |
+| --- | --- |
+| `roundDownToStep()` | 数量を刻みの整数倍に**切り捨てる**。切り上げると注文金額の上限を超えうるため |
+| `isTradable()` | 最小注文数量以上か。満たさない場合は発注せず見送る（停止させない） |
+| `isHoldingAmount()` | 保有とみなせるか。ダストを保有とみなすと二重保有防止のチェックに永久に引っかかる |
+
+設定が未設定のまま実注文を有効にすると注文のたびに拒否されるため、`Main.kt` の `validateOrderSizeSettings()` で起動時に検証する。`RealTradingService` 側にも `resolveOrderSizeSpec()` の防御を置いているが、通常は起動時ガードで弾かれる。
+
 ### 8.1 停止中（`isStopped=true`）の振る舞い
 
 停止が止めるのは**新規の買いだけ**である。売りは実行する。停止中に売りまで止めると、ポジションを抱えたまま損切りできなくなるためである。この例外は `checkPreSellOrderSafety()` が `isStopped` を参照しないことで表現している。
