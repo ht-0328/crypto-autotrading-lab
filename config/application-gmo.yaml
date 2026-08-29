@@ -24,6 +24,12 @@ real_trading:
   # 刻みに合わない数量を送ると注文が拒否されるため、実注文には必須。
   min_order_size: 0.00001
   size_step: 0.00001
+  # 成行注文の手数料率。上限の判定に含める（GMOコインの BTC の takerFee）
+  taker_fee_rate: 0.0005
+  # 許容するスリッページ。K線の終値と最新価格の乖離、
+  # および約定価格と発注時の想定価格の乖離の両方に使う。
+  # 値の根拠は docs/overview/roadmap.md の「安全ルール（数値）」
+  max_slippage_rate: 0.005
 
 # 取引関連の設定
 trading:

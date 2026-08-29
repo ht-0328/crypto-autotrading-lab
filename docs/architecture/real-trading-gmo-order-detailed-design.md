@@ -79,6 +79,20 @@
 
 設定が未設定のまま実注文を有効にすると注文のたびに拒否されるため、`Main.kt` の `validateOrderSizeSettings()` で起動時に検証する。`RealTradingService` 側にも `resolveOrderSizeSpec()` の防御を置いているが、通常は起動時ガードで弾かれる。
 
+### 8.0.1 注文価格と手数料（`OrderPriceSpec`）
+
+注文価格と手数料の制約は `domain/realtrading/OrderPriceSpec.kt` の値オブジェクトで表す。`taker_fee_rate` / `max_slippage_rate` の設定から組み立てる。
+
+| メソッド | 役割 |
+| --- | --- |
+| `isWithinAllowedSlippage()` | 2つの価格の乖離が許容範囲かを判定する。注文前（K線終値と Ticker）と約定後（想定価格と約定価格）の両方に使う |
+| `calculateTotalCostWithFee()` | 手数料を含めた注文金額を計算する。上限判定に使うため端数は切り上げる |
+| `calculateAffordableOrderAmount()` | 残高から手数料を差し引いた注文金額を計算する。`ALL_IN` で残高を全額注文に回すと手数料の分だけ足りなくなるため |
+
+注文数量の計算には Ticker の最新価格を使う。K線の終値は最大で1本分古く、急騰時に想定より多い数量を注文することになるためである。`TradingApplication` が Ticker を取得して `tickerPrice` として渡し、`RealTradingService.resolveOrderPrice()` が使える価格かどうかを判断する。
+
+**未確認注文の照合は、価格が使えるかどうかに関係なく先に行う。** 価格が取れないことを理由に、注文の行方が分からないまま放置してはいけない。
+
 ### 8.1 停止中（`isStopped=true`）の振る舞い
 
 停止が止めるのは**新規の買いだけ**である。売りは実行する。停止中に売りまで止めると、ポジションを抱えたまま損切りできなくなるためである。この例外は `checkPreSellOrderSafety()` が `isStopped` を参照しないことで表現している。
