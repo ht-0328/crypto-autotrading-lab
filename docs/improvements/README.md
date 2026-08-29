@@ -44,14 +44,14 @@ docs/improvements/pr03-private-api-log-leak.md の内容を実施して
 最大の問題は Kotlin コードの品質ではありません。**仕様書・ドキュメント・インフラコード・実装の4者が食い違っていること**です。特に次の3点が重い問題です。
 
 - Cloud Run では設定ファイルが存在せず、`API_PUBLIC_BASE_URL` などの環境変数も名前違いで無視される。
-- [docs/overview/product.md](../overview/product.md) が「安全設計」として宣言している内容（時刻ズレ検知・指数バックオフ・重複実行スキップ）が実装されていない。
+- [product.md](../overview/product.md) が「安全設計」として宣言している3点が実装されていない。時刻ズレ検知、指数バックオフ、重複実行スキップである。
 - バックテストが同一足の終値で判定し、同じ終値で約定する。手数料もスリッページも考慮していない（実測の結果、影響は当初の想定より小さかった。[findings.md](findings.md) の「誤りだった指摘」を参照）。
 
 個々の指摘とその根拠は [findings.md](findings.md) を参照してください。
 
 ## 決定事項
 
-1. **実注文機能は Phase1 の仕様から分離する**。分離先は **Phase3**（[roadmap.md](../overview/roadmap.md) 上、実注文は「通知 → 手動承認 → 実注文」の Phase3 の内容）。
+1. **実注文機能は Phase1 の仕様から分離する**。分離先は **Phase3** とする。[roadmap.md](../overview/roadmap.md) 上、実注文は Phase3 の内容である。
 2. **gcloud / Terraform の二重管理は、今回は乖離の解消までにとどめる**。一本化は [backlog.md](backlog.md) 送り。
 
 ## 第1波: 実害を止める
@@ -110,6 +110,6 @@ docs/improvements/pr03-private-api-log-leak.md の内容を実施して
 
 - **実注文機能の作り込み**: Phase1 では起動時ガードで封じるのが先。誤発注リスクを増やすだけ。
 - **`ALL_IN` の高度化**: Phase1 の目的は損益シミュレーションの検証。`FIXED_AMOUNT` 中心で足りる。
-- **新しい Strategy の追加・パラメータ最適化**: [PR06](pr06-backtest-execution-model.md) で約定モデルを直すまで比較結果が信頼できない。
-- **detekt / ktlint の導入**: [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) が「導入されていない」と明記している。今回はスコープ外。
+- **新しい Strategy の追加**: [PR06](pr06-backtest-execution-model.md) で約定モデルを直すまで比較結果が信頼できない。
+- **detekt / ktlint の導入**: [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) が「導入されていない」と明記している。
 - **Kafka / 分散トランザクション / マイクロサービス化**: Phase1 には過剰。アトミックなファイル保存で足りる。

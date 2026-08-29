@@ -13,17 +13,17 @@
 
 ## 対象の指摘
 
-[findings.md](findings.md) の **T** / **B**（残り） / **D** / **Z** / **C**（乖離解消のみ） / **AD** / **AE**（作業中に発見）
+[findings.md](findings.md) の **T** / **B**（残り） / **D** / **Z** / **C** / **AD** / **AE**
 
 ## なぜ直すか
 
 - **T（中）**: [ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が `toIntOrNull()` などを使っています。環境変数の書き間違いが、黙ってベース値へフォールバックします。運用者は設定に失敗したことに気付けません。
 - **B の残り（高）**: `order_sizing_mode` だけ環境変数で上書きできません。Cloud Run では設定ファイルの値から変えられません。
-- **D（低）**: `stop_on_unconfirmed_order` は読み込まれるだけです。どの判定にも使われていません（[RealTradingSafetyChecker](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は値に関係なく常に停止する）。設定項目の意味と実装が一致していません。
+- **D（低）**: `stop_on_unconfirmed_order` は読み込まれるだけです。どの判定にも使われていません。[RealTradingSafetyChecker](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は値に関係なく常に停止します。設定項目の意味と実装が一致していません。
 - **Z（低）**: 設定の切り替えが sed による YAML 書き換えで2箇所に散在しています。`ConfigLoader` は環境変数上書きに対応済みなので sed は不要です。
-- **C（中、乖離解消のみ）**: gcloud と Terraform で、Cloud Run Job に渡す環境変数が食い違っています。一本化は [backlog.md](backlog.md) 送りですが、食い違いだけは消します。
+- **C（中、乖離解消のみ）**: gcloud と Terraform で、渡す環境変数が食い違っています。一本化は [backlog.md](backlog.md) 送りですが、食い違いだけは消します。
 - **AD（中、作業中に発見）**: Terraform の `output_path` / `state_path` の既定値は絶対パスです。しかしアプリは `Paths.get(APP_DATA_DIR, statePath)` で連結するため `/mnt/gcs/data/mnt/gcs/data/state.json` になります。`terraform apply` を運用していないため実害は出ていません。
-- **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡します。[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を実際に読むようにしたことで「API のベースURLが空のまま起動する」経路ができています。
+- **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡します。[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を読むようにしたため、「ベースURLが空のまま起動する」経路ができています。
 
 ## 変更対象
 
@@ -53,7 +53,7 @@ private fun requireInt(name: String, base: Int): Int {
 }
 ```
 
-**空文字は「未指定」として従来どおりベース値を使うこと。** [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は未設定の GitHub Variable を空文字として渡します。ここを例外にすると既存デプロイが壊れます。
+**空文字は「未指定」として従来どおりベース値を使うこと。** [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は未設定の Variable を空文字として渡します。ここを例外にすると既存デプロイが壊れます。
 
 例外メッセージには**変数名だけ**を含め、値は含めません。設定値が秘密情報である可能性があるため。
 
@@ -75,7 +75,8 @@ orderSizingMode = System.getenv("TRADING_ORDER_SIZING_MODE")
 
 ### 3. stop_on_unconfirmed_order の扱いを決める
 
-**設定キーは残し、実装は現行の「常に停止」を維持します。** [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) の「既存の公開API、設定キー、その意味を壊しません」に従うためと、`false` を実際に効かせると未確認注文がある状態でも発注できてしまい安全側に倒す原則に反するためです。
+**設定キーは残し、実装は現行の「常に停止」を維持します。** [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) の「既存の公開API、設定キー、その意味を壊しません」に従うためです。
+また `false` を効かせると、未確認注文がある状態でも発注できてしまいます。
 
 - [RealTradingConfig.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/realtrading/RealTradingConfig.kt) の KDoc に方針を書く。「Phase1〜Phase3 では値に関わらず常に停止する。`false` は将来用の予約」とする。
 - `false` が指定された場合は起動時に警告ログを出す。
@@ -83,8 +84,8 @@ orderSizingMode = System.getenv("TRADING_ORDER_SIZING_MODE")
 
 ### 4. sed による設定書き換えをやめる
 
-- [ci/prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh): `strategy_name` / `public_base_url` / `private_base_url` の sed を削除し、`APP_TRADING_STRATEGY_NAME` / `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` を `GITHUB_ENV` に書き出す形にする。設定ファイルは `config/application-ci.yaml` をそのまま使う。
-- [scripts/local/run-devcontainer-menu.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/scripts/local/run-devcontainer-menu.sh): `application-runtime.yaml` の生成をやめ、`API_PUBLIC_BASE_URL` を export して `config/application-gmo.yaml` をそのまま使う。README の「設定ファイルの扱い」の記述も更新する。
+- [ci/prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh): 3つの値の sed を削除する。代わりに対応する環境変数を `GITHUB_ENV` へ書き出す。設定ファイルは `config/application-ci.yaml` をそのまま使う。
+- [scripts/local/run-devcontainer-menu.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/scripts/local/run-devcontainer-menu.sh): `application-runtime.yaml` の生成をやめる。`API_PUBLIC_BASE_URL` を export し、`config/application-gmo.yaml` をそのまま使う。README の「設定ファイルの扱い」の記述も更新する。
 
 ### 5. gcloud と Terraform の環境変数を一致させる
 
