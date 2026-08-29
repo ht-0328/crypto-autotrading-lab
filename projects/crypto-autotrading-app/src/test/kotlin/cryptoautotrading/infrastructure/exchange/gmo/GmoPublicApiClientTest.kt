@@ -235,4 +235,155 @@ class GmoPublicApiClientTest {
         // 最初の呼び出し1回 + リトライ1回 = 2回
         assertEquals(2, callCount)
     }
+
+    @Test
+    fun `HTTPステータスが500の場合は再試行され、回復すれば成功すること`() = runTest {
+        var callCount = 0
+        val mockClient = createMockClient { request ->
+            callCount++
+            if (callCount == 1) {
+                respond(
+                    content = "",
+                    status = HttpStatusCode.InternalServerError,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            } else {
+                respond(
+                    content = klineJsonResponse,
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json")
+                )
+            }
+        }
+        val client = GmoPublicApiClient(
+            baseUrl = apiConfig.publicBaseUrl!!,
+            retryCount = 2,
+            client = mockClient,
+            retryPolicy = noWaitRetryPolicy(maxAttempts = 3)
+        )
+
+        val response = client.getKlines("BTC", "5min", "20260101")
+
+        assertEquals(2, callCount, "500 は待てば回復しうるので再試行されること")
+        assertEquals(0, response.status)
+    }
+
+    @Test
+    fun `HTTPステータスが400の場合は再試行されないこと`() = runTest {
+        var callCount = 0
+        val mockClient = createMockClient {
+            callCount++
+            respond(
+                content = "",
+                status = HttpStatusCode.BadRequest,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val client = GmoPublicApiClient(
+            baseUrl = apiConfig.publicBaseUrl!!,
+            retryCount = 3,
+            client = mockClient,
+            retryPolicy = noWaitRetryPolicy(maxAttempts = 4)
+        )
+
+        assertThrows<GmoApiHttpException> {
+            client.getKlines("BTC", "5min", "20260101")
+        }
+        assertEquals(1, callCount, "何度送っても結果が変わらないため再試行しないこと")
+    }
+
+    @Test
+    fun `応答の解析に失敗した場合は再試行されないこと`() = runTest {
+        var callCount = 0
+        val mockClient = createMockClient {
+            callCount++
+            respond(
+                content = "これはJSONではありません",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val client = GmoPublicApiClient(
+            baseUrl = apiConfig.publicBaseUrl!!,
+            retryCount = 3,
+            client = mockClient,
+            retryPolicy = noWaitRetryPolicy(maxAttempts = 4)
+        )
+
+        assertThrows<Exception> {
+            client.getKlines("BTC", "5min", "20260101")
+        }
+        assertEquals(1, callCount, "解析の失敗は何度送っても同じなので再試行しないこと")
+    }
+
+    @Test
+    fun `GMO APIのステータスが0以外の場合は例外になること`() = runTest {
+        val mockClient = createMockClient {
+            respond(
+                content = """{"status": 1, "data": [], "responsetime": "2026-01-01T00:00:00.000Z"}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val client = GmoPublicApiClient(
+            baseUrl = apiConfig.publicBaseUrl!!,
+            retryCount = 0,
+            client = mockClient,
+            retryPolicy = noWaitRetryPolicy(maxAttempts = 1)
+        )
+
+        // HTTP が 200 でも API 側が失敗していれば、そのデータで判定してはいけない
+        assertThrows<IllegalStateException> {
+            client.getKlines("BTC", "5min", "20260101")
+        }
+    }
+
+    @Test
+    fun `再試行の上限に達したら例外になること`() = runTest {
+        var callCount = 0
+        val mockClient = createMockClient {
+            callCount++
+            respond(
+                content = "",
+                status = HttpStatusCode.ServiceUnavailable,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val client = GmoPublicApiClient(
+            baseUrl = apiConfig.publicBaseUrl!!,
+            retryCount = 2,
+            client = mockClient,
+            retryPolicy = noWaitRetryPolicy(maxAttempts = 3)
+        )
+
+        assertThrows<GmoApiHttpException> {
+            client.getKlines("BTC", "5min", "20260101")
+        }
+        assertEquals(3, callCount, "最初の1回と再試行2回で計3回呼ばれること")
+    }
 }
+
+/** 待ち時間を0にした再試行ポリシー。テストを待たせないために使う */
+private fun noWaitRetryPolicy(maxAttempts: Int) = HttpRetryPolicy(
+    maxAttempts = maxAttempts,
+    baseDelayMillis = 1,
+    maxDelayMillis = 1
+)
+
+/** 再試行のテストで使う正常なK線レスポンス */
+private val klineJsonResponse = """
+    {
+        "status": 0,
+        "data": [
+            {
+                "openTime": "1618588800000",
+                "open": "1000000",
+                "high": "1010000",
+                "low": "990000",
+                "close": "1005000",
+                "volume": "1.5"
+            }
+        ],
+        "responsetime": "2026-01-01T00:00:00.000Z"
+    }
+""".trimIndent()

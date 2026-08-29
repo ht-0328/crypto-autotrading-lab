@@ -28,12 +28,13 @@
 - **重要度**: 高 / **工数感**: M
 - **状態**: 実施済み（[PLAN02](../plans/plan02-order-safety-guards.md) の一環）。Ticker との乖離は注文価格の決定時に別途チェックしている。
 
-### 2. API リトライを指数バックオフ＋HTTP ステータス検証に統一する
+### 2. API リトライを指数バックオフ＋HTTP ステータス検証に統一する（実施済み）
 
 - **対象**: [findings.md](findings.md) の Q(2)、AC
 - **問題**: [product.md](../overview/product.md) は「少しずつ間隔を空けながら最大3回まで再試行します（指数バックオフ）」と宣言しているが、[GmoPublicApiClient](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPublicApiClient.kt) は全例外を固定1秒間隔で再試行している。HTTP ステータスも GMO API の `status` も検証せずデコードしている。タイムアウト設定も無い。
 - **方向性**: 接続・読み取りタイムアウト、HTTP / API ステータスの検証、429 の `Retry-After` 尊重、指数バックオフ＋jitter を共通化する。**自動リトライは冪等な GET に限定し、POST（発注）は注文照合を経てから判断する**（安易にリトライすると二重注文になる）。
 - **重要度**: 高 / **工数感**: M
+- **状態**: 実施済み（[PLAN02](../plans/plan02-order-safety-guards.md) の一環）。
 
 ### 3. 重複実行を抑止する
 
