@@ -71,6 +71,8 @@ flowchart TD
 
 ## 11. 具体例
 
+実装時に判断が分かれやすい箇所を、具体的な処理の流れで示します。
+
 ### 例1: ソートと重複排除の実装方針
 
 Kotlin の標準ライブラリを利用し、読み込み完了後に `list.sortedBy { it.openTime.toLong() }.distinctBy { it.openTime }` のような処理を行うことで、仕様を満たすソートと重複排除を簡潔に実装する。

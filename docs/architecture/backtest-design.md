@@ -87,6 +87,8 @@ flowchart TD
 
 ## 11. 具体例
 
+実装時に判断が分かれやすい箇所を、具体的な処理の流れで示します。
+
 ### 例1: サマリー作成時の責務
 
 `BacktestEngine` はすべてのループが終了した後、最終の `totalAssetValue`、保持している最大資産額からの `maxDrawdown`、全体の `tradeCount` 等を計算し、`BacktestSummary` モデルを組み立てる。この計算処理はドメイン知識（バックテストの成績評価）であるため、`BacktestEngine` または専用のドメインサービス内で行う。

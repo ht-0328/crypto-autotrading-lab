@@ -33,6 +33,8 @@
 
 ## 設計上の論点（着手前に決めること）
 
+実装に入る前に決めておく論点です。決めずに書き始めると手戻りになります。
+
 ### 1. 約定反映が買い専用になっている
 
 [RealTradingService.handleExecutedOrder()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は約定を確認すると無条件に次を返します。

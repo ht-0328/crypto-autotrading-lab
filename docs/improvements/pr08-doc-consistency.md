@@ -32,6 +32,8 @@
 
 ## 実施手順
 
+上から順に実施してください。前の手順が終わってから次に進みます。
+
 ### 1. phase1-simulation.md の修正
 
 - **53行付近（出力仕様）**: `data/history_20260501.csv` → `data/trades_20260501.csv`。実装は [CsvRepository.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/CsvRepository.kt) で `trades.csv` → `trades_YYYYMMDD.csv` に変換している。

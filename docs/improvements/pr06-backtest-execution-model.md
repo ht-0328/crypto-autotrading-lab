@@ -34,6 +34,8 @@ currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 
 ## 実施手順
 
+上から順に実施してください。前の手順が終わってから次に進みます。
+
 ### 1. 仕様書を直す
 
 [backtest.md](../specifications/features/backtest.md) の「7. 処理仕様」を次の内容に置き換える。

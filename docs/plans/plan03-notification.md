@@ -18,6 +18,8 @@ Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の�
 
 ## 含む作業
 
+この計画で実施する作業です。作業ごとに分けてあり、個別に着手できます。
+
 ### A. 通知の送信
 
 - 送信先を決める（LINE Messaging API、Discord Webhook など）。**Webhook URL やトークンは秘密情報**です。[AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) のとおり、コードにも設定ファイルにも書かず、環境変数と Secret Manager 経由で渡してください。
