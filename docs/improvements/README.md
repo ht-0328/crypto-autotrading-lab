@@ -57,7 +57,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 
 | 状態 | ファイル | 内容 | 重要度 |
 | --- | --- | --- | --- |
-| 未着手 | [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md) | CI / Compose の整合と安全側固定 | 高 |
+| 実施済み | [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md) | CI / Compose の整合と安全側固定 | 高 |
 | 未着手 | [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md) | バックテストの約定モデルを是正する | 高 |
 | 未着手 | [pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md) | 実注文機能を Phase1 の仕様から分離する | 高 |
 | 未着手 | [pr08-doc-consistency.md](pr08-doc-consistency.md) | 仕様書・設計書の食い違いを解消する | 中 |
