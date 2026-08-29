@@ -1,6 +1,6 @@
 # PR12: 公開サイトでの読みやすさを Zensical に合わせる
 
-**状態**: 未着手
+**状態**: 実施済み（ブランチ `docs/zensical-readability`）
 
 ## 対象の問題
 
@@ -57,9 +57,9 @@
 | [operations/gcp/01-account-and-project.md](../operations/gcp/01-account-and-project.md) | 注意を `!!! note` に | A |
 | [operations/gcp/04-service-accounts-and-iam.md](../operations/gcp/04-service-accounts-and-iam.md) | Note を `!!! note` に | A |
 | [operations/gcp/05-github-actions-variables.md](../operations/gcp/05-github-actions-variables.md) | 4件の補足を `!!! note` に | A |
-| [pr10-config-fail-fast.md](pr10-config-fail-fast.md) | 「現状」を `!!! note` に | A |
+| [operations/gcp/08-cleanup.md](../operations/gcp/08-cleanup.md) | 「（※1）自動では消さないもの」を `!!! note` に | A |
 | [infrastructure/gcp/README.md](../infrastructure/gcp/README.md) | H1 を「インフラ設計 (Infrastructure)」に変更し、置き場の案内であることを明確にする | B |
-| [zensical.toml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/zensical.toml) | `nav` の「インフラ設計」章の項目名を実態に合わせる | B |
+| [zensical.toml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/zensical.toml) | 変更不要（章名は `nav` 側で「インフラ設計」と定義済みのため、README の H1 を直すだけで重複が解消する） | B |
 | [development/workflow.md](../development/workflow.md) | ドキュメント追加時に `nav` を更新する手順を追加 | D |
 
 ## 実施手順
@@ -71,6 +71,8 @@
 ```bash
 grep -rn '^> \*\*' docs/
 ```
+
+**[改善計画](README.md) 配下のPRファイルにある引用は変換しません。** これらは「別の文書にこう書き込む」という文面を引用しているものであり、そのページ自身の警告ではありません。admonition にすると、引用なのか、そのページの警告なのかが読み取れなくなります。
 
 危険度の対応は次のとおりです。**勝手に増減させず、この表に従ってください。**
 
@@ -118,7 +120,7 @@ grep -rn '^> \*\*' docs/
 
 ## 受け入れ条件
 
-- [ ] `grep -rn '^> \*\*' docs/` の出力が 0 件であること
+- [ ] `grep -rn '^> ' docs/` に残る引用が、他の文書へ書き込む文面を引用している箇所だけであること（[改善計画](README.md) 配下の各PRファイル）
 - [ ] `zensical build --clean` が成功し、警告が [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) 実施前より増えていないこと
 - [ ] admonition の中身が4スペースでインデントされ、サイト上で色付きボックスとして表示されること
 - [ ] [plans/README.md](../plans/README.md) の「いま実注文を有効にすると何が起きるか」が赤いボックスで表示されること

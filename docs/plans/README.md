@@ -25,14 +25,16 @@ Claude Code / Codex / Antigravity の3ツールで現状を評価し、結果を
 
 ## 最重要: いま実注文を有効にすると何が起きるか
 
-[RealTradingService](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は買い注文だけを送り、**売り注文は送りません**（`SELL_CANDIDATE` はログを出すだけです）。
+!!! danger "現在のコードのまま実注文を有効にしてはいけません"
 
-1. 買い注文が約定して BTC を保有する。
-2. 利確・損切りの判定が出ても、取引所には何も送られない。
-3. **損切りが一度も発動しないまま、相場が下げ続ける限り含み損を抱える。**
-4. 同時に「保有中」の状態で固定され、新規注文も出なくなる。
+    [RealTradingService](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は買い注文だけを送り、**売り注文は送りません**（`SELL_CANDIDATE` はログを出すだけです）。
 
-`max_order_jpy` などの上限は「1回に賭ける金額」を制限するだけで、**すでに持っているポジションの下落は止めません**。これは「自動売買」ではなく「出口のないポジションを作る処理」です。
+    1. 買い注文が約定して BTC を保有する。
+    2. 利確・損切りの判定が出ても、取引所には何も送られない。
+    3. **損切りが一度も発動しないまま、相場が下げ続ける限り含み損を抱える。**
+    4. 同時に「保有中」の状態で固定され、新規注文も出なくなる。
+
+    `max_order_jpy` などの上限は「1回に賭ける金額」を制限するだけで、**すでに持っているポジションの下落は止めません**。これは「自動売買」ではなく「出口のないポジションを作る処理」です。
 
 ## 計画の一覧
 

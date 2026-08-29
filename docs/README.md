@@ -23,7 +23,9 @@
 1. [アプリの目的と一番大事な方針 (overview/product.md)](overview/product.md)
 2. [ロードマップと完了条件 (overview/roadmap.md)](overview/roadmap.md)
 
-> **リアル注文について**: [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
+!!! warning "リアル注文について"
+
+    [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
 
 ### 🧠 売買ロジックの仕組みを知りたい方
 
@@ -81,6 +83,7 @@ AIエージェントに開発を依頼する前に、人間が内容を把握し
 - `overview/`: プロダクトの目的やロードマップ
 - `development/`: 開発環境の構築手順や日々の開発フロー
 - `operations/`: GCP環境の構築やデプロイ手順
+- `infrastructure/`: GCP インフラをコードで構築するための設計。実際の操作手順は `operations/` 側にあります。
 - **`plans/`**: 実注文（自動売買）に到達するまでの作業計画です。着手順と、実資金を投入してよい条件を定義しています。
 - **`improvements/`**: 仕様・ドキュメント・インフラ・実装の食い違いを洗い出した結果と、その解消計画です。1ファイル = 1PR の単位で分けてあり、ファイルを指定すればその作業だけを実施できます。
 
@@ -103,3 +106,6 @@ AIエージェントに開発を依頼する前に、人間が内容を把握し
 - **リンク切れを増やさない**
   - ファイル名の変更や移動を行った際は、必ず関連するドキュメント内のリンクも修正してください。
   - コミット前に `python3 scripts/check-doc-links.py` を実行してください。`docs/` の外を指す相対リンクが残っていると、検出されて終了コード 1 を返します。
+- **ファイルを追加・移動・削除したら `nav` も更新する**
+  - 公開サイトの目次は [zensical.toml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/zensical.toml) の `nav` が決めています。`nav` に無いファイルはビルドはされますが、**サイドバーから辿れません**。
+  - 手順は [開発環境のセットアップ (development/setup.md)](development/setup.md) の「章立てを変えるとき」を参照してください。

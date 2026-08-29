@@ -70,7 +70,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 | 状態 | ファイル | 内容 | 重要度 |
 | --- | --- | --- | --- |
 | 実施済み | [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) | 公開サイトのリンク切れ197件を解消し、再発をCIで止める | 高 |
-| 未着手 | [pr12-zensical-readability.md](pr12-zensical-readability.md) | 安全上の警告を admonition にし、章タイトルと目次の食い違いを直す | 中 |
+| 実施済み | [pr12-zensical-readability.md](pr12-zensical-readability.md) | 安全上の警告を admonition にし、章タイトルと目次の食い違いを直す | 中 |
 
 **[pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) を先に実施してください。** 両方とも同じファイルを触るため、順序を逆にすると衝突します。
 
