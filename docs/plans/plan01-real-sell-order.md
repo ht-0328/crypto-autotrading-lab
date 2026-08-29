@@ -121,7 +121,7 @@ cd projects/crypto-autotrading-app
 
 ## 積み残し（別PRに分離）
 
-論点5の**発注意図の先行保存は、このPRには含めていません。** 注文の送信前に状態を保存するには、ドメインサービスから状態リポジトリを呼ぶ必要があり、売り注文の実装とは独立した変更になるためです（[pr-and-commit](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md) の1PR1変更）。**[PLAN05](plan05-canary-with-real-money.md) の着手条件には含まれるので、実資金を入れる前に必ず実施してください。**
+論点5の**発注意図の先行保存は、このPRには含めていません。** 注文の送信前に状態を保存するには、ドメインサービスから状態リポジトリを呼ぶ必要があります。売り注文の実装とは別のPRになるためです（[pr-and-commit](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md) の1PR1変更）。**[PLAN05](plan05-canary-with-real-money.md) の着手条件には含まれるので、実資金を入れる前に必ず実施してください。**
 
 実装後に判明した制約も、[PLAN02](plan02-order-safety-guards.md) までに解消が必要です。
 

@@ -119,7 +119,7 @@ terraform validate
 
 ## 注意
 
-- **デプロイ前に GitHub Variables を更新すること。** 変数名を変えるため、`API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` を登録してからでないと空文字が渡り、設定ファイルの値が使われます（動作は安全側ですが意図した URL にはなりません）。
+- **デプロイ前に GitHub Variables を更新すること。** 変数名を変えます。`API_PUBLIC_BASE_URL` と `API_PRIVATE_BASE_URL` を先に登録してください。登録前は空文字が渡り、設定ファイルの値が使われます。動作は安全側ですが、意図した URL にはなりません。
 
 ## スコープ外
 

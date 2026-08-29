@@ -193,8 +193,12 @@ sys.exit(1 if found else 0)
 
 実在しないファイルを指す 3 件は、絶対 URL にしても壊れたままです。リンクをやめてコード表記にします。
 
-- [templates/design-template.md](../templates/design-template.md) の 15 行目・108 行目: `[対応する仕様書](../specifications/features/example.md)` → `` 対応する仕様書: `../specifications/features/example.md`（実際のファイル名に置き換える） ``
-- [templates/specification-template.md](../templates/specification-template.md) の 111 行目: `[対応する設計書](../architecture/example-design.md)` → 同様
+[templates/design-template.md](../templates/design-template.md) の 15 行目・108 行目と、[templates/specification-template.md](../templates/specification-template.md) の 111 行目を、次のように直します。
+
+```markdown
+直す前: - [対応する仕様書](../specifications/features/example.md)
+直した後: - 対応する仕様書: `../specifications/features/example.md`（実際のファイル名に置き換える）
+```
 
 [docs/README.md](README.md) の「ドキュメントリンク方針」にある `phase1-overview.md` の記述は、すでにインラインコードで囲まれており実際のリンクにはなっていません。**変更不要です。**
 
