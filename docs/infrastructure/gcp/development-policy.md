@@ -1,6 +1,16 @@
 # GCP インフラコード設計書
 
-このドキュメントは、TerraformなどでGCPインフラを0からコード化して作成するための設計書です。
+| 項目 | 内容 |
+| --- | --- |
+| 想定読者 | GCP インフラを Terraform で定義する開発者 |
+| 読んだあとできること | どのリソースを誰が管理し、権限をどこまで絞るかを判断できる |
+| 状態 | 現行 |
+| 機密区分 | 公開可 |
+| 作成者 | リポジトリ管理者 |
+| 保守責任者 | リポジトリ管理者 |
+| 最終確認日 | 2026-08-30 |
+
+この文書は、GCP インフラを 0 からコード化するための設計を定めます。
 
 ## 1. 設計の目的
 
@@ -22,14 +32,14 @@
 | Cloud Scheduler の管理 | Terraform | GitHub Actions の `gcloud`（`scheduler-gcp.yml`） |
 | Terraform コード | 正 | [infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に存在するが `terraform apply` は運用していない。環境変数の集合は gcloud 側と一致させている |
 
-**現時点で正となるのは GitHub Actions（gcloud）側です。** 一本化するかどうかの判断と、既存リソースの `terraform import` を含む移行は今後の課題として [改善計画のバックログ](../../improvements/backlog.md) に登録しています。
+**2026-08-30 時点で正となるのは GitHub Actions（gcloud）側です。** 一本化するかどうかの判断は [改善計画のバックログ](../../improvements/backlog.md) に登録しています。既存リソースの `terraform import` を含む移行も同じ項目で扱います。
 
 ## 2. 全体構成
 
 この章では、GCPインフラとGitHub Actionsの全体的なアーキテクチャ構成を定義します。
 
-本システムのGCPインフラは、GitHub Actionsからデプロイを行い、Cloud Run Jobとして実行される構成となっています。
-権限とリソースの関係は以下の通りです。
+本システムの GCP インフラは、GitHub Actions からデプロイします。実行は Cloud Run Job です。
+権限とリソースの関係は以下のとおりです。
 
 ```mermaid
 flowchart TD
@@ -83,7 +93,7 @@ flowchart TD
 ## 3. リソース設計
 
 この章では、Terraformなどのインフラコードで作成・管理するGCP上の構成要素を定義します。
-ここでいう「リソース」とは、GCP上に作成・設定する個別のクラウド部品のことです（AWSでいうEC2インスタンス、S3バケット、IAM Roleなどのようなもの）。
+ここでいう「リソース」とは、GCP 上に作成・設定する個別のクラウド部品です。AWS でいう EC2 インスタンス、S3 バケット、IAM Role にあたります。
 
 | 構成要素 | 何を定義するか | 用途 | Terraform管理方針 |
 |---|---|---|---|
@@ -103,13 +113,15 @@ flowchart TD
 
 Terraformで有効化するGCP API一覧は以下の通りです。
 
-- `serviceusage.googleapis.com`
-- `iam.googleapis.com`
-- `iamcredentials.googleapis.com`
-- `cloudbuild.googleapis.com`
-- `artifactregistry.googleapis.com`
-- `run.googleapis.com`
-- `storage.googleapis.com`
+| API | 用途 |
+| --- | --- |
+| `serviceusage.googleapis.com` | 他の API の有効化 |
+| `iam.googleapis.com` | サービスアカウントと権限 |
+| `iamcredentials.googleapis.com` | Workload Identity Federation |
+| `cloudbuild.googleapis.com` | コンテナイメージのビルド |
+| `artifactregistry.googleapis.com` | イメージの保管 |
+| `run.googleapis.com` | Cloud Run Job |
+| `storage.googleapis.com` | GCS バケット |
 - `secretmanager.googleapis.com`
 - `cloudscheduler.googleapis.com`
 
@@ -130,10 +142,10 @@ Terraformで定義するCloud Run Jobの詳細は以下の通りです。
 | max retries | 0 |
 
 **補足事項:**
-- Docker image の build / push はTerraformではなくGitHub Actionsで実行する。
-- Terraformでは、Cloud Run Jobが参照する image URI を変数として受け取る。
-- image tag は latest ではなく、GitHub SHAなどを使った固定タグを前提にする。
-- Cloud Run Job の実行はTerraformではなく、GitHub ActionsまたはCloud Schedulerで行う。
+- image の build と push は GitHub Actions が実行する。Terraform では扱わない。
+- image URI は変数で受け取る。Cloud Run Job がこれを参照する。
+- image tag は `latest` を使わない。GitHub SHA などの固定タグを前提にする。
+- Cloud Run Job の実行は Terraform では扱わない。GitHub Actions か Cloud Scheduler が行う。
 - APIキーやAPI Secretは通常の環境変数ではなく、Secret Manager参照で渡す。
 
 ### GCS Bucketの用途設計
@@ -228,7 +240,7 @@ Secretの実値は変数に含めず、Secret名のみを変数として渡し�
 
 ## 6. IAMリソース設計
 
-この章では、各Service Accountに対して、どのGCPリソースへの操作権限を付与するかを定義します。
+この章では、各 Service Account に付与する操作権限を定義します。対象は GCP リソースです。
 
 | 操作主体 | 対象リソース | 権限 | 方針 |
 |---|---|---|---|
@@ -245,13 +257,21 @@ Secretの実値は変数に含めず、Secret名のみを変数として渡し�
 
 **禁止事項と付与方針:**
 - project全体に広く付ける権限と、特定リソースにだけ付ける権限を分ける。
-- 可能なものは project IAM ではなく、Artifact Registry、GCS Bucket、Secret単位で付与する。
+- 可能なものは project IAM で付与しない。Artifact Registry、GCS Bucket、Secret の単位で付与する。
 - `google_project_iam_policy` は使わない。理由は、プロジェクト全体のIAMを上書きして既存権限を壊す可能性があるため。
-- 基本は `google_project_iam_member`、`google_storage_bucket_iam_member`、`google_artifact_registry_repository_iam_member`、`google_secret_manager_secret_iam_member`、`google_service_account_iam_member` を使う。
+- 基本は次の `*_iam_member` を使う。
+
+  | リソース | 使う Terraform リソース |
+  | --- | --- |
+  | プロジェクト | `google_project_iam_member` |
+  | GCS Bucket | `google_storage_bucket_iam_member` |
+  | Artifact Registry | `google_artifact_registry_repository_iam_member` |
+  | Secret Manager | `google_secret_manager_secret_iam_member` |
+  | サービスアカウント | `google_service_account_iam_member` |
 
 ## 7. state設計
 
-この章では、Terraformのstateをどこに保存し、誰が扱い、どのように保護するかを定義します。
+この章では、Terraform の state の扱いを定義します。保存先、扱う人、保護の方法が対象です。
 
 | 設計項目 | 定義内容 |
 |---|---|
@@ -272,7 +292,7 @@ Secretの実値は変数に含めず、Secret名のみを変数として渡し�
 
 ## 8. Secretリソース設計
 
-この章では、APIキーや取引用Secretなどの機密情報を、GCP上でどのリソースとして定義し、Cloud Run Jobからどう参照するかを定義します。リアルAPI接続で使うAPIキー/API Secretは、Secret Managerで扱う設計にします。
+この章では、機密情報を GCP 上のどのリソースとして定義するかを決めます。対象は APIキーと取引用 Secret です。Cloud Run Job からの参照方法もここで扱います。APIキーと API Secret は Secret Manager で扱います。
 
 | 項目 | 内容 |
 |---|---|
@@ -306,8 +326,8 @@ Secretの実値は変数に含めず、Secret名のみを変数として渡し�
 
 ## 9. GitHub Actionsとの責務分離
 
-この章では、TerraformとGitHub Actionsの間でインフラ操作の責務をどのように分担するかを定義します。
-Terraformで「ジョブ定義」を管理し、GitHub Actionsでは「実行」を担当する責務にしています。
+この章では、インフラ操作の責務分担を定義します。分担する相手は Terraform と GitHub Actions です。
+Terraform が「ジョブ定義」を管理します。GitHub Actions は「実行」を担当します。
 
 | 対象 | Terraform側 | GitHub Actions側 |
 |---|---|---|
