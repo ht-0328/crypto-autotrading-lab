@@ -8,4 +8,5 @@
 
 ## ドキュメント一覧
 
+- [go-live-runbook.md](go-live-runbook.md): 実資金での自動売買を始めるまでに、オーナー本人にしかできない作業の手順。
 - [real-trading-recovery.md](real-trading-recovery.md): リアル取引が停止（`realTrading.isStopped`）したときの確認と復旧の手順。
