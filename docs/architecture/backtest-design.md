@@ -21,9 +21,9 @@
 
 ## 3. 設計方針
 
-- **依存の逆転**: バックテストエンジン（`BacktestEngine`）はドメイン層に配置し、具体的なCSVの読み書きやStrategyの生成は `application` または `infrastructure` から注入されるようにする。
-- **ドメインロジックの再利用**: 売買判定には既存の `TradingStrategy` をそのまま使い、資産更新には既存の `SimulationService` をそのまま使う。バックテストエンジン自身に新しい売買ルールは書かない。
-- **小数計算の正確性**: 金額や数量、利益率などの計算には必ず `BigDecimal` を使用し、浮動小数点による誤差を防ぐ。
+- **依存の逆転**: `BacktestEngine` はドメイン層に置く。CSVの読み書きや Strategy の生成は外から注入する。
+- **ドメインロジックの再利用**: 売買判定は `TradingStrategy`、資産更新は `SimulationService` をそのまま使う。バックテストエンジン自身に新しい売買ルールは書かない。
+- **小数計算の正確性**: 金額・数量・利益率の計算には必ず `BigDecimal` を使う。誤差を防ぐためである。
 
 ## 4. 責務分担
 
@@ -58,15 +58,17 @@
 **K線を1本ずつ回す**
 
 5. `BacktestEngine` はK線を1本ずつループする
-6. 直前のK線で受け取った判定結果があれば、**このK線の始値**を約定価格として `SimulationService` に状態更新を依頼する。約定価格には手数料率とスリッページ率を織り込む
-7. `BacktestEngine` はその時点までのK線を Strategy に渡して判定を依頼し、結果を「次のK線で約定させるシグナル」として保持する
+6. 直前のK線の判定結果があれば、**このK線の始値**を約定価格として状態更新を依頼する
+   - 約定価格には手数料率とスリッページ率を織り込む
+7. その時点までのK線を Strategy に渡して判定を依頼する
+   - 結果は「次のK線で約定させるシグナル」として保持する
 
 **結果を出す**
 
 8. `BacktestEngine` は毎ステップの `BacktestStepResult` を記録し、最後に `BacktestSummary` を作成して `BacktestResult` を返す
 9. `BacktestApplication` が `BacktestResultOutputPort` を使ってCSVファイルを出力する
 
-判定と約定を1本ずらしているのは、判定に使った終値でそのまま約定させると成績が構造的に楽観化するためです（詳細は [バックテスト機能の仕様](../specifications/features/backtest.md)）。
+判定と約定を1本ずらしています。判定に使った終値でそのまま約定させると、成績が構造的に楽観化するためです（詳細は [バックテスト機能の仕様](../specifications/features/backtest.md)）。
 
 ## 7. Mermaid による設計フロー
 
@@ -110,7 +112,8 @@ flowchart TD
 
 ### 例1: サマリー作成時の責務
 
-`BacktestEngine` はすべてのループが終了した後に `BacktestSummary` を組み立てる。計算する値は最終の `totalAssetValue`・最大資産額からの `maxDrawdown`・全体の `tradeCount` などである。この計算処理はドメイン知識（バックテストの成績評価）であるため、`BacktestEngine` または専用のドメインサービス内で行う。
+`BacktestEngine` はループ終了後に `BacktestSummary` を組み立てる。
+計算する値は `totalAssetValue`・`maxDrawdown`・`tradeCount` などである。この計算処理はドメイン知識（バックテストの成績評価）であるため、`BacktestEngine` または専用のドメインサービス内で行う。
 
 ## 12. テスト方針
 
