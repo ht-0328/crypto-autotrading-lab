@@ -1,6 +1,15 @@
 # PLAN04: 本番へ配線し、実注文なしでリハーサルする
 
-**状態**: 未着手 / 前提: [PLAN01](plan01-real-sell-order.md), [PLAN02](plan02-order-safety-guards.md), [PLAN03](plan03-notification.md)
+| 項目 | 内容 |
+| --- | --- |
+| 想定読者 | この計画を実施する開発者、AIコーディングエージェント |
+| 読んだあとできること | 本番環境へ配線し、実注文なしでリハーサルできる |
+| 状態 | 未着手 / 前提: [PLAN01](plan01-real-sell-order.md), [PLAN02](plan02-order-safety-guards.md), [PLAN03](plan03-notification.md) |
+| 機密区分 | 公開可 |
+| 作成者 | リポジトリ管理者 |
+| 保守責任者 | リポジトリ管理者 |
+| 最終確認日 | 2026-08-30 |
+
 
 ## なぜやるか
 

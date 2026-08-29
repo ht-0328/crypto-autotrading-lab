@@ -1,5 +1,16 @@
 # 3. Workload Identity Federation の設定
 
+| 項目 | 内容 |
+| --- | --- |
+| 想定読者 | GitHub Actions から GCP を操作したい運用担当者 |
+| 読んだあとできること | 鍵ファイルを使わずに GitHub Actions から GCP へ認証できる |
+| 状態 | 現行 |
+| 機密区分 | 公開可 |
+| 作成者 | リポジトリ管理者 |
+| 保守責任者 | リポジトリ管理者 |
+| 最終確認日 | 2026-08-30 |
+
+
 ## 文書の目的
 
 - GitHub Actions から GCP へ安全にアクセスするための仕組み（Workload Identity Federation）の作り方
