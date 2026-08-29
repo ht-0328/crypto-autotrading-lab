@@ -23,6 +23,9 @@ on:
         type: choice
         options:
           - SafeReboundStrategy
+          - CooldownReboundStrategy
+          - TrendConfirmReboundStrategy
+          - AtrTrendConfirmReboundStrategy
           - SimpleContrarianStrategy
         default: SafeReboundStrategy
 
@@ -40,15 +43,11 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
+      # build にコンパイル・全単体テスト・Konsist の ArchitectureTest がすべて含まれる
       - name: Build and Test
         run: |
           cd projects/crypto-autotrading-app
           ./gradlew build
-
-      - name: Run Architecture Rule Tests
-        run: |
-          cd projects/crypto-autotrading-app
-          ./gradlew test --tests "*Architecture*"
 
       - name: Upload Test Reports
         if: always()

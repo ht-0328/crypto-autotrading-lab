@@ -1,6 +1,6 @@
 # PR09: CI / Compose の整合と安全側固定
 
-**状態**: 未着手
+**状態**: 実施済み（ブランチ `fix/ci-compose-consistency`）
 
 ## 対象の指摘
 
@@ -56,12 +56,14 @@ options:
 
 正は [TradingApplication.createStrategy()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `when` 式です。
 
-### 3. ズレを検知するテストを追加する
+### 3. ズレを検知するテストを用意する
 
-選択肢と実装が再びズレないよう、[TradingApplicationTest.kt](../../projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/application/TradingApplicationTest.kt) に追加する。
+選択肢と実装が再びズレないよう、[TradingApplicationTest.kt](../../projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/application/TradingApplicationTest.kt) で次を確認する。
 
-- 5つの戦略名すべてで `TradingApplication` が生成・実行できること
+- 5つの戦略名すべてで対応する Strategy が生成されること
 - 未知の戦略名を渡すと例外になること（現在は `error()`）
+
+**既存のテストがすでに両方を満たしているため、追加は不要だった。** ワークフロー側の選択肢が実装とズレていても CI は失敗しない点は変わらないので、ズレの検知は今後もレビューで担保する。
 
 ### 4. 重複した CI ステップを削除する
 

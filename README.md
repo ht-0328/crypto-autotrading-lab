@@ -131,6 +131,14 @@ Docker Compose を使用する場合 (初回clone直後でもそのままビル�
 docker compose -f docker/compose/local.yml up --build
 ```
 
+- アプリは1回だけ実行して終了します（常駐しません）。
+- **既定では WireMock に接続します。** 本物の GMO Public API を叩きたい場合のみ、環境変数で上書きしてください。
+
+```bash
+API_PUBLIC_BASE_URL=https://api.coin.z.com/public \
+  docker compose -f docker/compose/local.yml up --build
+```
+
 ### Docker リソースのクリーンアップ
 
 `docker/compose/local.yml` で起動したコンテナ・ネットワーク・ボリュームと、Compose がビルドしたイメージを削除します。

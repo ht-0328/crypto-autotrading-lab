@@ -1,25 +1,27 @@
-version: "3.8"
-
 services:
   app:
     build:
       context: ../../
       dockerfile: docker/app/Dockerfile
     container_name: crypto-autotrading
-    restart: unless-stopped
+    # 1回実行して終了するバッチのため再起動はしない。
+    # restart を付けると終了のたびに再実行され、APIを叩き続けることになる。
+    restart: "no"
     environment:
       - APP_DATA_DIR=/app/data
-      - APP_CONFIG_PATH=/app/config/application-gmo.yaml
-      - API_BASE_URL=${API_BASE_URL:-https://api.coin.z.com}
-      - GMO_PRIVATE_API_BASE_URL=${GMO_PRIVATE_API_BASE_URL:-http://wiremock:8080}
+      # 既定は WireMock 向け。本物の GMO API を使う場合は下の2つを上書きする
+      - APP_CONFIG_PATH=/app/config/application-wiremock.yaml
+      - API_PUBLIC_BASE_URL=${API_PUBLIC_BASE_URL:-http://wiremock:8080/public}
+      - API_PRIVATE_BASE_URL=${API_PRIVATE_BASE_URL:-http://wiremock:8080/private}
     volumes:
-      - ../../config:/app/config
+      - ../../config:/app/config:ro
       - ../../data:/app/data
     depends_on:
       - wiremock
 
   wiremock:
-    image: wiremock/wiremock:latest
+    # CI (.github/workflows/ci.yml) と同じバージョンに固定する
+    image: wiremock/wiremock:3.5.2
     container_name: crypto-autotrading-wiremock
     ports:
       - "8080:8080"
