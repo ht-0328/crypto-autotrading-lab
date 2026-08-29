@@ -19,7 +19,7 @@
 
 [StateRepository.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) に2つの問題があります。
 
-- **I**: `save()` が例外を握り潰してログを出すだけで、呼び出し元に伝えません。保存に失敗してもアプリは正常終了（exit 0）します。[phase1-simulation.md](../specifications/phase1-simulation.md) のエラー仕様「CSVまたはJSONファイルの保存に失敗した → エラーをログに記録し終了する」に反します。実注文と組み合わさると「注文したのに state が残らない＝二重注文」につながります。
+- **I**: `save()` が例外を握り潰します。ログを出すだけで、呼び出し元に伝えません。保存に失敗してもアプリは正常終了（exit 0）します。[phase1-simulation.md](../specifications/phase1-simulation.md) のエラー仕様「CSVまたはJSONファイルの保存に失敗した → エラーをログに記録し終了する」に反します。実注文と組み合わさると「注文したのに state が残らない＝二重注文」につながります。
 - **J**: `file.writeText(content)` で既存ファイルに直接書いています。書き込み途中でプロセスが落ちると空ファイルや途中までの JSON が残り、次回の `load()` がデコード例外を投げて以降の実行がすべて止まります。GCS FUSE マウント上ではさらにリスクが高くなります。
 
 ## 変更対象
@@ -60,7 +60,7 @@
    - 保存に失敗したとき例外が呼び出し元に伝わること
    - 保存後に一時ファイル（`.tmp`）が残っていないこと
    - 既存ファイルがある状態で保存すると中身が置き換わること
-   - `ATOMIC_MOVE` 非対応時にフォールバックが動くこと（`Files` をモックするか、フォールバック経路を internal 関数に切り出して直接呼ぶ）
+   - `ATOMIC_MOVE` 非対応時にフォールバックが動くこと
 
 ## 受け入れ条件
 

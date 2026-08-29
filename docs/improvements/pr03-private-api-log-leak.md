@@ -17,7 +17,7 @@
 
 ## なぜ直すか
 
-[GmoPrivateApiClientImpl.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt) が、GMO Private API のレスポンス本文を INFO レベルでそのまま出力しています。
+[GmoPrivateApiClientImpl.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt) が、GMO Private API のレスポンス本文を INFO で出力しています。
 
 ```kotlin
 logger.info { "GMO Private API raw response: $responseText" }
@@ -42,7 +42,8 @@ logger.info { "GMO Private API raw response: $responseText" }
    grep -n 'responseText' projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt
    ```
 
-   2026-08-29 時点では 54, 58, 64, 76, 80, 89, 121, 129, 144, 150, 165, 171 行付近に、レスポンス本文をログ・例外メッセージへ入れている箇所があります。
+   2026-08-29 時点では、次の行付近にレスポンス本文を入れている箇所があります。
+   54, 58, 64, 76, 80, 89, 121, 129, 144, 150, 165, 171 行です。
 
 2. 各箇所を、本文を含まない形に置き換える。残してよいのは次の情報だけ。
    - HTTP ステータスコード
@@ -57,7 +58,7 @@ logger.info { "GMO Private API raw response: $responseText" }
 
 ## 受け入れ条件
 
-- [ ] `logger.info` / `logger.warn` / `logger.error` および例外メッセージに、Private API のレスポンス本文が含まれないこと
+- [ ] ログと例外メッセージに、Private API のレスポンス本文が含まれないこと
 - [ ] `LOG_LEVEL=debug` のときだけ本文が出ること
 - [ ] エラー時に、原因調査に必要な HTTP ステータスと GMO のエラーコードは残っていること
 - [ ] 既存テスト（[GmoPrivateApiClientImplTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImplTest.kt)）が通ること

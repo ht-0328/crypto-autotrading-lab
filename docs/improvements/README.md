@@ -111,5 +111,5 @@ docs/improvements/pr03-private-api-log-leak.md の内容を実施して
 - **実注文機能の作り込み**: Phase1 では起動時ガードで封じるのが先。誤発注リスクを増やすだけ。
 - **`ALL_IN` の高度化**: Phase1 の目的は損益シミュレーションの検証。`FIXED_AMOUNT` 中心で足りる。
 - **新しい Strategy の追加**: [PR06](pr06-backtest-execution-model.md) で約定モデルを直すまで比較結果が信頼できない。
-- **detekt / ktlint の導入**: [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) が「導入されていない」としている。
+- **detekt / ktlint の導入**: [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) が未導入と明記している。
 - **Kafka / 分散トランザクション / マイクロサービス化**: Phase1 には過剰。アトミックなファイル保存で足りる。

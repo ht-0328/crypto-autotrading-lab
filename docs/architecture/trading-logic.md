@@ -36,9 +36,9 @@
 - 現在のデフォルト設定（売買ルール）は **`SafeReboundStrategy`** です。
 - `SafeReboundStrategy` は、**買った価格（buyPrice）を基準**に売るかどうかを判断します。
 - 派生戦略が3つあります。詳細は各仕様書にあります。
-  - **`CooldownReboundStrategy`**: 損切り後の再エントリーを制限する
-  - **`TrendConfirmReboundStrategy`**: 短期トレンドの上向きを確認する
-  - **`AtrTrendConfirmReboundStrategy`**: ATR を用いた変動幅で利確・損切りする
+  - **`CooldownReboundStrategy`**: 損切り後の再エントリーを制限します
+  - **`TrendConfirmReboundStrategy`**: 短期トレンドの上向きを確認します
+  - **`AtrTrendConfirmReboundStrategy`**: ATR を用いた変動幅で利確・損切りします
 - **Phase1 では実際の取引所に注文を出しません**。シミュレーション上の状態更新だけを行います。
 
 ## 用語補足

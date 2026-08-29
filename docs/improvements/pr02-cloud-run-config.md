@@ -13,16 +13,16 @@
 
 ## 対象の指摘
 
-[findings.md](findings.md) の **A** / **B** / **F** / **H**（いずれも重要度: 高〜中）
+[findings.md](findings.md) の **A** / **B** / **F** / **H**（重要度は高〜中）
 
 ## なぜ直すか
 
 Cloud Run 上のアプリが、意図した設定でまったく動いていません。
 
-- **A**: [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) と [local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) は `API_BASE_URL` / `GMO_PRIVATE_API_BASE_URL` を渡しますが、[ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が読むのは `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` です。指定した URL は無視され、隠れたデフォルト（本物の GMO API）に繋ぎます。
+- **A**: [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) と [local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) は `API_BASE_URL` などを渡します。しかし [ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が読むのは `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` です。指定した URL は無視され、隠れたデフォルト（本物の GMO API）に繋ぎます。
 - **B**: [Dockerfile](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/app/Dockerfile) は jar しかコピーせず、`APP_CONFIG_PATH` も未設定です。そのため Cloud Run では設定ファイルが常に見つからず `createDefaultConfig()` にフォールバックします。
-- **F**: [logback.xml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/resources/logback.xml) がファイル出力のみのため、Cloud Logging にアプリログが残りません。
-- **H**: [cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) に `APP_DATA_DIR` が無いため、`app.log` だけがコンテナローカルの `/app/data` に出て Job 終了時に消えます（`state.json` と結果ファイルは `output_path` / `state_path` が絶対パスなので残ります）。
+- **F**: [logback.xml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/resources/logback.xml) はファイル出力だけです。Cloud Logging にアプリログが残りません。
+- **H**: [cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) に `APP_DATA_DIR` がありません。`app.log` だけがコンテナローカルに出て、Job 終了時に消えます（`state.json` と結果ファイルは `output_path` / `state_path` が絶対パスなので残ります）。
 
 ## 変更対象
 
@@ -76,7 +76,7 @@ Cloud Run 上のアプリが、意図した設定でまったく動いていま�
    </appender>
    ```
 
-   ファイル冒頭のコメント「コンソールへのログ出力は行わず、ファイルのみに出力する」も実態に合わせて書き換える。
+   冒頭のコメントも実態に合わせて書き換える。
 
 ## 受け入れ条件
 
@@ -84,7 +84,7 @@ Cloud Run 上のアプリが、意図した設定でまったく動いていま�
 - [ ] `API_PUBLIC_BASE_URL` を渡すと、ログに出る採用済み URL がその値になること
 - [ ] アプリのログが標準出力に出ること
 - [ ] `terraform validate` が通り、`APP_DATA_DIR` が `/mnt/gcs/data` になっていること
-- [ ] [05-github-actions-variables.md](../operations/gcp/05-github-actions-variables.md) の変数一覧が実装と一致していること
+- [ ] [変数一覧](../operations/gcp/05-github-actions-variables.md) が実装と一致していること
 
 ## 検証
 
