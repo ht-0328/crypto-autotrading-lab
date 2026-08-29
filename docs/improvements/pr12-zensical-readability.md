@@ -86,10 +86,10 @@ grep -rn '^> \*\*' docs/
 変換の例:
 
 ```diff
--> **リアル注文について**: [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
+-> **リアル注文について**: [リアル購入処理の仕様](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
 +!!! warning "リアル注文について"
 +
-+    [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
++    [リアル購入処理の仕様](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
 ```
 
 **本文は4スペースでインデントします。** インデントを忘れると admonition の外に出ます。

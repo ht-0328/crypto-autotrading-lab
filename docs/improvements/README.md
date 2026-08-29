@@ -11,9 +11,9 @@
 
 ## 関連ドキュメント
 
-- [指摘一覧と根拠 (findings.md)](findings.md)
-- [第3波バックログ (backlog.md)](backlog.md)
-- [PRとコミットのルール (.agents/skills/pr-and-commit/SKILL.md)](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md)
+- [指摘一覧と根拠](findings.md)
+- [第3波バックログ](backlog.md)
+- [PRとコミットのルール](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md)
 
 ## 使い方
 

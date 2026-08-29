@@ -12,10 +12,10 @@
 
 ## 関連ドキュメント
 
-- [ロードマップと完了条件 (overview/roadmap.md)](../overview/roadmap.md)
-- [改善計画 (improvements/README.md)](../improvements/README.md)
-- [第3波バックログ (improvements/backlog.md)](../improvements/backlog.md)
-- [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](../specifications/features/real-trading-gmo-order.md)
+- [ロードマップと完了条件](../overview/roadmap.md)
+- [改善計画](../improvements/README.md)
+- [第3波バックログ](../improvements/backlog.md)
+- [リアル購入処理の仕様](../specifications/features/real-trading-gmo-order.md)
 
 ## この計画の背景
 

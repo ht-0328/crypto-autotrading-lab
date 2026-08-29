@@ -12,10 +12,10 @@
 
 ## 関連ドキュメント
 
-- [実注文までの作業計画 (plans/README.md)](../plans/README.md)
-- [安全ルールの数値 (overview/roadmap.md)](../overview/roadmap.md)
-- [リアル取引の停止からの復旧手順 (real-trading-recovery.md)](real-trading-recovery.md)
-- [GCP セットアップ手順 (gcp/README.md)](gcp/README.md)
+- [実注文までの作業計画](../plans/README.md)
+- [安全ルールの数値](../overview/roadmap.md)
+- [リアル取引の停止からの復旧手順](real-trading-recovery.md)
+- [GCP セットアップ手順](gcp/README.md)
 
 ## 前提
 

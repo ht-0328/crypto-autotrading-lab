@@ -147,7 +147,7 @@ Zensical がビルドするのは `docs/` 配下だけです。**`docs/` の外�
 python3 scripts/check-doc-links.py
 ```
 
-CI のビルドは `--strict` で実行しており、リンク切れの警告が1件でもあるとPRのチェックが落ちます。詳細は [公開サイトのリンク切れを解消する (improvements/pr11-zensical-broken-links.md)](../improvements/pr11-zensical-broken-links.md) を参照してください。
+CI のビルドは `--strict` で実行しており、リンク切れの警告が1件でもあるとPRのチェックが落ちます。詳細は [公開サイトのリンク切れを解消する](../improvements/pr11-zensical-broken-links.md) を参照してください。
 
 ## 用語補足
 
