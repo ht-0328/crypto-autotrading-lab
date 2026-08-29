@@ -21,6 +21,8 @@
 1. [アプリの目的と一番大事な方針 (overview/product.md)](overview/product.md)
 2. [ロードマップと完了条件 (overview/roadmap.md)](overview/roadmap.md)
 
+> **リアル注文について**: [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
+
 ### 🧠 売買ロジックの仕組みを知りたい方
 
 1. [売買ロジック説明 (architecture/trading-logic.md)](architecture/trading-logic.md)

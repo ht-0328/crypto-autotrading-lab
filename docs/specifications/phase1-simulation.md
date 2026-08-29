@@ -24,6 +24,16 @@
 - GMOコイン Private API の利用
 - レバレッジ取引
 
+### 実注文機能の位置づけ
+
+リアル注文機能（GMOコイン Private API の利用、`RealTradingService`）は **Phase3** のスコープですが、コード上には先行実装されています。Phase1 では次の3つで実行できないようにしています。
+
+1. **起動時ガード**: `app.phase` が 3 未満のときに `real_trade_enabled: true` かつ `dry_run: false` を検出すると、Private API クライアントを組み立てる前に異常終了します。
+2. **既定値**: [config/application-gmo.yaml](../../config/application-gmo.yaml) は `dry_run: true` / `real_trade_enabled: false` です。
+3. **CI**: [ci/prepare-ci-config.sh](../../ci/prepare-ci-config.sh) は常に実注文を無効にした設定を生成します。切り替えの入力は用意していません。
+
+リアル注文そのものの仕様は [リアル購入処理（GMOコイン） 仕様書](features/real-trading-gmo-order.md) を参照してください。フェーズの定義は [ロードマップ](../overview/roadmap.md) にあります。
+
 ## 3. 用語
 
 | 用語 | 意味 |
