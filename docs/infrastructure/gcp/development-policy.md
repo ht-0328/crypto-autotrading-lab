@@ -8,8 +8,21 @@
 
 - この設計書はアプリ実装ではなく、GCPインフラ構成を扱う。
 - GCP上に必要なリソースをコードで再現できるようにする。
-- 手作業やGitHub Actions内の `gcloud` コマンドに依存しすぎない構成にする。
+- 手作業やGitHub Actions内の `gcloud` コマンドに依存しすぎない構成にする。（**現状はこの方針を満たしていない。** 下の「現状との差」を参照）
 - IAM権限、サービスアカウント、保存先、デプロイ先の関係を設計として明確にする。
+
+### 現状との差
+
+この文書は目指す姿を書いたものです。実際のリポジトリは次の状態にあります。
+
+| 項目 | 目指す姿 | 現状 |
+| --- | --- | --- |
+| リソースの作成 | Terraform | GitHub Actions の `gcloud`（`bootstrap-create-gcp.yml` / `bootstrap-grant-iam.yml`） |
+| Cloud Run Job のデプロイ | Terraform | GitHub Actions の `gcloud run jobs deploy`（`deploy-gcp.yml`） |
+| Cloud Scheduler の管理 | Terraform | GitHub Actions の `gcloud`（`scheduler-gcp.yml`） |
+| Terraform コード | 正 | [infra/terraform/gcp/](../../../infra/terraform/gcp/) に存在するが `terraform apply` は運用していない。環境変数の集合は gcloud 側と一致させている |
+
+**現時点で正となるのは GitHub Actions（gcloud）側です。** 一本化するかどうかの判断と、既存リソースの `terraform import` を含む移行は今後の課題として [改善計画のバックログ](../../improvements/backlog.md) に登録しています。
 
 ## 2. 全体構成
 

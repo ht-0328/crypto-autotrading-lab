@@ -6,6 +6,6 @@
 
 最初に読むべきファイルである `development-policy.md` は、TerraformなどでGCPインフラコードを書く前提となる設計書です。
 
-なお、現時点（Phase 1）では Terraform 実装ファイルはまだ追加されていません。
+Terraform の実装ファイルは [infra/terraform/gcp/](../../../infra/terraform/gcp/) に追加済みです。ただし現時点では `terraform apply` を運用しておらず、GCP リソースの構築とデプロイは GitHub Actions の `gcloud` コマンドが正です。一本化は今後の課題として [改善計画のバックログ](../../improvements/backlog.md) に登録しています。
 
 運用手順や具体的なデプロイ方法を探す場合は、`docs/operations/gcp` を参照してください。
