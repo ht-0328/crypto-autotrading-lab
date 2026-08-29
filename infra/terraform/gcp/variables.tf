@@ -86,15 +86,24 @@ variable "app_interval" {
 }
 
 variable "output_path" {
-  description = "結果ファイルの出力パス"
+  # APP_DATA_DIR からの相対パスで指定する。絶対パスを渡すと APP_DATA_DIR に連結されてしまう
+  # （例: /mnt/gcs/data + /mnt/gcs/data/output.json = /mnt/gcs/data/mnt/gcs/data/output.json）
+  description = "取引履歴CSVのファイル名（APP_DATA_DIR からの相対パス）"
   type        = string
-  default     = "/mnt/gcs/data/output.json"
+  default     = "trades.csv"
 }
 
 variable "state_path" {
-  description = "状態ファイルの保存パス"
+  # APP_DATA_DIR からの相対パスで指定する
+  description = "状態ファイルのファイル名（APP_DATA_DIR からの相対パス）"
   type        = string
-  default     = "/mnt/gcs/data/state.json"
+  default     = "state.json"
+}
+
+variable "trading_order_sizing_mode" {
+  description = "注文サイズモード（FIXED_AMOUNT または ALL_IN）"
+  type        = string
+  default     = "FIXED_AMOUNT"
 }
 
 variable "trading_buy_threshold" {

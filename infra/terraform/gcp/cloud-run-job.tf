@@ -88,6 +88,10 @@ resource "google_cloud_run_v2_job" "app_job" {
           value = var.trading_atr_loss_multiplier
         }
         env {
+          name  = "TRADING_ORDER_SIZING_MODE"
+          value = var.trading_order_sizing_mode
+        }
+        env {
           name  = "API_RETRY_COUNT"
           value = var.api_retry_count
         }

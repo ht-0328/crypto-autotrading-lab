@@ -2,6 +2,19 @@
 
 このディレクトリには、GCPインフラリソースをプロビジョニングし管理するためのTerraform構成が含まれています。
 
+## 現状: `terraform apply` は運用していない
+
+**Cloud Run Job と Cloud Scheduler の正は、GitHub Actions の `gcloud` コマンド側です。**
+
+- リソースの作成: `bootstrap-create-gcp.yml` / `bootstrap-grant-iam.yml`
+- Cloud Run Job のデプロイ: `deploy-gcp.yml`（`gcloud run jobs deploy`）
+- Cloud Scheduler の管理: `scheduler-gcp.yml`
+- Terraform: コードは維持しているが `terraform apply` するワークフローは無い。[terraform-validate.yml](../../../.github/workflows/terraform-validate.yml) で構文検証のみ行う
+
+同じ構成を宣言的に保つため、**Cloud Run Job に渡す環境変数の集合は `deploy-gcp.yml` 側と一致させています。** どちらかを変更したら、もう一方も更新してください。
+
+一本化するかどうかの判断と、既存リソースの `terraform import` を含む移行は今後の課題です（[改善計画のバックログ](../../../docs/improvements/backlog.md)）。
+
 ## Terraform と GitHub Actions の責務分離
 
 このプロジェクトでは、TerraformとGitHub Actionsの間で責務を明確に分離しています：

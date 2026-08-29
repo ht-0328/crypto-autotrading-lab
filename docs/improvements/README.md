@@ -61,7 +61,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 | 実施済み | [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md) | バックテストの約定モデルを是正する | 高 |
 | 実施済み | [pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md) | 実注文機能を Phase1 の仕様から分離する | 高 |
 | 実施済み | [pr08-doc-consistency.md](pr08-doc-consistency.md) | 仕様書・設計書の食い違いを解消する | 中 |
-| 未着手 | [pr10-config-fail-fast.md](pr10-config-fail-fast.md) | 設定の fail-fast と環境変数契約の統一 | 中 |
+| 実施済み | [pr10-config-fail-fast.md](pr10-config-fail-fast.md) | 設定の fail-fast と環境変数契約の統一 | 中 |
 
 ## 推奨する着手順
 

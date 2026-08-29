@@ -128,8 +128,8 @@ DevContainer環境では、以下のスクリプトを実行することで、�
 - **手数料率・スリッページ率を設定した結果は、設定なしの過去結果とは比較できません。** 過去の成績をもとに戦略を選んでいた場合は、同じ条件で取り直してください。
 
 **設定ファイルの扱い:**
-- 元の設定ファイル（`config/application-gmo.yaml`）は直接書き換えられません。
-- 実行時に一時的な設定ファイルとして `data/local-devcontainer/application-runtime.yaml` が生成され、本物のAPI URL等の設定が反映されます。
+- 元の設定ファイル（`config/application-gmo.yaml`）をそのまま使い、書き換えません。
+- 変更したい項目（Public API の接続先、注文数量モードなど）は環境変数で上書きします。一時的な設定ファイルは生成しません。
 - 実行時のデータ（CSVなど）は `data/local-devcontainer` ディレクトリに出力されます。
 
 Docker Compose を使用する場合 (初回clone直後でもそのままビルド・起動できます):

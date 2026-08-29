@@ -106,10 +106,17 @@ jobs:
       - name: Run Application
         run: |
           docker run --rm --network crypto-ci-net \
-            -e APP_CONFIG_PATH=$APP_CONFIG_PATH \
+            -e APP_CONFIG_PATH="$APP_CONFIG_PATH" \
             -e APP_DATA_DIR=/app/data \
+            -e APP_TRADING_STRATEGY_NAME="$APP_TRADING_STRATEGY_NAME" \
+            -e API_PUBLIC_BASE_URL="$API_PUBLIC_BASE_URL" \
+            -e API_PRIVATE_BASE_URL="$API_PRIVATE_BASE_URL" \
+            -e REAL_TRADING_DRY_RUN="$REAL_TRADING_DRY_RUN" \
+            -e REAL_TRADING_ENABLED="$REAL_TRADING_ENABLED" \
+            -e REAL_TRADING_MAX_ORDER_JPY="$REAL_TRADING_MAX_ORDER_JPY" \
+            -e REAL_TRADING_MAX_DAILY_ORDER_JPY="$REAL_TRADING_MAX_DAILY_ORDER_JPY" \
+            -e REAL_TRADING_MAX_POSITION_JPY="$REAL_TRADING_MAX_POSITION_JPY" \
             -v ${{ github.workspace }}/config:/app/config:ro \
-            -v ${{ github.workspace }}/build/ci-config:/app/build/ci-config:ro \
             -v ${{ github.workspace }}/data:/app/data \
             crypto-app:ci
 
