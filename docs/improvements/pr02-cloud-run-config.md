@@ -13,7 +13,7 @@
 
 ## 対象の指摘
 
-[findings.md](findings.md) の **A** / **B** / **F** / **H**（重要度は高〜中）
+[findings.md](findings.md) の **A** / **B** / **F** / **H**
 
 ## なぜ直すか
 
@@ -43,7 +43,8 @@ Cloud Run 上のアプリが、意図した設定でまったく動いていま�
    ENV_VARS="${ENV_VARS},API_PRIVATE_BASE_URL=${{ vars.API_PRIVATE_BASE_URL }}"
    ```
 
-   GitHub Variables 側にも `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` の登録が必要になるため、[05-github-actions-variables.md](../operations/gcp/05-github-actions-variables.md) の変数一覧を更新し、旧 `API_BASE_URL` は削除する旨を書く。
+   GitHub Variables 側にも新しい変数の登録が必要になる。
+   [変数一覧](../operations/gcp/05-github-actions-variables.md) を更新し、旧 `API_BASE_URL` を削除する旨を書く。
 
 2. **Terraform に `APP_DATA_DIR` を追加する**。
 
@@ -63,7 +64,8 @@ Cloud Run 上のアプリが、意図した設定でまったく動いていま�
    ENV APP_CONFIG_PATH=/app/config/application-gmo.yaml
    ```
 
-   `ConfigLoader` は「設定ファイルを土台にして環境変数で上書きする」設計なので、土台を欠いたまま運用するのは設計と食い違います。同梱する [application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) は `dry_run: true` / `real_trade_enabled: false` なので安全側です。
+   `ConfigLoader` は「設定ファイルを土台に環境変数で上書きする」設計である。
+   土台を欠いたままの運用は、設計と食い違う。同梱する [application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) は `dry_run: true` / `real_trade_enabled: false` なので安全側です。
 
 4. **logback.xml に標準出力を追加する**。既存の `FileAppender` は残す。
 

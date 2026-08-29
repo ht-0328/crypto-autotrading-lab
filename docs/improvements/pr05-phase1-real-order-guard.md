@@ -21,7 +21,8 @@
 
 - **O**: [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) は、2つが揃うだけで Private API を構築します。
   設定ミスや新しいデプロイ経路の追加だけで、禁止事項を破れます。
-- **K**: [ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) で `dry_run: false` を選ぶと、[prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) が `real_trade_enabled: true` を生成します。
+- **K**: [ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) で `dry_run: false` を選んだ場合の問題です。
+  [prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) が `real_trade_enabled: true` を生成します。
   Private API は WireMock 固定なので実発注は届きません。
   それでも、CI に実取引経路を有効化する選択肢があること自体が禁止事項と衝突します。
 - **L**: 実取引モードで SELL 判定が出ると、`RealTradingService` はログを出すだけです。しかし `SimulationService` が仮想売却して `isHolding=false` にします。

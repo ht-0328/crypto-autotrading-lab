@@ -17,7 +17,7 @@
 
 ## なぜ直すか
 
-- **U（重要度: 高）**: README が案内する `docker compose -f docker/compose/local.yml up --build` が危険です。アプリは1回実行して終了するバッチなのに `restart: unless-stopped` が付いているため無限に再起動し、設定は本物の GMO Public API を向いています（`API_BASE_URL` は実装が読まないため無視され、[application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) の `https://api.coin.z.com/public` が使われる）。同時に起動する WireMock は Public API には使われません。
+- **U（重要度: 高）**: README が案内する `docker compose ... up --build` が危険です。アプリは1回実行して終了するバッチなのに `restart: unless-stopped` が付いているため無限に再起動し、設定は本物の GMO Public API を向いています（`API_BASE_URL` は実装が読まないため無視され、[application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) の `https://api.coin.z.com/public` が使われる）。同時に起動する WireMock は Public API には使われません。
 - **G（重要度: 中）**: ワークフローの `strategy_name` 選択肢が実装済み5戦略とズレています。`ci.yml` は2件、`deploy-gcp.yml` と `backtest-smoke.yml` は `AtrTrendConfirmReboundStrategy` が欠落。
 - **AA（重要度: 低）**: `ci.yml` が `./gradlew build`（テスト込み）の直後に `./gradlew test --tests "*Architecture*"` を再実行していて二重です。
 
@@ -82,7 +82,7 @@ options:
 
 ### 5. README を更新する
 
-Docker Compose の節に、既定で WireMock に接続すること、本物の Public API を使う場合は `API_PUBLIC_BASE_URL` を明示することを書く。
+Docker Compose の節に2点を書く。既定で WireMock に繋ぐこと、本物の API を使うなら `API_PUBLIC_BASE_URL` を明示すること。
 
 ## 受け入れ条件
 
@@ -105,7 +105,7 @@ grep '採用したAPIベースURL' data/app.log   # wiremock を指している�
 docker compose -f docker/compose/local.yml down
 ```
 
-ワークフローの選択肢は、GitHub の Actions 画面で `workflow_dispatch` の入力候補に5件出ることを確認する。
+ワークフローの選択肢は Actions 画面で確認する。入力候補が5件出ればよい。
 
 ## スコープ外
 

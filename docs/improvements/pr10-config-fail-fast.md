@@ -21,7 +21,7 @@
 - **B の残り（高）**: `order_sizing_mode` だけ環境変数で上書きできません。Cloud Run では設定ファイルの値から変えられません。
 - **D（低）**: `stop_on_unconfirmed_order` は読み込まれるだけです。どの判定にも使われていません。[RealTradingSafetyChecker](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は値に関係なく常に停止します。設定項目の意味と実装が一致していません。
 - **Z（低）**: 設定の切り替えが sed による YAML 書き換えで2箇所に散在しています。`ConfigLoader` は環境変数上書きに対応済みなので sed は不要です。
-- **C（中、乖離解消のみ）**: gcloud と Terraform で、渡す環境変数が食い違っています。一本化は [backlog.md](backlog.md) 送りですが、食い違いだけは消します。
+- **C（中、乖離解消のみ）**: gcloud と Terraform で、渡す環境変数が食い違っています。一本化は [backlog.md](backlog.md) 送りです。食い違いだけ消します。
 - **AD（中、作業中に発見）**: Terraform の `output_path` / `state_path` の既定値は絶対パスです。しかしアプリは `Paths.get(APP_DATA_DIR, statePath)` で連結するため `/mnt/gcs/data/mnt/gcs/data/state.json` になります。`terraform apply` を運用していないため実害は出ていません。
 - **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡します。[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を読むようにしたため、「ベースURLが空のまま起動する」経路ができています。
 

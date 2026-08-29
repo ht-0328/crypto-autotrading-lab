@@ -22,7 +22,7 @@
 - **V**: 出力 CSV 名が仕様書 `history_YYYYMMDD.csv` / 実装 `trades_YYYYMMDD.csv`
 - **W**: `order_sizing_mode`（`ALL_IN`）が仕様書に無く、「1回の売買金額 1,000円固定」という記述と矛盾する
 - **X**: 毎日 6:00〜約7:15 は判定がスキップされるが、どこにも書かれていない
-- **Y**: 設計書の記述が実装と違う（Terraform の有無、`TradeDecision` の型、gcloud 依存の方針）。`isStopped=true` からの復旧手順が運用ドキュメントに無い
+- **Y**: 設計書の記述が実装と違う。あわせて `isStopped=true` からの復旧手順が運用ドキュメントに無い
 
 ## 変更対象
 
@@ -60,12 +60,12 @@
 
 ### 2. 設計書の修正
 
-- [infrastructure/gcp/README.md](../infrastructure/gcp/README.md) 9行付近の「現時点（Phase 1）では Terraform 実装ファイルはまだ追加されていません」を削除し、[infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に実装があることを書く。
-- [development-policy.md](../infrastructure/gcp/development-policy.md) 11行付近「手作業やGitHub Actions内の `gcloud` コマンドに依存しすぎない構成にする」に注記を足す。
+- [infrastructure/gcp/README.md](../infrastructure/gcp/README.md) の「Terraform 実装ファイルはまだ追加されていません」を削除し、[infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に実装があることを書く。
+- [development-policy.md](../infrastructure/gcp/development-policy.md) の「`gcloud` コマンドに依存しすぎない構成にする」に注記を足す。
 
   > **現状**: 構築とデプロイは GitHub Actions の `gcloud` コマンドが正です。Terraform コードは追加済みですが `terraform apply` は運用していません。一本化は今後の課題です。
 
-- [trading-strategy-design.md](../architecture/trading-strategy-design.md) 23行付近の「enum `TradeDecision`」を修正する。実体は [TradeDecision.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeDecision.kt) の data class で、判定の種類は [TradeAction.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeAction.kt) の enum。配置も `domain.model` であり `domain.strategy` ではない。
+- [trading-strategy-design.md](../architecture/trading-strategy-design.md) の「enum `TradeDecision`」を修正する。実体は [TradeDecision.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeDecision.kt) の data class で、判定の種類は [TradeAction.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeAction.kt) の enum。配置も `domain.model` であり `domain.strategy` ではない。
 - [backtest-design.md](../architecture/backtest-design.md) の Writer クラス名を [BacktestResultOutputPort.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/repository/BacktestResultOutputPort.kt) など実装名に合わせる。
 
 ### 3. 復旧手順の新規作成
@@ -94,7 +94,7 @@
 
 - [ ] 仕様書の CSV 名・ログ出力が実装と一致していること
 - [ ] `order_sizing_mode` と 6時境界の挙動が仕様書に書かれていること
-- [ ] 設計書に「Terraform は未追加」「`TradeDecision` は enum」といった誤った記述が残っていないこと
+- [ ] 設計書に誤った記述が残っていないこと
 - [ ] `isStopped` からの復旧手順が [docs/operations/](../operations/) から辿れること
 - [ ] テンプレートに「状態」と「最終確認日」の欄があること
 - [ ] コードに変更が無いこと
