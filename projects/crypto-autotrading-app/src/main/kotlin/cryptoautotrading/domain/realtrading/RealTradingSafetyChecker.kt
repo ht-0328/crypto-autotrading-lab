@@ -96,7 +96,13 @@ class RealTradingSafetyChecker {
             return SafetyCheckResult(passed = false, reason = reason)
         }
 
-        // 6. 最大保有金額(ポジション)のチェック
+        // 6. その日の損失上限のチェック
+        checkDailyLossLimit(config, state, today)?.let { return it }
+
+        // 7. 連敗による停止のチェック
+        checkConsecutiveLossLimit(config, state, today)?.let { return it }
+
+        // 8. 最大保有金額(ポジション)のチェック
         if (config.maxPositionJpy == null) {
             val reason = "max_position_jpyが未設定"
             logger.warn { "安全チェックNG: $reason" }
@@ -111,6 +117,76 @@ class RealTradingSafetyChecker {
         }
 
         return SafetyCheckResult(passed = true)
+    }
+
+    /**
+     * その日の損失が上限に達していないかを判定する。
+     *
+     * 手動の承認を置かない運転では、負けが込んだときに止めるのはシステム自身になる。
+     * 上限に達したらその日は新規の買いを行わない。日付が変われば自動で解除される。
+     *
+     * **止めるのは新規の買いだけである。** 保有を解消する売りは止めない。
+     * 売りまで止めると、ポジションを抱えたまま損切りできなくなる。
+     *
+     * @param config リアル取引設定
+     * @param state 現在のシミュレーション(およびリアル取引)の状態
+     * @param today 判定する日付
+     * @return 上限に達していれば注文不可の結果、問題なければ null
+     */
+    private fun checkDailyLossLimit(
+        config: RealTradingConfig,
+        state: SimulationState,
+        today: String
+    ): SafetyCheckResult? {
+        val maxDailyLossJpy = config.maxDailyLossJpy
+            ?: return reject("max_daily_loss_jpyが未設定")
+
+        if (maxDailyLossJpy <= 0) {
+            return reject("max_daily_loss_jpy ($maxDailyLossJpy) が0以下")
+        }
+
+        val dailyResult = state.realTrading.dailyRealizedProfitAndLossOn(today)
+        val lossLimit = BigDecimal(maxDailyLossJpy).negate()
+
+        if (dailyResult <= lossLimit) {
+            return reject("1日の損失が上限に到達（当日の確定損益=$dailyResult, 上限=$lossLimit）")
+        }
+
+        return null
+    }
+
+    /**
+     * 連敗が上限に達していないかを判定する。
+     *
+     * 連敗が続いているときは、相場が想定と違う動きをしている可能性が高い。
+     * 上限に達したらその日は新規の買いを行わない。日付が変われば自動で解除される。
+     *
+     * 解除されないと、停止したまま売買が行われず、連敗が途切れる機会も無くなって
+     * 永久に止まったままになる。
+     *
+     * @param config リアル取引設定
+     * @param state 現在のシミュレーション(およびリアル取引)の状態
+     * @param today 判定する日付
+     * @return 上限に達していれば注文不可の結果、問題なければ null
+     */
+    private fun checkConsecutiveLossLimit(
+        config: RealTradingConfig,
+        state: SimulationState,
+        today: String
+    ): SafetyCheckResult? {
+        val maxConsecutiveLosses = config.maxConsecutiveLosses
+            ?: return reject("max_consecutive_lossesが未設定")
+
+        if (maxConsecutiveLosses <= 0) {
+            return reject("max_consecutive_losses ($maxConsecutiveLosses) が0以下")
+        }
+
+        val lossCount = state.realTrading.consecutiveLossCountOn(today)
+        if (lossCount >= maxConsecutiveLosses) {
+            return reject("連敗が上限に到達（連敗=$lossCount, 上限=$maxConsecutiveLosses）")
+        }
+
+        return null
     }
 
     /**

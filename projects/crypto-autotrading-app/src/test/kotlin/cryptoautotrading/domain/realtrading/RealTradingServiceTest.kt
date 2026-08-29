@@ -1140,6 +1140,162 @@ class RealTradingServiceTest {
 
         assertEquals("2026-08-29T10:00:00", newState.realTrading.latestOrder?.orderedAt)
     }
+
+    @Test
+    fun `売りの約定で損失が出たら連敗回数が増えその日の損益に反映されること`() = runBlocking {
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        val decision = TradeDecision(TradeAction.HOLDING, "保有中")
+        val config = tradingConfig()
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("1000000"),
+            holdingAmount = BigDecimal("0.01"),
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "loss_sell_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.SELL,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("9900"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("990000")
+                )
+            )
+        )
+
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("loss_sell_id", "EXECUTED", BigDecimal("0.01")))
+        // 買値 1,000,000 に対して 990,000 で売却したので損失
+        mockClient.mockExecutionsResponse = listOf(
+            ExecutedOrder(
+                "exec_1", "loss_sell_id", "BTC", "SELL",
+                BigDecimal("990000"), BigDecimal("0.01"), BigDecimal.ZERO, "2026-08-29T10:00:00"
+            )
+        )
+
+        val newState = serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("990000"),
+            tickerPrice = BigDecimal("990000")
+        )
+
+        assertEquals("2026-08-29", newState.realTrading.dailyResultDate)
+        assertEquals(0, BigDecimal("-100").compareTo(newState.realTrading.dailyRealizedProfitAndLoss))
+        assertEquals(1, newState.realTrading.consecutiveLossCount)
+    }
+
+    @Test
+    fun `売りの約定で利益が出たら連敗回数がリセットされること`() = runBlocking {
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        val decision = TradeDecision(TradeAction.HOLDING, "保有中")
+        val config = tradingConfig()
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("1000000"),
+            holdingAmount = BigDecimal("0.01"),
+            realTrading = RealTradingState(
+                dailyResultDate = "2026-08-29",
+                dailyRealizedProfitAndLoss = BigDecimal("-100"),
+                consecutiveLossCount = 2,
+                latestOrder = RealOrderState(
+                    orderId = "profit_sell_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.SELL,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10050"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1005000")
+                )
+            )
+        )
+
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("profit_sell_id", "EXECUTED", BigDecimal("0.01")))
+        mockClient.mockExecutionsResponse = listOf(
+            ExecutedOrder(
+                "exec_1", "profit_sell_id", "BTC", "SELL",
+                BigDecimal("1005000"), BigDecimal("0.01"), BigDecimal.ZERO, "2026-08-29T10:00:00"
+            )
+        )
+
+        val newState = serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1005000"),
+            tickerPrice = BigDecimal("1005000")
+        )
+
+        assertEquals(0, newState.realTrading.consecutiveLossCount, "利益が出たら連敗は途切れること")
+        // -100 に +50 が足される
+        assertEquals(0, BigDecimal("-50").compareTo(newState.realTrading.dailyRealizedProfitAndLoss))
+    }
+
+    @Test
+    fun `その日の損失が上限に達したら新規の買い注文が出ないこと`() = runBlocking {
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                dailyResultDate = "2026-08-29",
+                dailyRealizedProfitAndLoss = BigDecimal("-2500")
+            )
+        )
+
+        serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertFalse(mockClient.placeOrderCalled)
+    }
+
+    @Test
+    fun `その日の損失が上限に達していても売り注文は出せること`() = runBlocking {
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithClock = RealTradingService(exchangeClient = mockClient, clock = clock)
+        mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.01"), BigDecimal("0.01"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
+        val config = tradingConfig()
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("1000000"),
+            holdingAmount = BigDecimal("0.01"),
+            realTrading = RealTradingState(
+                dailyResultDate = "2026-08-29",
+                dailyRealizedProfitAndLoss = BigDecimal("-2500"),
+                consecutiveLossCount = 5
+            )
+        )
+
+        serviceWithClock.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        // 止めるのは新規の買いだけ。売りまで止めると損切りできなくなる
+        assertTrue(mockClient.placeOrderCalled)
+        assertEquals("SELL", mockClient.lastPlaceOrderSide)
+    }
 }
 
 /**
@@ -1160,7 +1316,9 @@ private fun tradingConfig(
     dryRun: Boolean = false,
     maxOrderJpy: Int? = null,
     maxDailyOrderJpy: Int? = null,
-    maxPositionJpy: Int? = null
+    maxPositionJpy: Int? = null,
+    maxDailyLossJpy: Int = 2000,
+    maxConsecutiveLosses: Int = 3
 ): RealTradingConfig = RealTradingConfig(
     realTradeEnabled = realTradeEnabled,
     dryRun = dryRun,
@@ -1170,7 +1328,9 @@ private fun tradingConfig(
     minOrderSize = BigDecimal("0.00001"),
     sizeStep = BigDecimal("0.00001"),
     takerFeeRate = BigDecimal("0.0005"),
-    maxSlippageRate = BigDecimal("0.005")
+    maxSlippageRate = BigDecimal("0.005"),
+    maxDailyLossJpy = maxDailyLossJpy,
+    maxConsecutiveLosses = maxConsecutiveLosses
 )
 
 class MockRealTradingClient : RealTradingClient {

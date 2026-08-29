@@ -25,6 +25,11 @@ import java.math.BigDecimal
  *   1つは注文前で、K線の終値と取引所の最新価格がこの割合を超えて離れていたら注文を見送る。
  *   もう1つは約定後で、約定価格が発注時の想定価格からこの割合を超えて離れていたら新規の買いを止める。
  *   未設定のまま実注文を有効にすると起動時に失敗する
+ * @property maxDailyLossJpy 1日の損失の上限（JPY、正の数で指定）。
+ *   その日の確定損益がこの額のマイナスに達したら、その日は新規の買いを止める。
+ *   未設定のまま実注文を有効にすると起動時に失敗する
+ * @property maxConsecutiveLosses 連敗の上限。この回数に達したら、その日は新規の買いを止める。
+ *   日付が変われば解除される。未設定のまま実注文を有効にすると起動時に失敗する
  */
 data class RealTradingConfig(
     @JsonProperty("dry_run")
@@ -46,5 +51,9 @@ data class RealTradingConfig(
     @JsonProperty("taker_fee_rate")
     val takerFeeRate: BigDecimal? = null,
     @JsonProperty("max_slippage_rate")
-    val maxSlippageRate: BigDecimal? = null
+    val maxSlippageRate: BigDecimal? = null,
+    @JsonProperty("max_daily_loss_jpy")
+    val maxDailyLossJpy: Int? = null,
+    @JsonProperty("max_consecutive_losses")
+    val maxConsecutiveLosses: Int? = null
 )

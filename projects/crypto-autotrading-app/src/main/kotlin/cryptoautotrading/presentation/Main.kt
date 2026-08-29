@@ -89,6 +89,7 @@ fun main() = runBlocking {
         if (isRealTradeActive) {
             validateOrderSizeSettings(config.realTrading)
             validateOrderPriceSettings(config.realTrading)
+            validateAutoStopSettings(config.realTrading)
         }
 
         // 定期実行が重複して起動すると、2つの実行が同じ状態を「保有なし」と読み、
@@ -225,5 +226,36 @@ private fun validateOrderPriceSettings(realTradingConfig: RealTradingConfig) {
     if (maxSlippageRate <= BigDecimal.ZERO) {
         logger.error { "max_slippage_rate は正の数である必要があります。max_slippage_rate=$maxSlippageRate" }
         error("許容スリッページの設定が不正です")
+    }
+}
+
+/**
+ * 自動で停止する条件の設定が揃っているかを検証する。
+ *
+ * 手動の承認を置かない運転では、負けが込んだときに止めるのはシステム自身になる。
+ * 設定が無いまま実注文を有効にすると、歯止めが金額の上限だけになる。
+ *
+ * @param realTradingConfig リアル取引設定
+ * @throws IllegalStateException 損失上限または連敗上限が未設定、もしくは正の数でない場合
+ */
+private fun validateAutoStopSettings(realTradingConfig: RealTradingConfig) {
+    val maxDailyLossJpy = realTradingConfig.maxDailyLossJpy
+    val maxConsecutiveLosses = realTradingConfig.maxConsecutiveLosses
+
+    if (maxDailyLossJpy == null || maxConsecutiveLosses == null) {
+        logger.error {
+            "実注文には max_daily_loss_jpy と max_consecutive_losses の設定が必要です。" +
+                "値は docs/overview/roadmap.md の「安全ルール（数値）」に合わせてください。" +
+                "max_daily_loss_jpy=$maxDailyLossJpy, max_consecutive_losses=$maxConsecutiveLosses"
+        }
+        error("自動で停止する条件の設定が不足しています")
+    }
+
+    if (maxDailyLossJpy <= 0 || maxConsecutiveLosses <= 0) {
+        logger.error {
+            "max_daily_loss_jpy と max_consecutive_losses は正の数である必要があります。" +
+                "max_daily_loss_jpy=$maxDailyLossJpy, max_consecutive_losses=$maxConsecutiveLosses"
+        }
+        error("自動で停止する条件の設定が正の数ではありません")
     }
 }
