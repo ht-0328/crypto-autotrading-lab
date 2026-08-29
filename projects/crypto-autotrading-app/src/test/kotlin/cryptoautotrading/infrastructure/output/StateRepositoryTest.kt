@@ -143,4 +143,61 @@ class StateRepositoryTest {
             repository.load()
         }
     }
+
+    @Test
+    fun `保存に失敗した場合は例外が呼び出し元に伝わること`(@TempDir tempDir: Path) {
+        // Arrange: ディレクトリであるべき場所に通常ファイルを置き、保存を失敗させる
+        val blockingFile = tempDir.resolve("blocked").toFile()
+        blockingFile.writeText("これはディレクトリではない")
+        val stateFilePath = blockingFile.toPath().resolve("state.json").toAbsolutePath().toString()
+        val repository = StateRepository(stateFilePath)
+
+        // Act & Assert
+        assertThrows(Exception::class.java) {
+            repository.save(SimulationState(cashBalance = BigDecimal("10000")))
+        }
+    }
+
+    @Test
+    fun `保存後に一時ファイルが残らないこと`(@TempDir tempDir: Path) {
+        // Arrange
+        val stateFilePath = tempDir.resolve("state.json").toAbsolutePath().toString()
+        val repository = StateRepository(stateFilePath)
+
+        // Act
+        repository.save(SimulationState(cashBalance = BigDecimal("10000")))
+
+        // Assert
+        assertTrue(tempDir.resolve("state.json").toFile().exists())
+        assertFalse(tempDir.resolve("state.json.tmp").toFile().exists())
+    }
+
+    @Test
+    fun `既存の状態ファイルが新しい内容で置き換わること`(@TempDir tempDir: Path) {
+        // Arrange
+        val stateFilePath = tempDir.resolve("state.json").toAbsolutePath().toString()
+        val repository = StateRepository(stateFilePath)
+        repository.save(SimulationState(cashBalance = BigDecimal("10000")))
+
+        // Act
+        repository.save(SimulationState(cashBalance = BigDecimal("20000"), isHolding = true))
+
+        // Assert
+        val loadedState = repository.load()
+        assertEquals(BigDecimal("20000"), loadedState.cashBalance)
+        assertTrue(loadedState.isHolding)
+    }
+
+    @Test
+    fun `親ディレクトリが存在しない場合は作成して保存できること`(@TempDir tempDir: Path) {
+        // Arrange
+        val stateFilePath = tempDir.resolve("nested/dir/state.json").toAbsolutePath().toString()
+        val repository = StateRepository(stateFilePath)
+
+        // Act
+        repository.save(SimulationState(cashBalance = BigDecimal("30000")))
+
+        // Assert
+        assertEquals(BigDecimal("30000"), repository.load().cashBalance)
+    }
 }
