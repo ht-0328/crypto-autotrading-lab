@@ -8,6 +8,7 @@ import cryptoautotrading.domain.model.AppConfig
 import cryptoautotrading.domain.model.AppSettings
 import cryptoautotrading.domain.model.OrderSizingMode
 import cryptoautotrading.domain.model.OutputConfig
+import cryptoautotrading.domain.model.notification.NotificationConfig
 import cryptoautotrading.domain.model.TradingConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -284,9 +285,47 @@ object ConfigLoader {
                 stopOnUnconfirmedOrder = resolveStopOnUnconfirmedOrder(base.realTrading.stopOnUnconfirmedOrder),
                 maxOrderJpy = envIntOrNull("REAL_TRADING_MAX_ORDER_JPY", base.realTrading.maxOrderJpy),
                 maxDailyOrderJpy = envIntOrNull("REAL_TRADING_MAX_DAILY_ORDER_JPY", base.realTrading.maxDailyOrderJpy),
-                maxPositionJpy = envIntOrNull("REAL_TRADING_MAX_POSITION_JPY", base.realTrading.maxPositionJpy)
+                maxPositionJpy = envIntOrNull("REAL_TRADING_MAX_POSITION_JPY", base.realTrading.maxPositionJpy),
+                minOrderSize = envBigDecimalOrNull("REAL_TRADING_MIN_ORDER_SIZE", base.realTrading.minOrderSize),
+                sizeStep = envBigDecimalOrNull("REAL_TRADING_SIZE_STEP", base.realTrading.sizeStep),
+                takerFeeRate = envBigDecimalOrNull("REAL_TRADING_TAKER_FEE_RATE", base.realTrading.takerFeeRate),
+                maxSlippageRate = envBigDecimalOrNull("REAL_TRADING_MAX_SLIPPAGE_RATE", base.realTrading.maxSlippageRate),
+                maxDailyLossJpy = envIntOrNull("REAL_TRADING_MAX_DAILY_LOSS_JPY", base.realTrading.maxDailyLossJpy),
+                maxConsecutiveLosses = envIntOrNull(
+                    "REAL_TRADING_MAX_CONSECUTIVE_LOSSES",
+                    base.realTrading.maxConsecutiveLosses
+                )
+            ),
+            notification = NotificationConfig(
+                enabled = envBoolean("NOTIFICATION_ENABLED", base.notification.enabled),
+                payloadKey = envString("NOTIFICATION_PAYLOAD_KEY") ?: base.notification.payloadKey
             )
         )
+    }
+
+    /**
+     * 環境変数を BigDecimal として取得する。
+     *
+     * 数値として解釈できない値が指定された場合は、黙って既定値に戻さず起動時に失敗させる。
+     * 注文数量や手数料に関わる値なので、設定ミスに気付かないまま動かしてはいけない。
+     *
+     * @param name 環境変数名
+     * @param base 未指定時に使用するベースの値
+     * @return 採用する値
+     * @throws IllegalStateException 数値として解釈できない場合
+     */
+    private fun envBigDecimalOrNull(name: String, base: java.math.BigDecimal?): java.math.BigDecimal? {
+        val raw = System.getenv(name)
+        if (raw.isNullOrBlank()) {
+            return base
+        }
+
+        return try {
+            java.math.BigDecimal(raw.trim())
+        } catch (e: NumberFormatException) {
+            logger.error(e) { "ConfigLoader: $name が数値として解釈できません。値: $raw" }
+            error("$name が数値として解釈できません")
+        }
     }
 
     /**
