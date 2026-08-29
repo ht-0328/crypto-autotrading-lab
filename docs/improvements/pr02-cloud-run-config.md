@@ -22,7 +22,8 @@ Cloud Run 上のアプリが、意図した設定でまったく動いていま�
 - **A**: [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) と [local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) は `API_BASE_URL` などを渡します。しかし [ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が読むのは `API_PUBLIC_BASE_URL` / `API_PRIVATE_BASE_URL` です。指定した URL は無視され、隠れたデフォルト（本物の GMO API）に繋ぎます。
 - **B**: [Dockerfile](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/app/Dockerfile) は jar しかコピーせず、`APP_CONFIG_PATH` も未設定です。そのため Cloud Run では設定ファイルが常に見つからず `createDefaultConfig()` にフォールバックします。
 - **F**: [logback.xml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/resources/logback.xml) はファイル出力だけです。Cloud Logging にアプリログが残りません。
-- **H**: [cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) に `APP_DATA_DIR` がありません。`app.log` だけがコンテナローカルに出て、Job 終了時に消えます（`state.json` と結果ファイルは `output_path` / `state_path` が絶対パスなので残ります）。
+- **H**: [cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) に `APP_DATA_DIR` がありません。`app.log` だけがコンテナローカルに出て、Job 終了時に消えます。
+  `state.json` と結果ファイルは、パス指定が絶対パスなので残ります。
 
 ## 変更対象
 

@@ -19,7 +19,8 @@
 
 [scripts/docker-clean.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/scripts/docker-clean.sh) が、ホスト上のリソースを確認なしで削除していました。
 対象は全コンテナ・全イメージ・全ボリューム・全ネットワークです。
-`docker system prune -a --volumes -f` まで実行していました。他プロジェクトのデータも消え、DevContainer 内から実行すれば開発環境自体も削除対象になります。README にも説明がなく、実行1回で被害が出ます。
+`docker system prune -a --volumes -f` まで実行していました。
+他プロジェクトのデータも消えます。DevContainer 内から実行すれば開発環境自体も消えます。README にも説明がなく、実行1回で被害が出ます。
 
 ## 変更対象
 

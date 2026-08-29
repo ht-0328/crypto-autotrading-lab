@@ -25,13 +25,14 @@
 
 ## 概要
 
-Cloud Run Job は「1回だけ動いて終わる」仕組みです。自動売買システムとして動かし続けるには、**Cloud Scheduler** を使って定期的に（タイマーで）呼び出す必要があります。
+Cloud Run Job は「1回だけ動いて終わる」仕組みです。
+動かし続けるには、**Cloud Scheduler** で定期的に呼び出します。
 これも GitHub Actions から設定できます。
 
 ## 設定の手順
 
 1. GitHub リポジトリの **Actions** タブを開きます。
-2. 左側の workflow 一覧から **Cloud Scheduler Management** を選びます。
+2. **Cloud Scheduler Management** を選びます。
 3. 右側の **Run workflow** ボタンを押します。
 4. `Action to perform` のプルダウンから、行いたい操作を選びます。
    - `create`: 新しく定期実行のタイマーを作ります（または更新します）。
@@ -43,13 +44,14 @@ Cloud Run Job は「1回だけ動いて終わる」仕組みです。自動売�
 
 ## 取引戦略を変えるときの注意
 
-Cloud Scheduler は「すでにデプロイされている Cloud Run Job のスイッチを押すだけ」の役割です。
-もし取引戦略（`strategy_name`）を変更したい場合は、Scheduler を触るのではなく、もう一度 **Deploy to GCP** ワークフローを実行して Cloud Run Job 自体を更新してください。
+Cloud Scheduler の役割は、デプロイ済みの Cloud Run Job を呼び出すことだけです。
+取引戦略を変えたい場合は、Scheduler を触りません。
+**Deploy to GCP** をもう一度実行し、Cloud Run Job 自体を更新してください。
 
 ## 完了条件チェックリスト
 
 - [ ] Cloud Scheduler Management が緑色（成功）で終わった
-- [ ] GCP のコンソールで Cloud Scheduler にジョブが登録されていることが確認できた
+- [ ] Cloud Scheduler にジョブが登録されていることを確認した
 
 これで、GCPへのデプロイと自動実行の設定はすべて完了です！
 不要になったリソースを消したい場合は [08-cleanup.md](08-cleanup.md) を参照してください。
