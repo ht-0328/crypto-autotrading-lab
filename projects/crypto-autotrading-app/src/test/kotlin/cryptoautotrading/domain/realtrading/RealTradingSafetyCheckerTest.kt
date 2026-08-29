@@ -32,7 +32,9 @@ class RealTradingSafetyCheckerTest {
             stopOnUnconfirmedOrder = true,
             maxOrderJpy = 10000,
             maxDailyOrderJpy = 50000,
-            maxPositionJpy = 100000
+            maxPositionJpy = 100000,
+            maxDailyLossJpy = 2000,
+            maxConsecutiveLosses = 3
         )
         defaultState = SimulationState()
     }
@@ -546,6 +548,174 @@ class RealTradingSafetyCheckerTest {
             activeOrders = emptyList(),
             currentPrice = currentPrice,
             today = TODAY
+        )
+
+        assertTrue(result.passed)
+    }
+
+    @Test
+    fun `その日の損失が上限に達したら買い注文が止まること`() {
+        val state = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(
+                dailyResultDate = TODAY,
+                dailyRealizedProfitAndLoss = BigDecimal("-2000")
+            )
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = state,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `その日の損失が上限に届いていなければ買い注文ができること`() {
+        val state = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(
+                dailyResultDate = TODAY,
+                dailyRealizedProfitAndLoss = BigDecimal("-1999")
+            )
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = state,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertTrue(result.passed)
+    }
+
+    @Test
+    fun `前日の損失は当日の上限判定に持ち越されないこと`() {
+        // 持ち越すと、負けた翌日以降も止まったままになり自力で復帰できない
+        val state = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(
+                dailyResultDate = "2026-08-28",
+                dailyRealizedProfitAndLoss = BigDecimal("-5000"),
+                consecutiveLossCount = 5
+            )
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = state,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertTrue(result.passed)
+    }
+
+    @Test
+    fun `連敗が上限に達したら買い注文が止まること`() {
+        val state = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(
+                dailyResultDate = TODAY,
+                consecutiveLossCount = 3
+            )
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = state,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `連敗が上限に届いていなければ買い注文ができること`() {
+        val state = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(
+                dailyResultDate = TODAY,
+                consecutiveLossCount = 2
+            )
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = state,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertTrue(result.passed)
+    }
+
+    @Test
+    fun `max_daily_loss_jpyが未設定の場合は買い注文が止まること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig.copy(maxDailyLossJpy = null),
+            tradeAmount = 1000,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertFalse(result.passed)
+        assertEquals("max_daily_loss_jpyが未設定", result.reason)
+    }
+
+    @Test
+    fun `max_consecutive_lossesが未設定の場合は買い注文が止まること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig.copy(maxConsecutiveLosses = null),
+            tradeAmount = 1000,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertFalse(result.passed)
+        assertEquals("max_consecutive_lossesが未設定", result.reason)
+    }
+
+    @Test
+    fun `損失上限に達していても売り注文は止まらないこと`() {
+        // 売りまで止めると、ポジションを抱えたまま損切りできなくなる
+        val state = SimulationState(
+            isHolding = true,
+            holdingAmount = BigDecimal("0.01"),
+            realTrading = defaultState.realTrading.copy(
+                dailyResultDate = TODAY,
+                dailyRealizedProfitAndLoss = BigDecimal("-5000"),
+                consecutiveLossCount = 10
+            )
+        )
+
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.01"),
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("0.01"),
+            state = state,
+            activeOrders = emptyList()
         )
 
         assertTrue(result.passed)

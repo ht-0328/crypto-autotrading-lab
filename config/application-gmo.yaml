@@ -30,6 +30,12 @@ real_trading:
   # および約定価格と発注時の想定価格の乖離の両方に使う。
   # 値の根拠は docs/overview/roadmap.md の「安全ルール（数値）」
   max_slippage_rate: 0.005
+  # 自動で停止する条件。手動の承認を置かないため、負けが込んだときは
+  # システム自身が止まる必要がある。値の根拠は docs/overview/roadmap.md の
+  # 「安全ルール（数値）」。いずれも新規の買いだけを止め、売りは止めない。
+  # 日付が変われば解除される。
+  max_daily_loss_jpy: 2000
+  max_consecutive_losses: 3
 
 # 取引関連の設定
 trading:

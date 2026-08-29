@@ -444,6 +444,12 @@ class RealTradingService(
                 "確定損益=$profitAndLoss, 残量=$remainingSize"
         }
 
+        // 1日の損失上限と連敗の判定に使うため、確定した損益をその日の集計に足す
+        val realTradingWithResult = updatedRealTrading.withRealizedResult(
+            date = resolveTodayString(),
+            profitAndLoss = profitAndLoss
+        )
+
         return currentState.copy(
             isHolding = isStillHolding,
             buyPrice = if (isStillHolding) currentState.buyPrice else BigDecimal.ZERO,
@@ -451,7 +457,7 @@ class RealTradingService(
             cashBalance = currentState.cashBalance.add(proceeds),
             realizedProfitAndLoss = currentState.realizedProfitAndLoss.add(profitAndLoss),
             entryAtr = if (isStillHolding) currentState.entryAtr else null,
-            realTrading = updatedRealTrading
+            realTrading = realTradingWithResult
         )
     }
 
