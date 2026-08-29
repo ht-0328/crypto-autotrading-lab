@@ -28,16 +28,32 @@
 return BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
 ```
 
-- 取引所ごとの**最小注文数量**と**数量の刻み**に丸めていません。GMOコインの BTC 現物には最小注文数量と刻みの制約があります（**着手時に公式の最新仕様を必ず確認してください**）。
-- [config/application-gmo.yaml](../../config/application-gmo.yaml) の `trade_amount: 1000` と `max_order_jpy: 1000` は、**BTC の価格次第で最小注文数量を下回ります**。1,000円 ÷ 1,600万円 ≒ 0.0000625 BTC です。この設定のまま実注文を有効にすると、注文が毎回取引所に拒否され、[RealTradingService](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) の例外処理で `isStopped=true` になって止まります。
+GMOコインの `GET /public/v1/symbols` で確認した BTC の制約は次です（2026-08-29 時点。**着手時に再確認してください**）。
+
+| 項目 | 値 |
+| --- | --- |
+| `minOrderSize`（最小注文数量） | 0.00001 BTC |
+| `sizeStep`（数量の刻み） | 0.00001 BTC |
+| `takerFee`（成行の手数料） | 0.0005（0.05%） |
+
+**問題は「最小注文数量」ではなく「数量の刻み」です。** BTC が 1,244万円のとき最小注文数量は約124円相当なので、`trade_amount: 1000` は最小値を上回っています。しかし刻みには合っていません。
+
+```
+1000 ÷ 12,447,381 = 0.00008033...
+小数8桁で切り捨て       → 0.00008033   ← 0.00001 の倍数ではないので取引所に拒否される
+刻みに丸める            → 0.00008      ← 正しい（約996円）
+```
+
+拒否されると [RealTradingService](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) の例外処理で `isStopped=true` になり、実注文が止まります。**金額を上げても解決しません。刻みへの丸めが必要です。**
 - 売却時に手数料や丸めで**端数（ダスト）**が残ると、[RealTradingSafetyChecker](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) の `currentHoldingAssets.isNotEmpty()` に永久に引っかかり、以後1回も買えなくなります。
 
 やること:
 
-1. 最小注文数量・数量刻みを設定値として持ち、注文数量をその刻みに丸める。
+1. 最小注文数量・数量刻みを設定値として持ち、注文数量をその刻みに切り捨てで丸める。売り注文の数量も同様に丸める。
 2. 丸めた結果が最小注文数量を下回るなら、**発注せず見送る**（例外にして停止させない。見送りは正常系）。
 3. 「保有中とみなす閾値」を最小注文数量基準にし、ダストを保有と誤認しないようにする。
 4. `trade_amount` / `max_order_jpy` が最小注文数量を満たせない設定なら、**起動時に落とす**（[PR10](../improvements/pr10-config-fail-fast.md) の fail-fast と同じ方針）。
+5. 手数料（成行は 0.05%）を注文金額の上限判定に含める。上限ぎりぎりの注文で、手数料の分だけ上限を超えないようにする。
 
 ### B. 注文価格の基準と、成行注文のスリッページ上限（新規。backlog には未記載）
 
