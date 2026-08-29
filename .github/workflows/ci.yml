@@ -105,6 +105,8 @@ jobs:
 
       - name: Run Application
         run: |
+          # tee を挟むとアプリの終了コードが隠れるため、パイプの失敗を拾えるようにする
+          set -o pipefail
           docker run --rm --network crypto-ci-net \
             -e APP_CONFIG_PATH="$APP_CONFIG_PATH" \
             -e APP_DATA_DIR=/app/data \
@@ -118,7 +120,7 @@ jobs:
             -e REAL_TRADING_MAX_POSITION_JPY="$REAL_TRADING_MAX_POSITION_JPY" \
             -v ${{ github.workspace }}/config:/app/config:ro \
             -v ${{ github.workspace }}/data:/app/data \
-            crypto-app:ci
+            crypto-app:ci 2>&1 | tee ${{ github.workspace }}/data/app.log
 
       - name: Verify Outputs
         run: |
@@ -126,6 +128,17 @@ jobs:
           test -f ${{ github.workspace }}/data/state.json || (echo "state.json が見つかりません！" && exit 1)
           ls ${{ github.workspace }}/data/trades_*.csv > /dev/null 2>&1 || (echo "trades_*.csv が見つかりません！" && exit 1)
           echo "出力ファイルを確認しました。"
+
+          # 出力ファイルの存在だけでは、モックのデータが壊れていても気付けない。
+          # 市場データの検証で見送りになっていないことを確認し、売買経路が通ったことを保証する。
+          echo "売買判定まで到達したかを確認します..."
+          if grep -q "市場データの検証NG" ${{ github.workspace }}/data/app.log; then
+            echo "市場データの検証に失敗しています。WireMock のスタブを確認してください。"
+            grep "市場データの検証NG" ${{ github.workspace }}/data/app.log
+            exit 1
+          fi
+          grep "Trade Decision:" ${{ github.workspace }}/data/app.log || (echo "売買判定のログが見つかりません！" && exit 1)
+          echo "売買判定まで到達したことを確認しました。"
 
 
       - name: Upload Application Artifacts
