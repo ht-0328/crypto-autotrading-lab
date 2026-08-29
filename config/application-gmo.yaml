@@ -7,13 +7,18 @@ app:
   phase: 1
 
 # リアル取引関連の設定
+# 上限値の決定理由と、まだ実装されていない安全ルール（1日の損失上限、連敗停止、
+# 許容スリッページ）は docs/overview/roadmap.md の「安全ルール（数値）」を正とする。
 real_trading:
   dry_run: true
   real_trade_enabled: false
   stop_on_unconfirmed_order: true
-  max_order_jpy: 1000
-  max_daily_order_jpy: 1000
-  max_position_jpy: 1000
+  # 1回あたりの注文金額の上限（円）
+  max_order_jpy: 10000
+  # 1日の累計注文金額の上限（円）
+  max_daily_order_jpy: 20000
+  # 保有金額と注文予定額の合計の上限（円）
+  max_position_jpy: 10000
 
 # 取引関連の設定
 trading:
@@ -23,6 +28,9 @@ trading:
   atr_profit_multiplier: 2.0
   # ATR損切り倍率
   atr_loss_multiplier: 2.0
+  # 実取引で許可するのは SafeReboundStrategy のみ。クールダウンを使う Strategy は
+  # 実注文の売りで lastStopLossTime を更新しないため、クールダウンが機能しない。
+  # 詳細は docs/overview/roadmap.md の「実取引で許可する設定」を参照。
   strategy_name: "SafeReboundStrategy"
   # 取引する通貨ペア（例: BTC, ETH）
   symbol: "BTC"
@@ -31,6 +39,7 @@ trading:
   # 1回の取引額
   trade_amount: 1000
   # 注文サイズモード (FIXED_AMOUNT または ALL_IN)
+  # 実取引で許可するのは FIXED_AMOUNT のみ。ALL_IN は1回の露出が読めない。
   # order_sizing_mode: "FIXED_AMOUNT"
   # 買い注文を出す閾値（例: 0.005 は 0.5%）
   buy_threshold: 0.005
