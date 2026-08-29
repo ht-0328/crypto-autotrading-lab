@@ -20,9 +20,10 @@
 
 | 層・部品 | 役割 |
 | --- | --- |
-| interface `TradingStrategy` | 全ての戦略が実装すべきメソッド（例: `evaluate()`）を定義する |
+| interface `TradingStrategy` | 全ての戦略が実装すべきメソッド（`judge()`）を定義する |
 | class 各種Strategy | 渡されたK線データと状態をもとに `TradeDecision` を返す |
-| enum `TradeDecision` | 判定結果（`BUY_CANDIDATE`, `SELL_CANDIDATE`, `HOLDING`, `SKIP`）を表す |
+| enum `TradeAction` | 判定の種類（`BUY_CANDIDATE`, `SELL_CANDIDATE`, `HOLDING`, `SKIP`）を表す。`domain.model` に配置する |
+| data class `TradeDecision` | 判定結果を表す。`TradeAction` と判定理由、ATR を保持する。`domain.model` に配置する |
 | class `SimulationService` | Strategyの判定結果を受け取り、仮想資産の計算・更新を行う |
 
 ## 5. 配置予定のクラス・ファイル
@@ -30,7 +31,8 @@
 | 種類 | 配置 | 役割 |
 | --- | --- | --- |
 | interface | `domain.strategy.TradingStrategy` | 戦略の共通インターフェース |
-| enum | `domain.strategy.TradeDecision` | 売買の判定結果 |
+| data class | `domain.model.TradeDecision` | 売買の判定結果（判定の種類・理由・ATR） |
+| enum | `domain.model.TradeAction` | 判定の種類 |
 | class | `domain.strategy.CooldownReboundStrategy` | クールダウン機能を持つ戦略の実装 |
 | class | `domain.simulation.SimulationService` | 仮想資産の更新ロジック |
 
@@ -67,16 +69,16 @@ Strategy内で発生した「次に引き継ぐべき状態」（例: 損切り�
 
 ## 10. エラー処理設計
 
-計算に必要なデータ（K線本数など）が不足している場合、例外を投げず、安全側に倒して `TradeDecision.SKIP` または `HOLDING` を返すようにする。
+計算に必要なデータ（K線本数など）が不足している場合、例外を投げず、安全側に倒して `TradeAction.SKIP` または `TradeAction.HOLDING` を返すようにする。
 
 ## 11. 具体例
 
 ### 例1: クールダウン期間中の処理
 
-- `application` が `CooldownReboundStrategy.evaluate()` を呼び出す。
+- `application` が `CooldownReboundStrategy.judge()` を呼び出す。
 - 渡された `SimulationState` に「最後に損切りした時刻」が記録されている。
 - Strategy内で現在時刻と比較し、クールダウン期間中であると判定する。
-- 買い条件（反発など）を計算する前に直ちに `TradeDecision.SKIP` を返す。
+- 買い条件（反発など）を計算する前に直ちに `TradeAction.SKIP` を返す。
 
 ## 12. テスト方針
 
