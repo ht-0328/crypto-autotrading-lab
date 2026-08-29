@@ -86,7 +86,7 @@ flowchart TD
 
 ### 例1: ソートと重複排除の実装方針
 
-Kotlin の標準ライブラリを利用し、読み込み完了後に `list.sortedBy { it.openTime.toLong() }.distinctBy { it.openTime }` のような処理を行うことで、仕様を満たすソートと重複排除を簡潔に実装する。
+Kotlin の標準ライブラリで実装する。読み込み完了後に `sortedBy` と `distinctBy` を続けて呼べば、仕様を満たせる。
 
 ## 12. テスト方針
 

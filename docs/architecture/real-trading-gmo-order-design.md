@@ -23,10 +23,10 @@
 
 - **domain に外部APIを依存させない**: `domain` に API 通信やファイル保存を含めません。
 - **DTOとモデルの分離**: DTO は `infrastructure` 層に閉じ込めます。上位層へは変換後のモデルだけを渡します。DTOは1APIごとに独立したクラス/ファイルとし、`GmoPrivateApiModels.kt` のような集約クラスは使用しません。
-- **シークレット管理**: APIキーは実注文の直前に Secret Manager から取得します。
+- **シークレット管理**: APIキーは実注文の直前にだけ取得します。
   メモリ上に長期間保持せず、ログにも出力しません。
 - **状態管理**: 注文状態と保有状態は `state.json` の `realTrading` で管理します。再起動時の二重注文を防ぎます。
-- **型変換**: GMO API が返す orderId は、ドメイン層では `String` に変換して扱います。また、APIレスポンスの price や size は、実際の約定値を表すドメインモデルでは `actualPrice`、`actualSize` などの明確な名前に変換します。
+- **型変換**: GMO API が返す orderId は、ドメイン層では `String` に変換して扱います。また price と size は、ドメインモデルでは `actualPrice` / `actualSize` に変換します。
 
 ## 4. 責務分担
 

@@ -68,7 +68,8 @@
 8. `BacktestEngine` は毎ステップの `BacktestStepResult` を記録し、最後に `BacktestSummary` を作成して `BacktestResult` を返す
 9. `BacktestApplication` が `BacktestResultOutputPort` を使ってCSVファイルを出力する
 
-判定と約定を1本ずらしています。判定に使った終値でそのまま約定させると、成績が構造的に楽観化するためです（詳細は [バックテスト機能の仕様](../specifications/features/backtest.md)）。
+判定と約定を1本ずらしています。判定に使った終値でそのまま約定させると、成績が楽観化するためです。
+詳細は [バックテスト機能の仕様](../specifications/features/backtest.md) にあります。
 
 ## 7. Mermaid による設計フロー
 
@@ -113,7 +114,7 @@ flowchart TD
 ### 例1: サマリー作成時の責務
 
 `BacktestEngine` はループ終了後に `BacktestSummary` を組み立てる。
-計算する値は `totalAssetValue`・`maxDrawdown`・`tradeCount` などである。この計算処理はドメイン知識（バックテストの成績評価）であるため、`BacktestEngine` または専用のドメインサービス内で行う。
+計算する値は `totalAssetValue`・`maxDrawdown`・`tradeCount` などである。この計算はドメイン知識である。`BacktestEngine` か専用のドメインサービス内で行う。
 
 ## 12. テスト方針
 

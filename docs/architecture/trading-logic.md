@@ -27,15 +27,18 @@
 ## 関連ドキュメント
 
 - [../specifications/phase1-simulation.md](../specifications/phase1-simulation.md)
-- [../specifications/strategies/cooldown-rebound-strategy.md](../specifications/strategies/cooldown-rebound-strategy.md)
-- [../specifications/strategies/trend-confirm-rebound-strategy.md](../specifications/strategies/trend-confirm-rebound-strategy.md)
-- [../specifications/strategies/atr-trend-confirm-rebound-strategy.md](../specifications/strategies/atr-trend-confirm-rebound-strategy.md)
+- [CooldownReboundStrategy 仕様書](../specifications/strategies/cooldown-rebound-strategy.md)
+- [TrendConfirmReboundStrategy 仕様書](../specifications/strategies/trend-confirm-rebound-strategy.md)
+- [AtrTrendConfirmReboundStrategy 仕様書](../specifications/strategies/atr-trend-confirm-rebound-strategy.md)
 
 ## 現在の採用戦略
 
 - 現在のデフォルト設定（売買ルール）は **`SafeReboundStrategy`** です。
 - `SafeReboundStrategy` は、**買った価格（buyPrice）を基準**に売るかどうかを判断します。
-- その他の派生戦略として、損切り後の再エントリーを制限する **`CooldownReboundStrategy`** や、さらに短期トレンド上向きを確認する **`TrendConfirmReboundStrategy`** 、ATRを用いた変動幅で利確・損切りを行う **`AtrTrendConfirmReboundStrategy`** などがあります（各詳細仕様は個別ドキュメントを参照）。
+- 派生戦略が3つあります。詳細は各仕様書にあります。
+  - **`CooldownReboundStrategy`**: 損切り後の再エントリーを制限する
+  - **`TrendConfirmReboundStrategy`**: 短期トレンドの上向きを確認する
+  - **`AtrTrendConfirmReboundStrategy`**: ATR を用いた変動幅で利確・損切りする
 - **Phase1 では実際の取引所に注文を出しません**。シミュレーション上の状態更新だけを行います。
 
 ## 用語補足
@@ -79,7 +82,7 @@
 
 ### イグジット条件（売る条件）
 
-すでに「保有中」の場合にだけ、**買った時の価格（buyPrice）**を基準にして売り判断を行います。
+「保有中」の場合にだけ売り判断を行います。基準は買った時の価格（buyPrice）です。
 
 - 今の価格が buyPrice より一定割合以上高くなったら、利益が出たので売る（利確）
 - 今の価格が buyPrice より一定割合以上低くなったら、損が大きくなる前に売る（損切り）
@@ -106,7 +109,7 @@
 
 1. **今が106円の場合**: 105円以上なので、利益が出たとして「売る（利確）」。
 2. **今が94円の場合**: 95円以下なので、損が大きくなる前に「売る（損切り）」。
-3. **今が102円の場合**: 利確ラインにも損切りラインにも届いていないため「売らない（保有継続）」。
+3. **今が102円の場合**: どちらのラインにも届かないため「売らない（保有継続）」。
 
 ## 判断フロー
 
@@ -145,4 +148,4 @@ flowchart TD
 
 ## 更新方針
 
-取引ロジックや戦略（Strategy）が追加・変更された場合や、Phase2へ移行して実注文が導入された際に更新してください。
+戦略が追加・変更されたときに更新してください。実注文が導入されたときも同様です。
