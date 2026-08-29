@@ -24,7 +24,7 @@
 - しかし [RealTradingService.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は `placeOrder` まで実装済みである。
 [secrets.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/secrets.tf) は GMO APIキーの Secret も作っている。
 
-どちらが正なのか読み手が判断できません。**実装は消しません。** 仕様側で位置づけ直します。「Phase3 の先行実装であり Phase1 では実行できない」とします（[PR05](pr05-phase1-real-order-guard.md) で実際に実行できなくします）。
+どちらが正なのか読み手が判断できません。**実装は消しません。** 仕様側で位置づけ直します。「Phase3 の先行実装であり、Phase1 では実行できない」とします。実行不能にするのは [PR05](pr05-phase1-real-order-guard.md) です。
 
 分離先を Phase3 にする理由は次のとおりです。[roadmap.md](../overview/roadmap.md) 上、実注文は Phase3 の内容です。Phase2 の禁止事項にも「自動で実際の注文を出すこと」があります。
 

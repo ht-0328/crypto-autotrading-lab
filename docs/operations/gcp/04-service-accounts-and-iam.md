@@ -113,7 +113,7 @@ gcloud iam service-accounts add-iam-policy-binding "crypto-autotrading-lab-runne
     必要になりうる権限は `roles/iam.serviceAccountAdmin`、`roles/resourcemanager.projectIamAdmin`、`roles/storage.admin`、`roles/artifactregistry.admin` です。
 
     動作確認のため、`github-actions-deployer` に一時的に強めの権限を残しています。
-    Bootstrap Create → Grant IAM → Deploy が main で安定して通ることを確認します。
+    3つのワークフローが main で安定して通ることを確かめます。
     そのあと、別作業でこの権限を段階的に削減します。
 
 ## 4. Workload Identity とサービスアカウントを繋ぐ
