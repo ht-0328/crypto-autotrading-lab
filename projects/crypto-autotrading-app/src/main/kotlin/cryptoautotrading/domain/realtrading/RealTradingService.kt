@@ -80,6 +80,7 @@ class RealTradingService(
                 orderSizingMode = orderSizingMode
             )
             TradeAction.SELL_CANDIDATE -> executeSellCandidateOrder(
+                config = config,
                 symbol = symbol,
                 currentState = currentState,
                 currentPrice = currentPrice
@@ -361,6 +362,7 @@ class RealTradingService(
 
         try {
             val client = exchangeClient ?: return currentState
+            val orderSizeSpec = resolveOrderSizeSpec(config)
             val currentHoldingAssets = client.getAssets()
 
             val targetOrderAmount = when (orderSizingMode) {
@@ -380,7 +382,11 @@ class RealTradingService(
                 return currentState
             }
 
-            val isHoldingCrypto = currentHoldingAssets.any { it.symbol == symbol && it.amount > BigDecimal.ZERO }
+            // 手数料や丸めで残る端数（ダスト）を保有とみなすと、二重保有防止のチェックに
+            // 永久に引っかかり、以後1回も買えなくなる。最小注文数量を保有の閾値とする。
+            val isHoldingCrypto = currentHoldingAssets.any {
+                it.symbol == symbol && orderSizeSpec.isHoldingAmount(it.amount)
+            }
             val checkAssets = if (isHoldingCrypto) {
                 currentHoldingAssets.filter { it.symbol == symbol }
             } else {
@@ -404,9 +410,13 @@ class RealTradingService(
 
             logger.info { "リアル取引: 安全チェックを通過しました。注文処理を開始します。" }
 
-            val size = calculateOrderSize(targetOrderAmount, currentPrice)
-            if (size <= BigDecimal.ZERO) {
-                logger.warn { "安全チェックNG: 注文数量 ($size) が0以下です" }
+            val size = calculateOrderSize(targetOrderAmount, currentPrice, orderSizeSpec)
+            if (!orderSizeSpec.isTradable(size)) {
+                // 見送りであって異常ではないため、停止させずに次回に回す
+                logger.info {
+                    "リアル取引: 注文数量 ($size) が最小注文数量 (${orderSizeSpec.minOrderSize}) に満たないため、" +
+                        "買い注文を見送ります。注文予定額=$targetOrderAmount, 価格=$currentPrice"
+                }
                 return currentState
             }
 
@@ -439,12 +449,14 @@ class RealTradingService(
      * 停止中に売りまで止めると、ポジションを抱えたまま損切りできなくなるためである。
      * 停止が止めるのは新規の買いだけである。
      *
+     * @param config リアル取引設定
      * @param symbol 通貨ペアシンボル
      * @param currentState 現在のシミュレーション状態
      * @param currentPrice 現在の市場価格
      * @return 更新されたシミュレーション状態
      */
     private suspend fun executeSellCandidateOrder(
+        config: RealTradingConfig,
         symbol: String,
         currentState: SimulationState,
         currentPrice: BigDecimal
@@ -453,6 +465,7 @@ class RealTradingService(
 
         try {
             val client = exchangeClient ?: return currentState
+            val orderSizeSpec = resolveOrderSizeSpec(config)
 
             val recordedHoldingSize = currentState.holdingAmount
             if (recordedHoldingSize <= BigDecimal.ZERO) {
@@ -473,8 +486,16 @@ class RealTradingService(
             }
 
             // 同じ口座にこのアプリ以外が買った資産があっても巻き込まないよう、
-            // 取引所の残高ではなく記録上の保有数量を売る。
-            val sellSize = recordedHoldingSize
+            // 取引所の残高ではなく記録上の保有数量を売る。刻みに合わない数量は拒否されるため丸める。
+            val sellSize = orderSizeSpec.roundDownToStep(recordedHoldingSize)
+            if (!orderSizeSpec.isTradable(sellSize)) {
+                // 保有量がダストしか残っていない状態。売れないが異常ではないため停止させない。
+                logger.info {
+                    "リアル取引: 売却数量 ($sellSize) が最小注文数量 (${orderSizeSpec.minOrderSize}) に" +
+                        "満たないため、売り注文を見送ります。記録上の保有数量=$recordedHoldingSize"
+                }
+                return currentState
+            }
 
             val activeOrders = client.getActiveOrders(symbol)
             val safetyCheckResult = safetyChecker.checkPreSellOrderSafety(
@@ -573,14 +594,40 @@ class RealTradingService(
     }
 
     /**
-     * 注文数量を計算する (注文予定額 / 現在価格、切り捨て)。
+     * 注文数量を計算する (注文予定額 / 現在価格を、取引所の刻みに切り捨て)。
+     *
+     * 刻みに丸めないと、取引所が受け付けない数量を送ることになり注文が拒否される。
      *
      * @param tradeAmount 注文金額
      * @param currentPrice 現在の価格
-     * @return 計算された注文数量
+     * @param orderSizeSpec 取引所の注文数量の制約
+     * @return 取引所に送れる注文数量
      */
-    private fun calculateOrderSize(tradeAmount: Int, currentPrice: BigDecimal): BigDecimal {
-        return BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
+    private fun calculateOrderSize(
+        tradeAmount: Int,
+        currentPrice: BigDecimal,
+        orderSizeSpec: OrderSizeSpec
+    ): BigDecimal {
+        val rawSize = BigDecimal(tradeAmount).divide(currentPrice, SIZE_CALCULATION_SCALE, RoundingMode.DOWN)
+        return orderSizeSpec.roundDownToStep(rawSize)
+    }
+
+    /**
+     * 設定から取引所の注文数量の制約を組み立てる。
+     *
+     * 未設定のまま実注文を行うと刻みに合わない数量を送ることになるため、
+     * 起動時ガード([cryptoautotrading.presentation]) で弾く前提で必須としている。
+     *
+     * @param config リアル取引設定
+     * @return 注文数量の制約
+     * @throws IllegalStateException 最小注文数量または刻みが未設定の場合
+     */
+    private fun resolveOrderSizeSpec(config: RealTradingConfig): OrderSizeSpec {
+        val minOrderSize = config.minOrderSize
+            ?: error("min_order_size が未設定です。実注文には取引所の最小注文数量の設定が必要です")
+        val sizeStep = config.sizeStep
+            ?: error("size_step が未設定です。実注文には取引所の注文数量の刻みの設定が必要です")
+        return OrderSizeSpec(minOrderSize = minOrderSize, sizeStep = sizeStep)
     }
 
     /**
@@ -666,5 +713,10 @@ class RealTradingService(
             "EXECUTED" -> RealOrderStatus.EXECUTED
             else -> RealOrderStatus.UNCONFIRMED
         }
+    }
+
+    private companion object {
+        /** 刻みに丸める前の注文数量を計算するときの小数点以下の桁数 */
+        const val SIZE_CALCULATION_SCALE = 8
     }
 }

@@ -19,6 +19,11 @@ real_trading:
   max_daily_order_jpy: 20000
   # 保有金額と注文予定額の合計の上限（円）
   max_position_jpy: 10000
+  # 取引所が定める最小注文数量と注文数量の刻み。
+  # GMOコインの GET /public/v1/symbols で確認できる（2026-08-29 時点の BTC の値）。
+  # 刻みに合わない数量を送ると注文が拒否されるため、実注文には必須。
+  min_order_size: 0.00001
+  size_step: 0.00001
 
 # 取引関連の設定
 trading:

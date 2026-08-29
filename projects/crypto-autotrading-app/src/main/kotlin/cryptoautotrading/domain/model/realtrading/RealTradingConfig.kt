@@ -1,6 +1,7 @@
 package cryptoautotrading.domain.model.realtrading
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import java.math.BigDecimal
 
 /**
  * リアル取引関連の設定
@@ -14,6 +15,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
  * @property maxOrderJpy 1回あたりの注文金額上限（JPY）
  * @property maxDailyOrderJpy 1日あたりの累計注文金額上限（JPY）
  * @property maxPositionJpy 現在の保有金額と注文予定額の合計の最大値（JPY）
+ * @property minOrderSize 取引所が定める最小注文数量。取引所の銘柄情報から確認して設定する。
+ *   未設定のまま実注文を有効にすると起動時に失敗する
+ * @property sizeStep 取引所が定める注文数量の刻み。注文数量はこの値の整数倍でなければ拒否される。
+ *   未設定のまま実注文を有効にすると起動時に失敗する
  */
 data class RealTradingConfig(
     @JsonProperty("dry_run")
@@ -27,5 +32,9 @@ data class RealTradingConfig(
     @JsonProperty("max_daily_order_jpy")
     val maxDailyOrderJpy: Int? = null,
     @JsonProperty("max_position_jpy")
-    val maxPositionJpy: Int? = null
+    val maxPositionJpy: Int? = null,
+    @JsonProperty("min_order_size")
+    val minOrderSize: BigDecimal? = null,
+    @JsonProperty("size_step")
+    val sizeStep: BigDecimal? = null
 )

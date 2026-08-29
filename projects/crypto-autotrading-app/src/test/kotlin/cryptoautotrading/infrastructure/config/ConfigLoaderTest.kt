@@ -45,6 +45,8 @@ class ConfigLoaderTest {
               max_order_jpy: 10000
               max_daily_order_jpy: 50000
               max_position_jpy: 100000
+              min_order_size: 0.00001
+              size_step: 0.00001
         """.trimIndent()
         val configFile = tempDir.resolve("application-test.yaml").toFile()
         configFile.writeText(yamlContent)
@@ -80,6 +82,9 @@ class ConfigLoaderTest {
         assertEquals(10000, realTradingConfig?.maxOrderJpy)
         assertEquals(50000, realTradingConfig?.maxDailyOrderJpy)
         assertEquals(100000, realTradingConfig?.maxPositionJpy)
+        // 小さな小数が浮動小数点の誤差なく読めていることを確認する
+        assertEquals("0.00001", realTradingConfig?.minOrderSize?.toPlainString())
+        assertEquals("0.00001", realTradingConfig?.sizeStep?.toPlainString())
     }
 
     @Test
@@ -121,6 +126,8 @@ class ConfigLoaderTest {
         assertEquals(false, realTradingConfig.realTradeEnabled)
         assertEquals(true, realTradingConfig.stopOnUnconfirmedOrder)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxOrderJpy)
+        org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.minOrderSize)
+        org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.sizeStep)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxDailyOrderJpy)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxPositionJpy)
     }

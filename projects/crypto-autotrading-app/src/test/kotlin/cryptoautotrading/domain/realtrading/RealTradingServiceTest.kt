@@ -36,7 +36,7 @@ class RealTradingServiceTest {
     @Test
     fun `EXECUTEDだがgetExecutionsの合計約定数量が0の場合はisHoldingがtrueにならないこと`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             realTrading = RealTradingState(
                 latestOrder = RealOrderState(
@@ -71,7 +71,7 @@ class RealTradingServiceTest {
     @Test
     fun `getOrdersがCANCELEDを返した場合、latestOrder_statusがCANCELEDになること`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             realTrading = RealTradingState(
                 latestOrder = RealOrderState(
@@ -102,7 +102,7 @@ class RealTradingServiceTest {
     @Test
     fun `getOrdersが未知のステータスを返した場合、latestOrder_statusがUNCONFIRMEDになること`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             realTrading = RealTradingState(
                 latestOrder = RealOrderState(
@@ -133,7 +133,7 @@ class RealTradingServiceTest {
     @Test
     fun `realTradeEnabledがfalseの場合は実注文処理がスキップされること`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = false, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = false, dryRun = false)
         val state = SimulationState()
 
         val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
@@ -145,7 +145,7 @@ class RealTradingServiceTest {
     @Test
     fun `latestOrderがORDEREDの場合、getOrdersが呼ばれ新規placeOrderは呼ばれないこと`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             realTrading = RealTradingState(
                 latestOrder = RealOrderState(
@@ -174,7 +174,7 @@ class RealTradingServiceTest {
     @Test
     fun `getOrdersの結果がEXECUTEDの場合だけgetExecutionsが呼ばれること`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             realTrading = RealTradingState(
                 latestOrder = RealOrderState(
@@ -214,7 +214,7 @@ class RealTradingServiceTest {
     @Test
     fun `getExecutionsで約定情報が取れない場合はisHoldingがtrueにならないこと`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             realTrading = RealTradingState(
                 latestOrder = RealOrderState(
@@ -246,7 +246,7 @@ class RealTradingServiceTest {
     @Test
     fun `dryRunがtrueの場合は実注文処理がスキップされること`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = true)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = true)
         val state = SimulationState()
 
         val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
@@ -258,7 +258,7 @@ class RealTradingServiceTest {
     @Test
     fun `保有していない状態のSELL_CANDIDATEでは実注文処理がスキップされること`() = runBlocking {
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState()
 
         val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
@@ -271,7 +271,7 @@ class RealTradingServiceTest {
     fun `exchangeClientがnullの場合は実注文処理がスキップされること`() = runBlocking {
         val serviceNullClient = RealTradingService(exchangeClient = null)
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState()
 
         val newState = serviceNullClient.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
@@ -283,7 +283,7 @@ class RealTradingServiceTest {
     fun `JPY残高不足の場合は実注文がスキップされること`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("5000"), BigDecimal("5000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
@@ -301,7 +301,7 @@ class RealTradingServiceTest {
         mockClient.activeOrders = listOf(ExchangeActiveOrder("order1", "BTC", "BUY", BigDecimal("0.01"), BigDecimal.ZERO, "WAITING"))
 
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
@@ -317,7 +317,7 @@ class RealTradingServiceTest {
     fun `maxOrderJpy超過の場合は実注文がスキップされること`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
@@ -333,7 +333,7 @@ class RealTradingServiceTest {
     fun `maxDailyOrderJpy超過の場合は実注文がスキップされること`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
@@ -349,7 +349,7 @@ class RealTradingServiceTest {
     fun `maxPositionJpy超過の場合は実注文がスキップされること`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
@@ -366,7 +366,7 @@ class RealTradingServiceTest {
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
 
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
@@ -377,8 +377,8 @@ class RealTradingServiceTest {
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("BTC", mockClient.lastPlaceOrderSymbol)
 
-        val expectedSize = BigDecimal("10000").divide(BigDecimal("1000000"), 8, java.math.RoundingMode.DOWN)
-        assertEquals(expectedSize, mockClient.lastPlaceOrderSize)
+        // 10000円 ÷ 1,000,000円 = 0.01。刻み(0.00001)の整数倍なので丸めても値は変わらない
+        assertEquals(0, BigDecimal("0.01").compareTo(mockClient.lastPlaceOrderSize))
 
         // isHolding は true にならないこと
         assertFalse(newState.isHolding)
@@ -397,7 +397,7 @@ class RealTradingServiceTest {
     @Test
     fun `ALL_INの場合、JPY_availableを使って注文数量を計算すること`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true,
             dryRun = false,
             maxOrderJpy = 20000,
@@ -432,7 +432,7 @@ class RealTradingServiceTest {
     @Test
     fun `ALL_INでJPY_availableが0以下の場合は注文しないこと`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState()
 
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ONE))
@@ -454,7 +454,7 @@ class RealTradingServiceTest {
     @Test
     fun `ALL_INでmaxOrderJpyを超える場合は注文しないこと`() = runBlocking {
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true,
             dryRun = false,
             maxOrderJpy = 10000,
@@ -484,7 +484,7 @@ class RealTradingServiceTest {
     fun `保有中のSELL_CANDIDATEでSELLの成行注文が送信されること`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.01"), BigDecimal("0.01"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             isHolding = true,
             buyPrice = BigDecimal("1000000"),
@@ -495,7 +495,7 @@ class RealTradingServiceTest {
 
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("SELL", mockClient.lastPlaceOrderSide)
-        assertEquals(BigDecimal("0.01"), mockClient.lastPlaceOrderSize)
+        assertEquals(0, BigDecimal("0.01").compareTo(mockClient.lastPlaceOrderSize))
 
         val latestOrder = newState.realTrading.latestOrder
         assertEquals(RealOrderSide.SELL, latestOrder?.side)
@@ -510,7 +510,7 @@ class RealTradingServiceTest {
         // このアプリ以外が買ったBTCが同じ口座にある状況を想定する
         mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.5"), BigDecimal("0.5"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             isHolding = true,
             buyPrice = BigDecimal("1000000"),
@@ -520,14 +520,14 @@ class RealTradingServiceTest {
         service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
 
         assertTrue(mockClient.placeOrderCalled)
-        assertEquals(BigDecimal("0.01"), mockClient.lastPlaceOrderSize)
+        assertEquals(0, BigDecimal("0.01").compareTo(mockClient.lastPlaceOrderSize))
     }
 
     @Test
     fun `取引所の残高が記録上の保有数量より少ない場合は売らずに停止すること`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.001"), BigDecimal("0.001"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             isHolding = true,
             buyPrice = BigDecimal("1000000"),
@@ -545,7 +545,7 @@ class RealTradingServiceTest {
         mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.01"), BigDecimal("0.01"), BigDecimal.ONE))
         mockClient.activeOrders = listOf(ExchangeActiveOrder("active_id", "BTC", "SELL", BigDecimal("0.01"), BigDecimal.ZERO, "ORDERED"))
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             isHolding = true,
             buyPrice = BigDecimal("1000000"),
@@ -562,7 +562,7 @@ class RealTradingServiceTest {
     fun `isStoppedでも売り注文は実行されること`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.01"), BigDecimal("0.01"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             isHolding = true,
             buyPrice = BigDecimal("1000000"),
@@ -581,7 +581,7 @@ class RealTradingServiceTest {
     fun `isStoppedの場合は買い注文が実行されないこと`() = runBlocking {
         mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
         val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
-        val config = RealTradingConfig(
+        val config = tradingConfig(
             realTradeEnabled = true, dryRun = false,
             maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000
         )
@@ -597,7 +597,7 @@ class RealTradingServiceTest {
     @Test
     fun `売り注文の約定を確認した場合、保有が解消され確定損益が加算されること`() = runBlocking {
         val decision = TradeDecision(TradeAction.HOLDING, "保有中")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             cashBalance = BigDecimal("5000"),
             isHolding = true,
@@ -640,7 +640,7 @@ class RealTradingServiceTest {
     @Test
     fun `売りが部分的にしか約定していない場合は保有が継続すること`() = runBlocking {
         val decision = TradeDecision(TradeAction.HOLDING, "保有中")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             isHolding = true,
             buyPrice = BigDecimal("1000000"),
@@ -676,7 +676,7 @@ class RealTradingServiceTest {
     @Test
     fun `買いの約定確認では従来どおり保有状態になること`() = runBlocking {
         val decision = TradeDecision(TradeAction.HOLDING, "保有中")
-        val config = RealTradingConfig(realTradeEnabled = true, dryRun = false)
+        val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState(
             realTrading = RealTradingState(
                 latestOrder = RealOrderState(
@@ -705,7 +705,141 @@ class RealTradingServiceTest {
         assertEquals(0, BigDecimal("0.01").compareTo(newState.holdingAmount))
         assertEquals(0, BigDecimal("1000000").compareTo(newState.buyPrice))
     }
+
+    @Test
+    fun `注文数量が取引所の刻みに丸められて送信されること`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        // 1000円 ÷ 12,447,381円 = 0.00008033... なので 0.00008 に切り捨てられる
+        service.executeOrderIfNeeded(decision, config, 1000, "BTC", state, BigDecimal("12447381"))
+
+        assertTrue(mockClient.placeOrderCalled)
+        assertEquals("0.00008", mockClient.lastPlaceOrderSize?.toPlainString())
+    }
+
+    @Test
+    fun `注文数量が最小注文数量に満たない場合は買い注文を見送り停止しないこと`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        // 100円 ÷ 12,447,381円 = 0.000008... で最小注文数量 0.00001 に満たない
+        val newState = service.executeOrderIfNeeded(decision, config, 100, "BTC", state, BigDecimal("12447381"))
+
+        assertFalse(mockClient.placeOrderCalled)
+        // 見送りは正常系なので停止させない
+        assertFalse(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `最小注文数量に満たない端数は保有とみなされず買い注文が出せること`() = runBlocking {
+        mockClient.assets = listOf(
+            ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE),
+            // 売却後に残ったダスト
+            ExchangeAsset("BTC", BigDecimal("0.000005"), BigDecimal("0.000005"), BigDecimal.ONE)
+        )
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertTrue(mockClient.placeOrderCalled)
+    }
+
+    @Test
+    fun `最小注文数量以上の残高がある場合は保有中として買い注文が出ないこと`() = runBlocking {
+        mockClient.assets = listOf(
+            ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE),
+            ExchangeAsset("BTC", BigDecimal("0.001"), BigDecimal("0.001"), BigDecimal.ONE)
+        )
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertFalse(mockClient.placeOrderCalled)
+    }
+
+    @Test
+    fun `売却数量が刻みに丸められて送信されること`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.5"), BigDecimal("0.5"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
+        val config = tradingConfig()
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("1000000"),
+            holdingAmount = BigDecimal("0.00008033")
+        )
+
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+
+        assertTrue(mockClient.placeOrderCalled)
+        assertEquals("0.00008", mockClient.lastPlaceOrderSize?.toPlainString())
+    }
+
+    @Test
+    fun `保有量がダストしかない場合は売り注文を見送り停止しないこと`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.5"), BigDecimal("0.5"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal")
+        val config = tradingConfig()
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("1000000"),
+            holdingAmount = BigDecimal("0.000005")
+        )
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+
+        assertFalse(mockClient.placeOrderCalled)
+        assertFalse(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `min_order_sizeが未設定の場合は注文せず停止すること`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = RealTradingConfig(
+            realTradeEnabled = true,
+            dryRun = false,
+            maxOrderJpy = 20000,
+            maxDailyOrderJpy = 50000,
+            maxPositionJpy = 50000
+        )
+        val state = SimulationState()
+
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+
+        assertFalse(mockClient.placeOrderCalled)
+        // 通常は起動時ガードで弾かれるが、万一到達したら安全側に止める
+        assertTrue(newState.realTrading.isStopped)
+    }
 }
+
+/**
+ * テスト用のリアル取引設定を作る。
+ * 注文数量の制約は実注文に必須なので、各テストで書かなくて済むよう既定で埋める。
+ */
+private fun tradingConfig(
+    realTradeEnabled: Boolean = true,
+    dryRun: Boolean = false,
+    maxOrderJpy: Int? = null,
+    maxDailyOrderJpy: Int? = null,
+    maxPositionJpy: Int? = null
+): RealTradingConfig = RealTradingConfig(
+    realTradeEnabled = realTradeEnabled,
+    dryRun = dryRun,
+    maxOrderJpy = maxOrderJpy,
+    maxDailyOrderJpy = maxDailyOrderJpy,
+    maxPositionJpy = maxPositionJpy,
+    minOrderSize = BigDecimal("0.00001"),
+    sizeStep = BigDecimal("0.00001")
+)
 
 class MockRealTradingClient : RealTradingClient {
     var assets: List<ExchangeAsset> = emptyList()
