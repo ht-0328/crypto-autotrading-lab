@@ -102,7 +102,15 @@ docker compose -f docker/compose/local.yml up --build
 
 ### 手元で見た目を確認する
 
-Python 3.10 以上が必要です。仮想環境を作ってから実行してください。
+Python 3.10 以上が必要です。
+
+**DevContainer には Python の仮想環境モジュールが入っていません。** DevContainer の中で作業する場合は、先に次を実行してください（1回だけ）。
+
+```bash
+apt-get update && apt-get install -y python3-venv
+```
+
+そのうえで、仮想環境を作って Zensical をインストールします。
 
 ```bash
 # リポジトリのルートで実行する
@@ -112,6 +120,10 @@ python3 -m venv .venv
 # http://localhost:8000 で確認できる。Markdown を保存すると自動で再ビルドされる
 .venv/bin/zensical serve
 ```
+
+!!! note "見た目の確認は必須ではありません"
+
+    Zensical をインストールしなくても、PR を出せば `Documentation` チェックがビルドを検証します。手元で確認したいときだけ入れてください。
 
 静的ファイルだけを出力したい場合は `zensical build` を使います。出力先の `site/` はコミットしません（[.gitignore](../../.gitignore) で除外済み）。
 
