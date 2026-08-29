@@ -8,7 +8,11 @@
     "customizations": {
         "vscode": {
             "extensions": [
-                "vscjava.vscode-gradle"
+                "vscjava.vscode-gradle",
+                "Anthropic.claude-code",
+                "openai.chatgpt",
+                "JetBrains.kotlin-server"
+
             ],
             "settings": {
                 "kotlin.java.home": "/opt/java/openjdk",
