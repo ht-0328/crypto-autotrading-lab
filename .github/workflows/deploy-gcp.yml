@@ -94,7 +94,8 @@ jobs:
 
           ENV_VARS="APP_DATA_DIR=/mnt/gcs/data"
           ENV_VARS="${ENV_VARS},APP_TRADING_STRATEGY_NAME=${STRATEGY}"
-          ENV_VARS="${ENV_VARS},API_BASE_URL=${{ vars.API_BASE_URL }}"
+          ENV_VARS="${ENV_VARS},API_PUBLIC_BASE_URL=${{ vars.API_PUBLIC_BASE_URL }}"
+          ENV_VARS="${ENV_VARS},API_PRIVATE_BASE_URL=${{ vars.API_PRIVATE_BASE_URL }}"
           ENV_VARS="${ENV_VARS},API_RETRY_COUNT=${{ vars.API_RETRY_COUNT }}"
           ENV_VARS="${ENV_VARS},APP_INTERVAL=${{ vars.APP_INTERVAL }}"
           ENV_VARS="${ENV_VARS},OUTPUT_PATH=${{ vars.OUTPUT_PATH }}"

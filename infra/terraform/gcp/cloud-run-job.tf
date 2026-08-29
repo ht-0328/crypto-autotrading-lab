@@ -30,6 +30,11 @@ resource "google_cloud_run_v2_job" "app_job" {
         }
 
         # アプリケーションの設定値（環境変数）
+        # 出力先は GCS マウント配下に揃える。未設定だとコンテナローカルに出力され、Job 終了時に消える
+        env {
+          name  = "APP_DATA_DIR"
+          value = "/mnt/gcs/data"
+        }
         env {
           name  = "APP_INTERVAL"
           value = var.app_interval
