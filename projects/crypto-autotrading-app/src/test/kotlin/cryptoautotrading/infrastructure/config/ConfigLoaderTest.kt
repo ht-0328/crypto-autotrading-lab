@@ -47,6 +47,8 @@ class ConfigLoaderTest {
               max_position_jpy: 100000
               min_order_size: 0.00001
               size_step: 0.00001
+              taker_fee_rate: 0.0005
+              max_slippage_rate: 0.005
         """.trimIndent()
         val configFile = tempDir.resolve("application-test.yaml").toFile()
         configFile.writeText(yamlContent)
@@ -85,6 +87,8 @@ class ConfigLoaderTest {
         // 小さな小数が浮動小数点の誤差なく読めていることを確認する
         assertEquals("0.00001", realTradingConfig?.minOrderSize?.toPlainString())
         assertEquals("0.00001", realTradingConfig?.sizeStep?.toPlainString())
+        assertEquals("0.0005", realTradingConfig?.takerFeeRate?.toPlainString())
+        assertEquals("0.005", realTradingConfig?.maxSlippageRate?.toPlainString())
     }
 
     @Test
@@ -128,6 +132,8 @@ class ConfigLoaderTest {
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxOrderJpy)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.minOrderSize)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.sizeStep)
+        org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.takerFeeRate)
+        org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxSlippageRate)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxDailyOrderJpy)
         org.junit.jupiter.api.Assertions.assertNull(realTradingConfig.maxPositionJpy)
     }

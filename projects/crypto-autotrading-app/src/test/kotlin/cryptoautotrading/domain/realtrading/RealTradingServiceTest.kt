@@ -58,7 +58,7 @@ class RealTradingServiceTest {
             ExecutedOrder("exec_id_1", "exec_id_zero_size", "BTC", "BUY", BigDecimal("950000"), BigDecimal.ZERO, BigDecimal.ZERO, "2023-10-27T10:00:00")
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.getOrdersCalled)
         assertTrue(mockClient.getExecutionsCalled)
@@ -89,7 +89,7 @@ class RealTradingServiceTest {
         // Mock CANCELED response
         mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("canceled_id", "CANCELED", BigDecimal.ZERO))
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.getOrdersCalled)
         assertFalse(mockClient.getExecutionsCalled)
@@ -120,7 +120,7 @@ class RealTradingServiceTest {
         // Mock UNKNOWN response
         mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("unknown_id", "SOMETHING_NEW", BigDecimal.ZERO))
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.getOrdersCalled)
         assertFalse(mockClient.getExecutionsCalled)
@@ -136,7 +136,7 @@ class RealTradingServiceTest {
         val config = tradingConfig(realTradeEnabled = false, dryRun = false)
         val state = SimulationState()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -163,7 +163,7 @@ class RealTradingServiceTest {
         // Mock to return WAITING status
         mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("unconfirmed_id", "WAITING", BigDecimal.ZERO))
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.getOrdersCalled)
         assertFalse(mockClient.placeOrderCalled)
@@ -196,7 +196,7 @@ class RealTradingServiceTest {
             ExecutedOrder("exec_id_1", "exec_id", "BTC", "BUY", BigDecimal("950000"), BigDecimal("0.01"), BigDecimal.ZERO, "2023-10-27T10:00:00")
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.getOrdersCalled)
         assertTrue(mockClient.getExecutionsCalled)
@@ -233,7 +233,7 @@ class RealTradingServiceTest {
         mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("exec_id_no_info", "EXECUTED", BigDecimal("0.01")))
         mockClient.mockExecutionsResponse = emptyList()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.getOrdersCalled)
         assertTrue(mockClient.getExecutionsCalled)
@@ -249,7 +249,7 @@ class RealTradingServiceTest {
         val config = tradingConfig(realTradeEnabled = true, dryRun = true)
         val state = SimulationState()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -261,7 +261,7 @@ class RealTradingServiceTest {
         val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -274,7 +274,7 @@ class RealTradingServiceTest {
         val config = tradingConfig(realTradeEnabled = true, dryRun = false)
         val state = SimulationState()
 
-        val newState = serviceNullClient.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = serviceNullClient.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
     }
@@ -289,7 +289,7 @@ class RealTradingServiceTest {
         )
         val state = SimulationState()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -307,7 +307,7 @@ class RealTradingServiceTest {
         )
         val state = SimulationState()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -323,7 +323,7 @@ class RealTradingServiceTest {
         )
         val state = SimulationState()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 30000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 30000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -339,7 +339,7 @@ class RealTradingServiceTest {
         )
         val state = SimulationState(realTrading = cryptoautotrading.domain.model.realtrading.RealTradingState(dailyOrderedJpy = BigDecimal("40000")))
 
-        val newState = service.executeOrderIfNeeded(decision, config, 15000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 15000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -355,7 +355,7 @@ class RealTradingServiceTest {
         )
         val state = SimulationState(holdingAmount = BigDecimal("0.045")) // 約定価格1,000,000なら45,000円分
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertEquals(state, newState)
         assertFalse(mockClient.placeOrderCalled)
@@ -372,7 +372,7 @@ class RealTradingServiceTest {
         )
         val state = SimulationState(isHolding = false)
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("BTC", mockClient.lastPlaceOrderSymbol)
@@ -390,8 +390,8 @@ class RealTradingServiceTest {
         assertEquals(RealOrderStatus.ORDERED, latestOrder?.status)
         assertEquals(RealOrderSide.BUY, latestOrder?.side)
 
-        // dailyOrderedJpy が加算されていること
-        assertEquals(BigDecimal("10000"), newState.realTrading.dailyOrderedJpy)
+        // dailyOrderedJpy が手数料込みの額で加算されていること
+        assertEquals(0, BigDecimal("10005").compareTo(newState.realTrading.dailyOrderedJpy))
     }
 
     @Test
@@ -414,16 +414,18 @@ class RealTradingServiceTest {
             tradeAmount = 10000, // tradeAmount は ALL_IN では使われない
             symbol = "BTC",
             currentState = state,
-            currentPrice = BigDecimal("1000000"),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000"),
             orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
         )
 
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("BTC", mockClient.lastPlaceOrderSymbol)
 
-        // 15500.5 円を 15500 円に切り捨ててから、現在価格で割る
-        val expectedSize = BigDecimal("15500").divide(BigDecimal("1000000"), 8, java.math.RoundingMode.DOWN)
-        assertEquals(0, expectedSize.compareTo(mockClient.lastPlaceOrderSize))
+        // 15500.5 円の残高から手数料(0.05%)分を差し引いた 15492 円を注文額とし、現在価格で割る。
+        // 残高を全額注文に回すと手数料の分だけ足りなくなるため。
+        // 15492 ÷ 1,000,000 = 0.015492 を刻み(0.00001)に切り捨てて 0.01549 になる
+        assertEquals("0.01549", mockClient.lastPlaceOrderSize?.toPlainString())
 
         assertEquals(RealOrderStatus.ORDERED, newState.realTrading.latestOrder?.status)
         assertEquals("dummy_order_id", newState.realTrading.latestOrder?.orderId)
@@ -443,7 +445,8 @@ class RealTradingServiceTest {
             tradeAmount = 10000,
             symbol = "BTC",
             currentState = state,
-            currentPrice = BigDecimal("1000000"),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000"),
             orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
         )
 
@@ -472,7 +475,8 @@ class RealTradingServiceTest {
             tradeAmount = 5000, // tradeAmount は ALL_IN では使われない
             symbol = "BTC",
             currentState = state,
-            currentPrice = BigDecimal("1000000"),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000"),
             orderSizingMode = cryptoautotrading.domain.model.OrderSizingMode.ALL_IN
         )
 
@@ -491,7 +495,7 @@ class RealTradingServiceTest {
             holdingAmount = BigDecimal("0.01")
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("SELL", mockClient.lastPlaceOrderSide)
@@ -517,7 +521,7 @@ class RealTradingServiceTest {
             holdingAmount = BigDecimal("0.01")
         )
 
-        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertTrue(mockClient.placeOrderCalled)
         assertEquals(0, BigDecimal("0.01").compareTo(mockClient.lastPlaceOrderSize))
@@ -534,7 +538,7 @@ class RealTradingServiceTest {
             holdingAmount = BigDecimal("0.01")
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertFalse(mockClient.placeOrderCalled)
         assertTrue(newState.realTrading.isStopped)
@@ -552,7 +556,7 @@ class RealTradingServiceTest {
             holdingAmount = BigDecimal("0.01")
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertFalse(mockClient.placeOrderCalled)
         assertEquals(state, newState)
@@ -570,7 +574,7 @@ class RealTradingServiceTest {
             realTrading = RealTradingState(isStopped = true, stopReason = "テスト用の停止")
         )
 
-        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         // 停止中でも損切りできなくなってはいけないため、売りは通す
         assertTrue(mockClient.placeOrderCalled)
@@ -589,7 +593,7 @@ class RealTradingServiceTest {
             realTrading = RealTradingState(isStopped = true, stopReason = "テスト用の停止")
         )
 
-        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertFalse(mockClient.placeOrderCalled)
     }
@@ -625,7 +629,7 @@ class RealTradingServiceTest {
             )
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertFalse(newState.isHolding)
         assertEquals(0, BigDecimal.ZERO.compareTo(newState.holdingAmount))
@@ -666,7 +670,7 @@ class RealTradingServiceTest {
             )
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertTrue(newState.isHolding)
         assertEquals(0, BigDecimal("0.006").compareTo(newState.holdingAmount))
@@ -699,7 +703,7 @@ class RealTradingServiceTest {
             )
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(newState.isHolding)
         assertEquals(0, BigDecimal("0.01").compareTo(newState.holdingAmount))
@@ -714,7 +718,7 @@ class RealTradingServiceTest {
         val state = SimulationState()
 
         // 1000円 ÷ 12,447,381円 = 0.00008033... なので 0.00008 に切り捨てられる
-        service.executeOrderIfNeeded(decision, config, 1000, "BTC", state, BigDecimal("12447381"))
+        service.executeOrderIfNeeded(decision, config, 1000, "BTC", state, BigDecimal("12447381"), BigDecimal("12447381"))
 
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("0.00008", mockClient.lastPlaceOrderSize?.toPlainString())
@@ -728,7 +732,7 @@ class RealTradingServiceTest {
         val state = SimulationState()
 
         // 100円 ÷ 12,447,381円 = 0.000008... で最小注文数量 0.00001 に満たない
-        val newState = service.executeOrderIfNeeded(decision, config, 100, "BTC", state, BigDecimal("12447381"))
+        val newState = service.executeOrderIfNeeded(decision, config, 100, "BTC", state, BigDecimal("12447381"), BigDecimal("12447381"))
 
         assertFalse(mockClient.placeOrderCalled)
         // 見送りは正常系なので停止させない
@@ -746,7 +750,7 @@ class RealTradingServiceTest {
         val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
         val state = SimulationState()
 
-        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertTrue(mockClient.placeOrderCalled)
     }
@@ -761,7 +765,7 @@ class RealTradingServiceTest {
         val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
         val state = SimulationState()
 
-        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertFalse(mockClient.placeOrderCalled)
     }
@@ -777,7 +781,7 @@ class RealTradingServiceTest {
             holdingAmount = BigDecimal("0.00008033")
         )
 
-        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("0.00008", mockClient.lastPlaceOrderSize?.toPlainString())
@@ -794,7 +798,7 @@ class RealTradingServiceTest {
             holdingAmount = BigDecimal("0.000005")
         )
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1100000"), BigDecimal("1100000"))
 
         assertFalse(mockClient.placeOrderCalled)
         assertFalse(newState.realTrading.isStopped)
@@ -813,11 +817,213 @@ class RealTradingServiceTest {
         )
         val state = SimulationState()
 
-        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"))
+        val newState = service.executeOrderIfNeeded(decision, config, 10000, "BTC", state, BigDecimal("1000000"), BigDecimal("1000000"))
 
         assertFalse(mockClient.placeOrderCalled)
         // 通常は起動時ガードで弾かれるが、万一到達したら安全側に止める
         assertTrue(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `注文数量がK線の終値ではなく取引所の最新価格で計算されること`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        // K線の終値は 1,000,000 だが、取引所の最新価格は 1,004,000（0.4%の上振れ）
+        service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1004000")
+        )
+
+        assertTrue(mockClient.placeOrderCalled)
+        // 古いK線の終値で割ると 0.01 になり、実際の約定額が想定を超える。
+        // 最新価格で割った 0.00996... を刻みに丸めた 0.00996 になること
+        assertEquals("0.00996", mockClient.lastPlaceOrderSize?.toPlainString())
+    }
+
+    @Test
+    fun `K線の終値と最新価格が離れすぎている場合は注文を見送ること`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        // 許容スリッページ 0.5% を超える 1% の乖離
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1010000")
+        )
+
+        assertFalse(mockClient.placeOrderCalled)
+        // どちらの価格が正しいか判断できないだけなので、停止はさせない
+        assertFalse(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `取引所の最新価格が取得できない場合は注文を見送ること`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = null
+        )
+
+        assertFalse(mockClient.placeOrderCalled)
+        assertFalse(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `最新価格が取得できなくても未確認注文の照合は行われること`() = runBlocking {
+        val decision = TradeDecision(TradeAction.HOLDING, "保有中")
+        val config = tradingConfig()
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "pending_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("pending_id", "CANCELED", BigDecimal.ZERO))
+
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = null
+        )
+
+        assertTrue(mockClient.getOrdersCalled)
+        assertEquals(RealOrderStatus.CANCELED, newState.realTrading.latestOrder?.status)
+    }
+
+    @Test
+    fun `約定価格が想定から離れすぎていた場合は新規の買いを止めること`() = runBlocking {
+        val decision = TradeDecision(TradeAction.HOLDING, "保有中")
+        val config = tradingConfig()
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "slipped_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("slipped_id", "EXECUTED", BigDecimal("0.01")))
+        // 想定 1,000,000 に対して 1,010,000（1%）で約定した
+        mockClient.mockExecutionsResponse = listOf(
+            ExecutedOrder(
+                "exec_1", "slipped_id", "BTC", "BUY",
+                BigDecimal("1010000"), BigDecimal("0.01"), BigDecimal("5"), "2023-10-27T10:00:00"
+            )
+        )
+
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1010000"),
+            tickerPrice = BigDecimal("1010000")
+        )
+
+        // 約定自体は state に反映したうえで停止する
+        assertTrue(newState.isHolding)
+        assertTrue(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `約定価格の乖離が許容範囲内なら停止しないこと`() = runBlocking {
+        val decision = TradeDecision(TradeAction.HOLDING, "保有中")
+        val config = tradingConfig()
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "normal_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("normal_id", "EXECUTED", BigDecimal("0.01")))
+        mockClient.mockExecutionsResponse = listOf(
+            ExecutedOrder(
+                "exec_1", "normal_id", "BTC", "BUY",
+                BigDecimal("1002000"), BigDecimal("0.01"), BigDecimal("5"), "2023-10-27T10:00:00"
+            )
+        )
+
+        val newState = service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1002000"),
+            tickerPrice = BigDecimal("1002000")
+        )
+
+        assertTrue(newState.isHolding)
+        assertFalse(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `手数料を含めた金額がmaxOrderJpyを超える場合は注文しないこと`() = runBlocking {
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("20000"), BigDecimal("20000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        // 注文額 10000 に手数料 5 が乗って 10005 になり、上限 10000 を超える
+        val config = tradingConfig(maxOrderJpy = 10000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+        val state = SimulationState()
+
+        service.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertFalse(mockClient.placeOrderCalled)
     }
 }
 
@@ -838,7 +1044,9 @@ private fun tradingConfig(
     maxDailyOrderJpy = maxDailyOrderJpy,
     maxPositionJpy = maxPositionJpy,
     minOrderSize = BigDecimal("0.00001"),
-    sizeStep = BigDecimal("0.00001")
+    sizeStep = BigDecimal("0.00001"),
+    takerFeeRate = BigDecimal("0.0005"),
+    maxSlippageRate = BigDecimal("0.005")
 )
 
 class MockRealTradingClient : RealTradingClient {

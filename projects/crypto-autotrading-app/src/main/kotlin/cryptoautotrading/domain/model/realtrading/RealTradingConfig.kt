@@ -19,6 +19,12 @@ import java.math.BigDecimal
  *   未設定のまま実注文を有効にすると起動時に失敗する
  * @property sizeStep 取引所が定める注文数量の刻み。注文数量はこの値の整数倍でなければ拒否される。
  *   未設定のまま実注文を有効にすると起動時に失敗する
+ * @property takerFeeRate 成行注文の手数料率。注文金額の上限判定に含める。
+ *   未設定のまま実注文を有効にすると起動時に失敗する
+ * @property maxSlippageRate 許容するスリッページの割合。次の2つに使う。
+ *   1つは注文前で、K線の終値と取引所の最新価格がこの割合を超えて離れていたら注文を見送る。
+ *   もう1つは約定後で、約定価格が発注時の想定価格からこの割合を超えて離れていたら新規の買いを止める。
+ *   未設定のまま実注文を有効にすると起動時に失敗する
  */
 data class RealTradingConfig(
     @JsonProperty("dry_run")
@@ -36,5 +42,9 @@ data class RealTradingConfig(
     @JsonProperty("min_order_size")
     val minOrderSize: BigDecimal? = null,
     @JsonProperty("size_step")
-    val sizeStep: BigDecimal? = null
+    val sizeStep: BigDecimal? = null,
+    @JsonProperty("taker_fee_rate")
+    val takerFeeRate: BigDecimal? = null,
+    @JsonProperty("max_slippage_rate")
+    val maxSlippageRate: BigDecimal? = null
 )

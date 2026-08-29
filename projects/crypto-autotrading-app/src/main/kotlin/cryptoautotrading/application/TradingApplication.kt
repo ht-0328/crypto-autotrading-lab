@@ -84,6 +84,7 @@ class TradingApplication(
             logger.debug { "読み込んだ状態: $currentState" }
 
             // 2. APIからデータの取得
+            val tickerPrice = fetchTickerPrice()
             val klineData = fetchKlineData()
 
             // 3. 売買判定
@@ -109,7 +110,8 @@ class TradingApplication(
                 tradeAmount = config.trading.tradeAmount,
                 symbol = config.trading.symbol,
                 currentState = currentState,
-                currentPrice = currentPrice,
+                klineClosePrice = currentPrice,
+                tickerPrice = tickerPrice,
                 orderSizingMode = config.trading.orderSizingMode
             )
 
@@ -225,14 +227,33 @@ class TradingApplication(
      * @return 取得したK線データのリスト
      */
     private suspend fun fetchKlineData(): List<Kline> {
-        val tickerResponse = marketDataClient.getTicker(config.trading.symbol)
-        val ticker = tickerResponse.data.firstOrNull()
-        logger.debug { "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, bid=${ticker?.bid}, ask=${ticker?.ask}" }
-
         val targetDate = resolveKlineTargetDate()
         val klineResponse = marketDataClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
         logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
         return klineResponse.data
+    }
+
+/**
+     * 取引所から最新価格（ティッカーの最終取引価格）を取得する。
+     *
+     * 実注文の数量は「注文金額 ÷ 価格」で決まるため、K線の終値ではなくこの価格を使う。
+     * 取得や解釈に失敗した場合は、注文を見送れるように null を返す。
+     *
+     * @return 取引所の最新価格。取得できない場合は null
+     */
+    private suspend fun fetchTickerPrice(): java.math.BigDecimal? {
+        return try {
+            val tickerResponse = marketDataClient.getTicker(config.trading.symbol)
+            val ticker = tickerResponse.data.firstOrNull()
+            logger.debug {
+                "取得したティッカー主要値: symbol=${ticker?.symbol}, last=${ticker?.last}, " +
+                    "bid=${ticker?.bid}, ask=${ticker?.ask}"
+            }
+            ticker?.last?.toBigDecimalOrNull()
+        } catch (e: Exception) {
+            logger.warn(e) { "ティッカーの取得に失敗しました。実注文は見送られます。" }
+            null
+        }
     }
 
 /**

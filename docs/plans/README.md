@@ -94,7 +94,7 @@ PLAN01 と PLAN02 は互いに独立なので、並行して進められます�
 2. **約定の反映が買い専用**（[PLAN01](plan01-real-sell-order.md)）— 約定を確認すると無条件に `isHolding = true` にします。売りの約定でこれを通すと、売ったのに保有中になります。
 3. **安全チェックが買い専用**（[PLAN01](plan01-real-sell-order.md)）— 「保有中なら注文しない」という条件なので、そのまま売りに使うと逆の挙動になります。
 4. ~~**数量の刻み（`sizeStep`）に丸めていない**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) の A）。GMOコインの BTC は最小注文数量・刻みとも 0.00001 です。
-5. **注文数量の計算にK線の終値を使っている**（[PLAN02](plan02-order-safety-guards.md)）— 最大5分前の価格なので、急騰時に約定金額が `max_order_jpy` を超えます。上限が上限として機能していません。
+5. ~~**注文数量の計算にK線の終値を使っている**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) の B）。Ticker の最新価格を使い、手数料も上限判定に含めるようにしました。
 6. **発注の「意図」を送信前に保存していない**（[PLAN01](plan01-real-sell-order.md)）— POST 後・保存前に落ちると、取引所に注文があるのにアプリ側に記録が残りません。
 7. **通知が1つも実装されていない**（[PLAN03](plan03-notification.md)）— 停止しても誰も気づきません。
 8. **損失上限・連敗停止・スリッページ上限が未実装**（[PLAN00](plan00-phase-and-safety-contract.md) で数字を決め、各計画で実装）— [ロードマップ](../overview/roadmap.md) の Phase3 完了条件「安全ルールが確実に動く」は未達です。

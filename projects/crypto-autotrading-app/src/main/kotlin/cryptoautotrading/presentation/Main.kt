@@ -84,6 +84,7 @@ fun main() = runBlocking {
         // 拒否され続ける。設定漏れは起動時に気づけるようにする。
         if (isRealTradeActive) {
             validateOrderSizeSettings(config.realTrading)
+            validateOrderPriceSettings(config.realTrading)
         }
 
         if (isRealTradeActive) {
@@ -172,5 +173,40 @@ private fun validateOrderSizeSettings(realTradingConfig: RealTradingConfig) {
                 "min_order_size=$minOrderSize, size_step=$sizeStep"
         }
         error("注文数量の設定が正の数ではありません")
+    }
+}
+
+/**
+ * 実注文に必要な価格と手数料の設定が揃っているかを検証する。
+ *
+ * 手数料を含めずに上限を判定すると、上限ぎりぎりの注文で実際の支払額が上限を超える。
+ * 許容スリッページが無いと、想定と大きく違う価格で約定しても止まらない。
+ * どちらも設定漏れを実行時ではなく起動時に気づけるようにする。
+ *
+ * @param realTradingConfig リアル取引設定
+ * @throws IllegalStateException 手数料率または許容スリッページが未設定、もしくは値が不正な場合
+ */
+private fun validateOrderPriceSettings(realTradingConfig: RealTradingConfig) {
+    val takerFeeRate = realTradingConfig.takerFeeRate
+    val maxSlippageRate = realTradingConfig.maxSlippageRate
+
+    if (takerFeeRate == null || maxSlippageRate == null) {
+        logger.error {
+            "実注文には taker_fee_rate と max_slippage_rate の設定が必要です。" +
+                "手数料率は取引所の銘柄情報で確認し、許容スリッページは docs/overview/roadmap.md の" +
+                "「安全ルール（数値）」に合わせてください。" +
+                "taker_fee_rate=$takerFeeRate, max_slippage_rate=$maxSlippageRate"
+        }
+        error("実注文に必要な価格と手数料の設定が不足しています")
+    }
+
+    if (takerFeeRate < BigDecimal.ZERO) {
+        logger.error { "taker_fee_rate は0以上である必要があります。taker_fee_rate=$takerFeeRate" }
+        error("手数料率の設定が不正です")
+    }
+
+    if (maxSlippageRate <= BigDecimal.ZERO) {
+        logger.error { "max_slippage_rate は正の数である必要があります。max_slippage_rate=$maxSlippageRate" }
+        error("許容スリッページの設定が不正です")
     }
 }

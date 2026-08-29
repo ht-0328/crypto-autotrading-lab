@@ -46,7 +46,10 @@ class RealTradingService(
      * @param tradeAmount 1回あたりの注文予定金額(JPY)
      * @param symbol 銘柄名
      * @param currentState 現在のシミュレーション(およびリアル取引)の状態
-     * @param currentPrice 現在の市場価格
+     * @param klineClosePrice 売買判定に使ったK線の終値。取引所の最新価格と比べるための基準として使う
+     * @param tickerPrice 取引所から取得した最新価格。注文数量と注文金額の計算にはこちらを使う。
+     *   取得できていない場合は null
+     * @param orderSizingMode 注文サイズの決め方
      * @return 処理後のシミュレーション状態
      */
     suspend fun executeOrderIfNeeded(
@@ -55,7 +58,8 @@ class RealTradingService(
         tradeAmount: Int,
         symbol: String,
         currentState: SimulationState,
-        currentPrice: BigDecimal,
+        klineClosePrice: BigDecimal,
+        tickerPrice: BigDecimal?,
         orderSizingMode: OrderSizingMode = OrderSizingMode.FIXED_AMOUNT
     ): SimulationState {
         if (shouldSkipRealTrading(config)) {
@@ -66,8 +70,22 @@ class RealTradingService(
             return currentState
         }
 
+        // 未確認注文の照合は、価格が使えるかどうかに関係なく先に行う
         if (hasUnconfirmedOrder(currentState)) {
-            return checkLatestOrderStatus(currentState)
+            return checkLatestOrderStatus(currentState, config)
+        }
+
+        if (decision.action != TradeAction.BUY_CANDIDATE && decision.action != TradeAction.SELL_CANDIDATE) {
+            logger.debug { "売買判定が注文対象ではないため、リアル取引は実行しません。action=${decision.action}" }
+            return currentState
+        }
+
+        val orderPrice = try {
+            resolveOrderPrice(config, klineClosePrice, tickerPrice) ?: return currentState
+        } catch (e: Exception) {
+            // 通常は起動時ガードで弾かれる設定漏れ。万一到達したら安全側に止める
+            logger.error(e) { "リアル取引: 注文価格の決定に失敗しました。" }
+            return stopRealTrading(currentState, e.message ?: "注文価格の決定に失敗しました")
         }
 
         return when (decision.action) {
@@ -76,20 +94,69 @@ class RealTradingService(
                 tradeAmount = tradeAmount,
                 symbol = symbol,
                 currentState = currentState,
-                currentPrice = currentPrice,
+                currentPrice = orderPrice,
                 orderSizingMode = orderSizingMode
             )
-            TradeAction.SELL_CANDIDATE -> executeSellCandidateOrder(
+            else -> executeSellCandidateOrder(
                 config = config,
                 symbol = symbol,
                 currentState = currentState,
-                currentPrice = currentPrice
+                currentPrice = orderPrice
             )
-            else -> {
-                logger.debug { "売買判定が注文対象ではないため、リアル取引は実行しません。action=${decision.action}" }
-                currentState
-            }
         }
+    }
+
+    /**
+     * 注文に使う価格を決める。
+     *
+     * K線の終値は最大で1本分（5分足なら5分）古い。急騰しているときにその価格で
+     * 「注文金額 ÷ 価格」を計算すると、実際より多い数量を注文することになり、
+     * 約定金額が上限を超える。そのため注文には取引所の最新価格を使う。
+     *
+     * 最新価格が取得できない、または判定に使ったK線の終値から大きく離れている場合は、
+     * どちらの価格が正しいか判断できないため注文を見送る。
+     *
+     * @param config リアル取引設定
+     * @param klineClosePrice 売買判定に使ったK線の終値
+     * @param tickerPrice 取引所から取得した最新価格
+     * @return 注文に使う価格。使える価格が無い場合は null
+     */
+    private fun resolveOrderPrice(
+        config: RealTradingConfig,
+        klineClosePrice: BigDecimal,
+        tickerPrice: BigDecimal?
+    ): BigDecimal? {
+        if (tickerPrice == null || tickerPrice <= BigDecimal.ZERO) {
+            logger.warn { "リアル取引: 取引所の最新価格が取得できていないため、注文を見送ります。tickerPrice=$tickerPrice" }
+            return null
+        }
+
+        val orderPriceSpec = resolveOrderPriceSpec(config)
+        if (!orderPriceSpec.isWithinAllowedSlippage(klineClosePrice, tickerPrice)) {
+            val divergenceRate = orderPriceSpec.calculateDivergenceRate(klineClosePrice, tickerPrice)
+            logger.warn {
+                "リアル取引: K線の終値 ($klineClosePrice) と取引所の最新価格 ($tickerPrice) の乖離 " +
+                    "($divergenceRate) が許容範囲 (${orderPriceSpec.maxSlippageRate}) を超えたため、注文を見送ります。"
+            }
+            return null
+        }
+
+        return tickerPrice
+    }
+
+    /**
+     * 設定から注文価格と手数料の制約を組み立てる。
+     *
+     * @param config リアル取引設定
+     * @return 注文価格の制約
+     * @throws IllegalStateException 手数料率または許容スリッページが未設定の場合
+     */
+    private fun resolveOrderPriceSpec(config: RealTradingConfig): OrderPriceSpec {
+        val takerFeeRate = config.takerFeeRate
+            ?: error("taker_fee_rate が未設定です。実注文には取引所の手数料率の設定が必要です")
+        val maxSlippageRate = config.maxSlippageRate
+            ?: error("max_slippage_rate が未設定です。実注文には許容スリッページの設定が必要です")
+        return OrderPriceSpec(takerFeeRate = takerFeeRate, maxSlippageRate = maxSlippageRate)
     }
 
     /**
@@ -180,9 +247,13 @@ class RealTradingService(
      * 未確認の最新注文の状態を確認し、シミュレーション状態に反映する。
      *
      * @param currentState 現在のシミュレーション状態
+     * @param config リアル取引設定
      * @return 更新されたシミュレーション状態
      */
-    private suspend fun checkLatestOrderStatus(currentState: SimulationState): SimulationState {
+    private suspend fun checkLatestOrderStatus(
+        currentState: SimulationState,
+        config: RealTradingConfig
+    ): SimulationState {
         val latestOrder = currentState.realTrading.latestOrder ?: return currentState
         logger.info { "リアル取引: 未確認注文 (orderId: ${latestOrder.orderId}) が存在します。状態を確認します。" }
 
@@ -198,7 +269,7 @@ class RealTradingService(
 
             val mappedStatus = mapExchangeStatus(targetOrder.status)
             if (mappedStatus == RealOrderStatus.EXECUTED) {
-                return handleExecutedOrder(currentState, latestOrder, client)
+                return handleExecutedOrder(currentState, latestOrder, client, config)
             }
 
             logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) は未約定です。ステータス: ${targetOrder.status}" }
@@ -235,12 +306,14 @@ class RealTradingService(
      * @param currentState 現在のシミュレーション状態
      * @param latestOrder 最新の注文状態
      * @param client リアル取引クライアント
+     * @param config リアル取引設定
      * @return 更新されたシミュレーション状態
      */
     private suspend fun handleExecutedOrder(
         currentState: SimulationState,
         latestOrder: RealOrderState,
-        client: RealTradingClient
+        client: RealTradingClient,
+        config: RealTradingConfig
     ): SimulationState {
         logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) の約定を確認しました。約定情報を取得します。" }
         val executions = client.getExecutions(latestOrder.orderId)
@@ -268,10 +341,49 @@ class RealTradingService(
 
         // 売買区分によって保有状態への反映が正反対になる。買いの約定を売りに流用すると
         // 「売ったのに保有中」になり、以降の損切り判断がすべて狂う。
-        return when (latestOrder.side) {
+        val executedState = when (latestOrder.side) {
             RealOrderSide.BUY -> applyExecutedBuy(currentState, updatedRealTrading, averagePrice, summary)
             RealOrderSide.SELL -> applyExecutedSell(currentState, updatedRealTrading, averagePrice, summary)
         }
+
+        return stopIfSlippageExceeded(executedState, latestOrder, averagePrice, config)
+    }
+
+    /**
+     * 約定価格が発注時の想定から離れすぎていた場合に、新規の買いを止める。
+     *
+     * 成行注文は板が薄いときや急変時に想定と違う価格で約定する。乖離が続く状況で
+     * 注文を出し続けると、想定していない価格で売買を繰り返すことになる。
+     *
+     * 止めるのは新規の買いだけである。保有を解消する売りは止めない。
+     *
+     * @param currentState 約定を反映済みのシミュレーション状態
+     * @param latestOrder 約定した注文
+     * @param averagePrice 平均約定価格
+     * @param config リアル取引設定
+     * @return 乖離が許容範囲を超えていれば停止させた状態、そうでなければ入力のままの状態
+     */
+    private fun stopIfSlippageExceeded(
+        currentState: SimulationState,
+        latestOrder: RealOrderState,
+        averagePrice: BigDecimal,
+        config: RealTradingConfig
+    ): SimulationState {
+        val requestedPrice = latestOrder.requestedPrice
+        if (requestedPrice == null || requestedPrice <= BigDecimal.ZERO) {
+            return currentState
+        }
+
+        val orderPriceSpec = resolveOrderPriceSpec(config)
+        if (orderPriceSpec.isWithinAllowedSlippage(requestedPrice, averagePrice)) {
+            return currentState
+        }
+
+        val divergenceRate = orderPriceSpec.calculateDivergenceRate(requestedPrice, averagePrice)
+        val reason = "約定価格 ($averagePrice) が発注時の想定価格 ($requestedPrice) から " +
+            "$divergenceRate 乖離し、許容範囲 (${orderPriceSpec.maxSlippageRate}) を超えました"
+        logger.error { "リアル取引: $reason" }
+        return stopRealTrading(currentState, reason)
     }
 
     /**
@@ -363,6 +475,7 @@ class RealTradingService(
         try {
             val client = exchangeClient ?: return currentState
             val orderSizeSpec = resolveOrderSizeSpec(config)
+            val orderPriceSpec = resolveOrderPriceSpec(config)
             val currentHoldingAssets = client.getAssets()
 
             val targetOrderAmount = when (orderSizingMode) {
@@ -374,11 +487,15 @@ class RealTradingService(
                         logger.warn { "安全チェックNG: JPY available ($jpyAvailable) は0以下です" }
                         return currentState
                     }
-                    jpyAvailable.setScale(0, RoundingMode.DOWN).toInt()
+                    // 残高を全額注文に回すと手数料の分だけ足りなくなるため、手数料を差し引いた額にする
+                    orderPriceSpec.calculateAffordableOrderAmount(jpyAvailable)
                 }
             }
 
-            if (!checkJpyBalance(currentHoldingAssets, targetOrderAmount)) {
+            // 上限は「実際に口座から出ていく額」に対してかける必要があるため、手数料を含めて判定する
+            val totalCostWithFee = orderPriceSpec.calculateTotalCostWithFee(targetOrderAmount)
+
+            if (!checkJpyBalance(currentHoldingAssets, totalCostWithFee)) {
                 return currentState
             }
 
@@ -396,7 +513,7 @@ class RealTradingService(
             val activeOrders = client.getActiveOrders(symbol)
             val safetyCheckResult = safetyChecker.checkPreOrderSafety(
                 config = config,
-                tradeAmount = targetOrderAmount,
+                tradeAmount = totalCostWithFee,
                 state = currentState,
                 currentHoldingAssets = checkAssets,
                 activeOrders = activeOrders,
@@ -432,7 +549,7 @@ class RealTradingService(
                 currentState = currentState,
                 orderId = acceptedOrder.orderId,
                 symbol = symbol,
-                tradeAmount = targetOrderAmount,
+                tradeAmount = totalCostWithFee,
                 size = size,
                 currentPrice = currentPrice
             )
