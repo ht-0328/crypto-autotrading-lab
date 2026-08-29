@@ -10,6 +10,15 @@ Codex と Antigravity はこのファイルを自動で読み込みます。Clau
 - 現在は Phase1 です。実資金での実注文は行いません。判断に幅があるときは常に安全側（損失を出さない側）に倒してください。
 - 全体像は [README.md](README.md)、ドキュメントの地図は [docs/README.md](docs/README.md) を参照してください。
 
+## ドキュメントを変更するとき
+
+`references/engineering-docs-standard/` は、ドキュメント作成・レビュー時に参照する Git submodule です。
+
+- サブモジュールが未初期化の場合は、`git submodule update --init --recursive` を実行してから参照します。
+- ドキュメントを作成・変更する前に、`references/engineering-docs-standard/docs/index.md`、作業内容に対応する章、対応する `references/engineering-docs-standard/templates/` のテンプレートを読みます。
+- 参考リポジトリの構成・テンプレート・検査ツールをそのままコピーしません。このリポジトリの既存構成、依頼内容、各スキルのルールに合わせて原則を適用します。
+- 通常の作業ではサブモジュール内を変更しません。参照先の更新が必要な場合は、内容を確認したうえで親リポジトリが指すコミットだけを更新します。
+
 ## 絶対厳守
 
 - **日本語で書く**: 回答、説明、コミットメッセージ、PR本文、コードコメント、KDoc はすべて日本語で書きます（技術用語は英語のままで構いません）。
