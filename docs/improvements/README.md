@@ -51,7 +51,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 | 実施済み | [pr03-private-api-log-leak.md](pr03-private-api-log-leak.md) | Private API レスポンスのログ流出を止める | 高 |
 | 実施済み | [pr02-cloud-run-config.md](pr02-cloud-run-config.md) | Cloud Run で設定が効かない・ログが残らない問題を直す | 高 |
 | 実施済み | [pr04-state-repository-crash-safe.md](pr04-state-repository-crash-safe.md) | 状態保存をクラッシュセーフにする | 高 |
-| 未着手 | [pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md) | Phase1 で実注文を構造的に不可能にする | 高 |
+| 実施済み | [pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md) | Phase1 で実注文を構造的に不可能にする | 高 |
 
 ## 第2波: 仕様・ドキュメント・CI の整合
 

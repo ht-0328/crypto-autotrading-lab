@@ -2,6 +2,9 @@
 app:
   # データを取得する間隔（例: 5min, 1hour）
   interval: "5min"
+  # 現在の開発フェーズ。実注文が許可されるのは Phase3 以降で、
+  # それ未満では real_trade_enabled=true を指定しても起動時に失敗する
+  phase: 1
 
 # リアル取引関連の設定
 real_trading:
