@@ -12,13 +12,13 @@
 
 
 ## 1. 目的
-この文書は、GMOコイン Private API を利用した「リアル注文処理」の実装に必要な設計を定める。
-扱うのは、呼び出す API の特定・DTO とアプリ内モデルの設計・安全な実注文実行の処理手順である。
+この文書は「リアル注文処理」の実装に必要な設計を定める。対象は GMOコイン Private API である。
+扱う範囲は3つある。呼び出す API の特定、DTO とアプリ内モデルの設計、安全な実注文実行の処理手順である。
 
 ## 2. 実装対象
 - `dry_run=false` かつ `real_trade_enabled=true` の場合にのみ動作する実注文処理
 - GMOコイン Private API の呼び出し。対象は資産残高取得・有効注文一覧・新規注文・注文情報取得・約定情報取得
-- infrastructure層に配置するリクエスト/レスポンスDTO（1クラス1ファイル）の作成と、アプリ内モデルへの変換処理
+- リクエスト/レスポンスDTO の作成と、アプリ内モデルへの変換処理。DTO は infrastructure 層に1クラス1ファイルで置く
 - GMO APIキーを GCP Secret Manager から取得する処理（必要なタイミングのみ）
 - 注文後、約定が確認できた場合のみ `state.json` を更新する仕組み
 - 初期対応としての現物取引（Spot）の「買い注文」の自動化
@@ -32,7 +32,7 @@
 ## 4. 既存シミュレーション処理との関係
 - リアル注文処理と既存の `Strategy` は明確に責務を分離する。
 - 既存の `Strategy` は相場データを分析し、`TradeDecision` を出力するのみとする。値は `BUY_CANDIDATE` / `SELL_CANDIDATE` / `SKIP` / `HOLDING`。
-- リアル注文処理は `TradeDecision` を受け取り、残高や上限設定などの「安全面」のチェックを行い、条件をクリアした場合のみAPI呼び出しを行う。
+- リアル注文処理は `TradeDecision` を受け取り、残高や上限設定などの安全チェックを行う。条件をクリアした場合だけ API を呼び出す。
 
 ## 5. dry-run 時の処理
 - **条件:** `dry_run=true` または `real_trade_enabled=false`
@@ -41,15 +41,15 @@
   - GMO Private API は一切呼び出さない。
   - GCP Secret Manager からのAPIキー取得も行わない。
   - 疑似 `orderId` を生成しない。
-  - 既存のシミュレーション処理として `state.json` の残金、保有数量、確定損益などを更新し、CSV・ログを出力する。
+  - 既存のシミュレーション処理として `state.json` を更新する。対象は残金・保有数量・確定損益で、あわせて CSV とログを出力する。
 
 ## 6. 実注文ON時の処理
 - **条件:** `dry_run=false` かつ `real_trade_enabled=true`
 - **動作:**
   - この条件を満たした場合のみ、実注文処理に進む。
   - 初期対応は現物の「買い注文」のみ。
-  - GMO Private API を呼び出して注文を送信し、APIから `orderId` が返却された時点では「保有状態（isHolding=true）」にはしない。
-  - GMO側で約定済み（EXECUTED）であることを確認できた場合のみ、実約定価格および実約定数量で `state.json` の保有状態を更新する。
+  - GMO Private API を呼び出して注文を送信する。API から `orderId` が返った時点では「保有状態（isHolding=true）」にしない。
+  - GMO側で約定済み（EXECUTED）を確認できた場合だけ `state.json` の保有状態を更新する。使う値は実約定価格と実約定数量である。
 - 約定が確認できない場合は未確認注文として保存し、次回以降の新規の「実注文」を停止する。
   - ただし、既存の未確認注文の状態確認だけは次回起動時に引き続き行う。
   - その状態確認で約定済み（EXECUTED）を確認できた場合のみ、`state.json` の保有状態を更新する。
@@ -111,7 +111,7 @@
 
 ### 8.2 約定の反映
 
-`handleExecutedOrder()` は `latestOrder.side` で処理を分ける。買いの約定処理（`isHolding=true` にする）を売りに流用すると「売ったのに保有中」になり、以降の損切り判断がすべて狂う。
+`handleExecutedOrder()` は `latestOrder.side` で処理を分ける。買いの約定処理（`isHolding=true` にする）を売りに流用してはいけない。「売ったのに保有中」になり、以降の損切り判断がすべて狂う。
 
 | side | 反映内容 |
 | --- | --- |
@@ -233,7 +233,7 @@
 
 ## 12. 追加・変更する設定項目
 既存のシミュレーション向け設定（`trading`）と分けるため、実注文制御用の設定は `real_trading` 配下に定義する。
-金額上限等は実注文ON時には明示的な設定を必須とするが、安全フラグについては安全側に倒したデフォルト値を持たせてよい。
+金額上限などは、実注文ON時に明示的な設定を必須とする。一方、安全フラグは安全側に倒したデフォルト値を持たせてよい。
 | 設定名 | 日本語の意味 | 目的 | デフォルト値ポリシー |
 |---|---|---|---|
 | `real_trading.dry_run` | シミュレーションモード | 実際の注文送信を行わないか | `true` |
@@ -409,7 +409,7 @@ data class GmoActiveOrdersResponseDto(
 )
 ```
 
-**GmoActiveOrdersDataDto.kt** (1クラス1ファイルの原則により別途用意)
+**GmoActiveOrdersDataDto.kt**（1クラス1ファイル）
 ```kotlin
 package cryptoautotrading.infrastructure.exchange.gmo.dto
 
@@ -736,26 +736,28 @@ data class GmoExecutionDto(
 
 ## 16. DTOとアプリ内モデルの変換
 
-DTOはあくまで GMO API との通信仕様を反映したデータ構造（業務ロジックなし）とし、それを `infrastructure` パッケージ内部の `GmoPrivateApiClient` などで、ドメイン層やアプリケーション層で利用するアプリ内モデルへマッピングする。
+DTO は GMO API との通信仕様を反映したデータ構造とし、業務ロジックは持たせない。
+アプリ内モデルへの変換は、`infrastructure` パッケージ内部の `GmoPrivateApiClient` などで行う。
 **ドメイン/アプリケーションはDTOを直接扱わず、変換後のモデルのみに依存する設計とする。**
 
 **orderId の型変換方針について**
-GMO公式APIにおいて `orderId` が数値(Long等)で返却される場合、DTOではAPIの仕様に合わせて数値型（Longなど）として定義する。ただし、ドメインやアプリケーション層のアプリ内モデル（`ExchangeActiveOrder`、`AcceptedOrder`、`ExchangeOrderStatus` 等）ではすべて一貫して **`String` 型** に統一する。DTOからアプリ内モデルへの変換時にString化を行う。
+
+GMO公式APIが `orderId` を数値で返す場合がある。DTO は API の仕様に合わせ、数値型（Long など）で定義する。ただしアプリ内モデルでは、一貫して **`String` 型** に統一する。対象は `ExchangeActiveOrder`・`AcceptedOrder`・`ExchangeOrderStatus` などである。DTOからアプリ内モデルへの変換時にString化を行う。
 
 - `GmoAccountAssetDto` → `ExchangeAsset`
-  - DTOから対象の `symbol` に合致するオブジェクトを探し、`available` を `BigDecimal` に変換してドメイン用の `ExchangeAsset` を生成する。
+  - DTO から対象の `symbol` に合致するオブジェクトを探す。`available` を `BigDecimal` に変換し、`ExchangeAsset` を生成する。
 - `GmoActiveOrderDto` → `ExchangeActiveOrder`
-  - DTOの `orderId` (Long) を String に変換し、`symbol`, `side`, `status` などをマッピングして、未約定注文の状態をカプセル化する。
+  - DTO の `orderId` (Long) を String に変換する。`symbol`・`side`・`status` をマッピングし、未約定注文の状態を表す。
 - `GmoPlaceOrderResponseDto` → `AcceptedOrder`
-  - `data` フィールドの `orderId` (String または Long) を String 型として保持する、注文成功を表すドメインモデル `AcceptedOrder` を生成する。
+  - 注文成功を表す `AcceptedOrder` を生成する。`data` の `orderId` は String 型として保持する。
 - `GmoOrderDto` → `ExchangeOrderStatus`
-  - `orderId` (Long) を String に変換し、`status` (`WAITING`, `ORDERED`, `EXECUTED`, `CANCELED` など) と共にマッピングし、ステータスチェック用のモデルとして返す。
+  - `orderId` (Long) を String に変換する。`status`（`WAITING` / `ORDERED` / `EXECUTED` / `CANCELED` など）と共にマッピングして返す。
 - `GmoExecutionDto` → `ExecutedOrder`
-  - `orderId` や `executionId` (Long) を String に変換し、実際の `price` と `size`、さらに `fee` などを抽出して真の約定結果を表現する `ExecutedOrder` を生成する。
+  - `orderId` と `executionId` (Long) を String に変換する。実際の `price`・`size`・`fee` を抽出し、`ExecutedOrder` を生成する。
 
 ## 17. APIキー取得方法
 - **GCP Secret Manager** を使用して取得する。
-- 起動時に全取得してメモリに保持するのではなく、`BUY_CANDIDATE` が発生して実注文前チェック（安全チェック）を行う直前に、必要なタイミングでのみ取得する。
+- 起動時に全取得してメモリへ保持しない。`BUY_CANDIDATE` が発生し、実注文前の安全チェックを行う直前にだけ取得する。
 - ログ出力へのAPIキー、Secret Key、署名文字列の表示は厳禁とする。
 
 ## 18. エラー時・約定未確認時の停止処理
@@ -767,7 +769,7 @@ GMO公式APIにおいて `orderId` が数値(Long等)で返却される場合、
 - **動作:**
   - `state.json` の `realTrading.isStopped` を `true` にし、`stopReason` や未確認注文のステータスを記録する。
   - 以降の新規の「実注文（POST）」はスキップ（停止）する。
-  - **既存未確認注文への対応:** 新規注文は停止するが、次回以降の実行時に、既存の未確認注文に対する状態確認（GET）だけは継続して行う。状態が最終的に `EXECUTED` になったことが確認できた場合のみ、`state.json` の保有状態および約定日時等を更新する。
+  - **既存未確認注文への対応:** 新規注文は停止する。ただし既存の未確認注文の状態確認（GET）は、次回以降の実行でも継続する。状態が最終的に `EXECUTED` になったことが確認できた場合のみ、`state.json` の保有状態および約定日時等を更新する。
   - 復旧（新規注文の再開）は手動によるフラグリセット・状態修正のみとする。
 
 ## 19. Mermaid による処理フロー
@@ -792,23 +794,24 @@ flowchart TD
 
 ## 20. テスト観点
 - `dry_run=true` 時、GMO Private API が絶対に呼ばれないこと（MockやWireMockで検証）。
-- 異常な残高やアクティブな注文が存在する場合に、正しく実注文が見送られること（安全チェックロジックの単体テスト）。
+- 異常な残高やアクティブな注文があるとき、実注文が見送られること（安全チェックの単体テスト）。
 - DTOとアプリ内モデルへの変換が正しく行われること。
-- `GmoPrivateApiModels.kt` が存在せず、DTOが1クラス1ファイルで配置され、ドメインに漏れ出していないこと（ArchitectureTestによるKonsist検証）。
+- `GmoPrivateApiModels.kt` が存在しないこと。DTO が1クラス1ファイルで置かれていること。ドメインに漏れ出していないこと（ArchitectureTest で検証）。
 - `orderId` は返却されたが約定確認が取れない場合、正しく停止処理へ移行すること。
-- 金額等の運用パラメータにデフォルト値が設定されていないこと（設定未指定時はパースエラーなどで起動しないこと）。
+- 金額などの運用パラメータにデフォルト値が無いこと。未指定のときは起動しないこと。
 
 ## 21. 実装PRの分割方針
 本仕様の実装は規模が大きくなる可能性があるため、以下の単位でPRを分割して実装する。
-1. **APIクライアントとDTO/モデル定義の追加:** GMO Private API クライアント、DTOクラス、アプリ内モデルの基盤実装。
-2. **安全チェックロジックと設定項目の追加:** `BUY_CANDIDATE` 判定後の残高チェック・注文上限チェックロジックの追加。
-3. **実注文処理と状態保存の結合:** 実際の注文送信、約定確認、および `state.json` 拡張を含む一連のパイプラインの実装。
+1. **APIクライアントとDTO/モデル定義の追加**
+   - GMO Private API クライアント、DTO、アプリ内モデルの基盤実装。
+2. **安全チェックロジックと設定項目の追加:** `BUY_CANDIDATE` 判定後の残高チェックと注文上限チェック。
+3. **実注文処理と状態保存の結合:** 注文送信、約定確認、`state.json` 拡張までのパイプライン実装。
 
 ## 22. 受け入れ条件
-- 全ての要件（DTO/モデル分離、1クラス1ファイル、設定デフォルトなしルール）が遵守されたコードが実装されていること。
+- DTO/モデル分離、1クラス1ファイル、設定デフォルトなしの3要件を満たしていること。
 - 既存の `dry-run` 時のシミュレーション動作に影響を与えていないこと（既存テストが全てパスすること）。
 - ArchitectureTest などの Konsist テストを通過すること。
 - `SELL_CANDIDATE` 時に売り注文が送信され、約定確認後に保有が解消され確定損益が加算されること。
 - 取引所の残高が記録上の保有数量より少ない場合、売らずに停止すること。
 - `isStopped=true` でも売り注文は実行され、買い注文は実行されないこと。
-- APIエラー発生時や未確認注文発生時に、次回以降の実注文が強制的にスキップされる仕組みが確認できること。
+- APIエラーや未確認注文が起きたとき、次回以降の実注文がスキップされること。
