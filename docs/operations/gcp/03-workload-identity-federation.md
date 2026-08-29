@@ -13,7 +13,7 @@
 
 ## 文書の目的
 
-- GitHub Actions から GCP へ安全にアクセスするための仕組み（Workload Identity Federation）の作り方
+- GitHub Actions から GCP へ安全にアクセスする仕組みの作り方
 
 ## 対象読者
 
@@ -25,8 +25,8 @@
 
 ## 概要
 
-GCP にプログラムをデプロイするとき、昔は「パスワード（JSONキー）」を発行してGitHubに登録していましたが、これは漏れると危険です。
-代わりに **Workload Identity Federation** という仕組みを使って、「このGitHubリポジトリから来た通信なら許可する」という安全な設定を行います。
+GCP へのデプロイでは、以前は JSONキーを発行して GitHub に登録していました。これは漏れると危険です。
+代わりに **Workload Identity Federation** を使います。「このリポジトリから来た通信なら許可する」という設定です。
 
 ## 1. 準備（環境変数の設定）
 

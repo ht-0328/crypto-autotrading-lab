@@ -60,13 +60,14 @@
 
 ### 2. 設計書の修正
 
-- [infrastructure/gcp/README.md](../infrastructure/gcp/README.md) の「Terraform 実装ファイルはまだ追加されていません」を削除し、[infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に実装があることを書く。
-- [development-policy.md](../infrastructure/gcp/development-policy.md) の「`gcloud` コマンドに依存しすぎない構成にする」に注記を足す。
+- [infrastructure/gcp/README.md](../infrastructure/gcp/README.md) の「Terraform 実装ファイルはまだ追加されていません」を削除する。実装があることを書く。
+- [development-policy.md](../infrastructure/gcp/development-policy.md) の「`gcloud` に依存しすぎない」に注記を足す。
 
   > **現状**: 構築とデプロイは GitHub Actions の `gcloud` コマンドが正です。Terraform コードは追加済みですが `terraform apply` は運用していません。一本化は今後の課題です。
 
-- [trading-strategy-design.md](../architecture/trading-strategy-design.md) の「enum `TradeDecision`」を修正する。実体は [TradeDecision.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeDecision.kt) の data class で、判定の種類は [TradeAction.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeAction.kt) の enum。配置も `domain.model` であり `domain.strategy` ではない。
-- [backtest-design.md](../architecture/backtest-design.md) の Writer クラス名を [BacktestResultOutputPort.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/repository/BacktestResultOutputPort.kt) など実装名に合わせる。
+- [trading-strategy-design.md](../architecture/trading-strategy-design.md) の「enum `TradeDecision`」を修正する。
+  実体は [TradeDecision.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeDecision.kt) の data class である。判定の種類は [TradeAction.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeAction.kt) の enum。配置も `domain.model` であり `domain.strategy` ではない。
+- [backtest-design.md](../architecture/backtest-design.md) の Writer クラス名を実装名に合わせる。
 
 ### 3. 復旧手順の新規作成
 

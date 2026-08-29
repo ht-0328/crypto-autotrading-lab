@@ -171,7 +171,8 @@ print(f"{found} 件")
 sys.exit(1 if found else 0)
 ```
 
-**インラインコードを除外する処理を省かないでください。** [docs/README.md](README.md) のリンク方針や、この計画自身が、書き方の例としてリンクの形をした文字列を載せています。除外しないと、直す必要のない箇所まで検出されます。
+**インラインコードを除外する処理を省かないでください。**
+この計画自身やリンク方針が、書き方の例としてリンクの形をした文字列を載せています。除外しないと、直す必要のない箇所まで検出されます。
 
 ### 2. 置換する
 
@@ -193,14 +194,14 @@ sys.exit(1 if found else 0)
 
 実在しないファイルを指す 3 件は、絶対 URL にしても壊れたままです。リンクをやめてコード表記にします。
 
-[templates/design-template.md](../templates/design-template.md) の 15 行目・108 行目と、[templates/specification-template.md](../templates/specification-template.md) の 111 行目を、次のように直します。
+次の3か所を直します。[design-template.md](../templates/design-template.md) の 15・108 行目と、[specification-template.md](../templates/specification-template.md) の 111 行目です。
 
 ```markdown
 直す前: - [対応する仕様書](../specifications/features/example.md)
 直した後: - 対応する仕様書: `../specifications/features/example.md`（実際のファイル名に置き換える）
 ```
 
-[docs/README.md](README.md) の「ドキュメントリンク方針」にある `phase1-overview.md` の記述は、すでにインラインコードで囲まれており実際のリンクにはなっていません。**変更不要です。**
+[docs/README.md](README.md) の `phase1-overview.md` の記述は、インラインコードで囲まれています。実際のリンクにはなっていません。**変更不要です。**
 
 ### 4. ドキュメントリンク方針を更新する
 
@@ -213,7 +214,7 @@ sys.exit(1 if found else 0)
 
 ### 5. ビルドを --strict にする
 
-[.github/workflows/docs.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/docs.yml) の `build` ジョブと `deploy` ジョブの両方で、`zensical build --clean` を `zensical build --clean --strict` に変更します。以降は `.md` へのリンク切れが1件でもあればPRのチェックが落ちます。
+[.github/workflows/docs.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/docs.yml) の両ジョブで、`zensical build --clean` に `--strict` を付けます。以降は `.md` へのリンク切れが1件でもあればPRのチェックが落ちます。
 
 **この手順は 1〜4 がすべて終わってから行ってください。** 先に `--strict` にすると、このPR自身のCIが落ちます。
 
@@ -223,7 +224,7 @@ sys.exit(1 if found else 0)
 - [ ] `zensical build --clean --strict` が成功すること
 - [ ] [.github/workflows/docs.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/docs.yml) の両ジョブに `--strict` が入っていること
 - [ ] リンクのラベルを変えていないこと（文章の意味が変わっていないこと）
-- [ ] GitHub 上で Markdown を直接読んだ場合も、置き換えたリンクが正しい場所へ飛ぶこと
+- [ ] GitHub 上で読んだ場合も、置き換えたリンクが正しい場所へ飛ぶこと
 - [ ] Kotlin コード、Gradle 設定、`config/` に変更が無いこと
 
 ## 検証

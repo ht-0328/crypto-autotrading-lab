@@ -11,7 +11,7 @@
 | 最終確認日 | 2026-08-30 |
 
 
-このディレクトリには、システムの運用やクラウド環境（GCP）への展開に関するドキュメントが含まれています。
+このディレクトリには、システムの運用と GCP への展開の手順が入っています。
 
 ## ディレクトリ一覧
 
@@ -19,5 +19,5 @@
 
 ## ドキュメント一覧
 
-- [go-live-runbook.md](go-live-runbook.md): 実資金での自動売買を始めるまでに、オーナー本人にしかできない作業の手順。
-- [real-trading-recovery.md](real-trading-recovery.md): リアル取引が停止（`realTrading.isStopped`）したときの確認と復旧の手順。
+- [go-live-runbook.md](go-live-runbook.md): 実資金での自動売買を始めるまでの、オーナー本人の作業手順。
+- [real-trading-recovery.md](real-trading-recovery.md): リアル取引が停止したときの確認と復旧の手順。

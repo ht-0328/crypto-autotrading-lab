@@ -27,7 +27,7 @@
 
 ## 1. gcloud CLI をインストールする
 
-`gcloud` CLI は、黒い画面（ターミナル）から Google Cloud を操作するための公式ツールです。
+`gcloud` CLI は、ターミナルから Google Cloud を操作する公式ツールです。
 
 - [公式のインストール手順](https://cloud.google.com/sdk/docs/install) に従ってインストールしてください。
 - インストールが終わったら、ターミナルで `gcloud --version` と打ち、バージョンが表示されるか確認します。
@@ -82,4 +82,4 @@ _結果の `lifecycleState` が `ACTIVE` になっていて、`billingEnabled` �
 - [ ] `gcloud config get-value project` で対象プロジェクトが表示される
 - [ ] プロジェクトが `ACTIVE` で、課金が `True` になっている
 
-終わったら、次は [03-workload-identity-federation.md](03-workload-identity-federation.md) に進んでください。
+終わったら [Workload Identity Federation の設定](03-workload-identity-federation.md) に進んでください。
