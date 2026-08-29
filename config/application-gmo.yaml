@@ -37,6 +37,13 @@ real_trading:
   max_daily_loss_jpy: 2000
   max_consecutive_losses: 3
 
+# 通知関連の設定
+# 送信先のURLは秘密情報なので、ここには書かず環境変数 NOTIFICATION_WEBHOOK_URL から渡す。
+notification:
+  enabled: false
+  # 送信するJSONの本文を入れるキー。Discord は "content"、Slack は "text"
+  payload_key: "content"
+
 # 取引関連の設定
 trading:
   # ATR計算に使用するK線の数

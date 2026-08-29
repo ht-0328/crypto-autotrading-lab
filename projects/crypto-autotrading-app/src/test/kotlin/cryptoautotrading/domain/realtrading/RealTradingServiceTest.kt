@@ -13,6 +13,7 @@ import cryptoautotrading.domain.model.realtrading.RealOrderStatus
 import cryptoautotrading.domain.model.realtrading.RealOrderState
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingState
+import cryptoautotrading.domain.notification.NotificationSeverity
 import cryptoautotrading.domain.realtrading.RealTradingClient
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -1295,6 +1296,155 @@ class RealTradingServiceTest {
         // 止めるのは新規の買いだけ。売りまで止めると損切りできなくなる
         assertTrue(mockClient.placeOrderCalled)
         assertEquals("SELL", mockClient.lastPlaceOrderSide)
+    }
+
+    @Test
+    fun `買い注文を送信したら通知されること`() = runBlocking {
+        val notifier = RecordingNotifier()
+        val serviceWithNotifier = RealTradingService(exchangeClient = mockClient, notifier = notifier)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        val decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal")
+        val config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000)
+
+        serviceWithNotifier.executeOrderIfNeeded(
+            decision = decision,
+            config = config,
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = SimulationState(),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertTrue(notifier.messages.any { it.title.contains("実注文を送信しました") }, notifier.messages.toString())
+    }
+
+    @Test
+    fun `約定を確認したら通知されること`() = runBlocking {
+        val notifier = RecordingNotifier()
+        val serviceWithNotifier = RealTradingService(exchangeClient = mockClient, notifier = notifier)
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = "notify_exec_id",
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.ORDERED,
+                    requestedAmountJpy = BigDecimal("10000"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000")
+                )
+            )
+        )
+        mockClient.mockOrdersResponse = listOf(ExchangeOrderStatus("notify_exec_id", "EXECUTED", BigDecimal("0.01")))
+        mockClient.mockExecutionsResponse = listOf(
+            ExecutedOrder(
+                "exec_1", "notify_exec_id", "BTC", "BUY",
+                BigDecimal("1000000"), BigDecimal("0.01"), BigDecimal("5"), "2026-08-29T10:00:00"
+            )
+        )
+
+        serviceWithNotifier.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.HOLDING, "保有中"),
+            config = tradingConfig(),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertTrue(notifier.messages.any { it.title.contains("約定を確認しました") }, notifier.messages.toString())
+    }
+
+    @Test
+    fun `リアル取引が停止したら重大度CRITICALで通知されること`() = runBlocking {
+        val notifier = RecordingNotifier()
+        val serviceWithNotifier = RealTradingService(exchangeClient = mockClient, notifier = notifier)
+        // 取引所の残高が記録より少ないため停止する
+        mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.001"), BigDecimal("0.001"), BigDecimal.ONE))
+        val state = SimulationState(
+            isHolding = true,
+            buyPrice = BigDecimal("1000000"),
+            holdingAmount = BigDecimal("0.01")
+        )
+
+        serviceWithNotifier.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal"),
+            config = tradingConfig(),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        val stopMessage = notifier.messages.firstOrNull { it.title.contains("停止しました") }
+        assertTrue(stopMessage != null, notifier.messages.toString())
+        assertEquals(NotificationSeverity.CRITICAL, stopMessage?.severity)
+    }
+
+    @Test
+    fun `損失上限で買いを止めたら通知されること`() = runBlocking {
+        val notifier = RecordingNotifier()
+        val clock = fixedJstClock("2026-08-29T10:00:00")
+        val serviceWithNotifier = RealTradingService(
+            exchangeClient = mockClient,
+            clock = clock,
+            notifier = notifier
+        )
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                dailyResultDate = "2026-08-29",
+                dailyRealizedProfitAndLoss = BigDecimal("-2500")
+            )
+        )
+
+        serviceWithNotifier.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal"),
+            config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        assertTrue(notifier.messages.any { it.title.contains("新規の買いを止めました") }, notifier.messages.toString())
+    }
+
+    @Test
+    fun `日常的な見送りでは通知されないこと`() = runBlocking {
+        val notifier = RecordingNotifier()
+        val serviceWithNotifier = RealTradingService(exchangeClient = mockClient, notifier = notifier)
+        // すでに保有している状態での買い判定。5分ごとに起きうる日常的な見送り
+        mockClient.assets = listOf(
+            ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE),
+            ExchangeAsset("BTC", BigDecimal("0.01"), BigDecimal("0.01"), BigDecimal.ONE)
+        )
+
+        serviceWithNotifier.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal"),
+            config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = SimulationState(),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        // 日常的な見送りまで通知すると、本当に伝えたいことが埋もれる
+        assertTrue(notifier.messages.isEmpty(), notifier.messages.toString())
+    }
+}
+
+/** 送られた通知を記録するテスト用の実装 */
+private class RecordingNotifier : cryptoautotrading.domain.notification.Notifier {
+    val messages = mutableListOf<cryptoautotrading.domain.notification.NotificationMessage>()
+
+    override suspend fun notify(message: cryptoautotrading.domain.notification.NotificationMessage) {
+        messages.add(message)
     }
 }
 

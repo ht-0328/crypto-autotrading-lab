@@ -1,6 +1,7 @@
 package cryptoautotrading.domain.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import cryptoautotrading.domain.model.notification.NotificationConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 
 /**
@@ -11,6 +12,7 @@ import cryptoautotrading.domain.model.realtrading.RealTradingConfig
  * @property api 外部API関連の設定
  * @property output データ出力関連の設定
  * @property realTrading リアル取引関連の設定。未設定時は安全側のデフォルト値を使用する。
+ * @property notification 通知関連の設定。未設定時は通知を送らない。
  */
 data class AppConfig(
     val app: AppSettings,
@@ -18,5 +20,7 @@ data class AppConfig(
     val api: ApiConfig,
     val output: OutputConfig,
     @JsonProperty("real_trading")
-    val realTrading: RealTradingConfig = RealTradingConfig()
+    val realTrading: RealTradingConfig = RealTradingConfig(),
+
+    val notification: NotificationConfig = NotificationConfig()
 )

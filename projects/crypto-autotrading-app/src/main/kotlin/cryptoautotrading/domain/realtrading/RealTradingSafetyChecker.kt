@@ -149,7 +149,10 @@ class RealTradingSafetyChecker {
         val lossLimit = BigDecimal(maxDailyLossJpy).negate()
 
         if (dailyResult <= lossLimit) {
-            return reject("1日の損失が上限に到達（当日の確定損益=$dailyResult, 上限=$lossLimit）")
+            return reject(
+                reason = "1日の損失が上限に到達（当日の確定損益=$dailyResult, 上限=$lossLimit）",
+                shouldNotify = true
+            )
         }
 
         return null
@@ -183,7 +186,10 @@ class RealTradingSafetyChecker {
 
         val lossCount = state.realTrading.consecutiveLossCountOn(today)
         if (lossCount >= maxConsecutiveLosses) {
-            return reject("連敗が上限に到達（連敗=$lossCount, 上限=$maxConsecutiveLosses）")
+            return reject(
+                reason = "連敗が上限に到達（連敗=$lossCount, 上限=$maxConsecutiveLosses）",
+                shouldNotify = true
+            )
         }
 
         return null
@@ -255,11 +261,12 @@ class RealTradingSafetyChecker {
      * 安全チェックを不可として記録する。
      *
      * @param reason 注文できない理由
+     * @param shouldNotify 人に伝えるべき停止かどうか
      * @return 注文不可を表す結果
      */
-    private fun reject(reason: String): SafetyCheckResult {
+    private fun reject(reason: String, shouldNotify: Boolean = false): SafetyCheckResult {
         logger.warn { "安全チェックNG: $reason" }
-        return SafetyCheckResult(passed = false, reason = reason)
+        return SafetyCheckResult(passed = false, reason = reason, shouldNotify = shouldNotify)
     }
 
     /**

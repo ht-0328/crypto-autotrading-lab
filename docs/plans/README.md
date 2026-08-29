@@ -41,7 +41,7 @@ Claude Code / Codex / Antigravity の3ツールで現状を評価し、結果を
 | 1 | [PLAN00: フェーズの定義と安全契約を確定する](plan00-phase-and-safety-contract.md) ✅ | どこまで行けば実資金を入れてよいかを数字で決める | 動かさない |
 | 2 | [PLAN01: 売り注文（SELL）を実注文で自動化する](plan01-real-sell-order.md) ✅ | 買い→保有→売り→現金 の1サイクルが閉じる | 動かさない |
 | 3 | [PLAN02: 実注文の前に必要な安全ガードを揃える](plan02-order-safety-guards.md) ✅ | 誤発注・二重発注・上限超過を止める | 動かさない |
-| 4 | [PLAN03: 通知を実装する（Phase2a）](plan03-notification.md) | 異常に人間が気づけて、危ないときは自動で止まる | 動かさない |
+| 4 | [PLAN03: 通知を実装する（Phase2a）](plan03-notification.md) ✅ | 異常に人間が気づけて、危ないときは自動で止まる | 動かさない |
 | 5 | [PLAN04: 本番へ配線し、実注文なしでリハーサルする](plan04-production-wiring-and-rehearsal.md) | 本番環境と障害時の挙動を確認する | 動かさない |
 | 6 | [PLAN05: 最小額で実資金の1サイクルを通す（Phase3）](plan05-canary-with-real-money.md) | 監視下で実注文が1サイクル完結する | **動かす（最小額）** |
 | 7 | [PLAN06: 無人の自動売買に昇格する（Phase4）](plan06-unattended-trading.md) | 承認なしで自動売買が回り続ける | **動かす** |
@@ -96,8 +96,8 @@ PLAN01 と PLAN02 は互いに独立なので、並行して進められます�
 4. ~~**数量の刻み（`sizeStep`）に丸めていない**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) の A）。GMOコインの BTC は最小注文数量・刻みとも 0.00001 です。
 5. ~~**注文数量の計算にK線の終値を使っている**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) の B）。Ticker の最新価格を使い、手数料も上限判定に含めるようにしました。
 6. **発注の「意図」を送信前に保存していない**（[PLAN01](plan01-real-sell-order.md)）— POST 後・保存前に落ちると、取引所に注文があるのにアプリ側に記録が残りません。
-7. **通知が1つも実装されていない**（[PLAN03](plan03-notification.md)）— 停止しても誰も気づきません。
-8. **損失上限・連敗停止・スリッページ上限が未実装**（[PLAN00](plan00-phase-and-safety-contract.md) で数字を決め、各計画で実装）— [ロードマップ](../overview/roadmap.md) の Phase3 完了条件「安全ルールが確実に動く」は未達です。
+7. ~~**通知が1つも実装されていない**~~ — 解消済み（[PLAN03](plan03-notification.md)）。日次サマリーと沈黙の検知は積み残しです。
+8. ~~**損失上限・連敗停止・スリッページ上限が未実装**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) と [PLAN03](plan03-notification.md)）。
 9. **同一口座の既存資産を巻き込む危険**（[PLAN01](plan01-real-sell-order.md)）— 取引所の残高をそのまま全量売ると、ボット以外が買った BTC まで売ります。専用口座を推奨します。
 10. **緊急停止の手段が state.json の直接編集しかない**（[PLAN00](plan00-phase-and-safety-contract.md)）。
 

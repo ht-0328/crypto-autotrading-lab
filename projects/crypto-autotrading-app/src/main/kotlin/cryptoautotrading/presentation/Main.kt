@@ -1,7 +1,10 @@
 package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
+import cryptoautotrading.domain.model.notification.NotificationConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
+import cryptoautotrading.domain.notification.NoOpNotifier
+import cryptoautotrading.domain.notification.Notifier
 import cryptoautotrading.domain.time.TradingTime
 import cryptoautotrading.infrastructure.config.ConfigLoader
 import cryptoautotrading.infrastructure.exchange.gmo.GmoHttpClientFactory
@@ -11,6 +14,8 @@ import cryptoautotrading.infrastructure.exchange.gmo.auth.DummyGmoCredentialProv
 import cryptoautotrading.infrastructure.exchange.gmo.auth.EnvGmoCredentialProvider
 import cryptoautotrading.infrastructure.exchange.gmo.auth.GmoSignatureGeneratorImpl
 import cryptoautotrading.infrastructure.lock.ExecutionLock
+import cryptoautotrading.infrastructure.notification.WebhookNotifier
+import io.ktor.client.HttpClient
 import cryptoautotrading.infrastructure.output.ConsoleOutput
 import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
@@ -28,6 +33,9 @@ private val logger = KotlinLogging.logger {}
  */
 private const val REAL_TRADING_ALLOWED_PHASE = 3
 
+/** 通知先のURLを渡す環境変数の名前 */
+private const val NOTIFICATION_WEBHOOK_URL_ENV = "NOTIFICATION_WEBHOOK_URL"
+
 /** 実行ロックのファイル名に付ける接尾辞 */
 private const val LOCK_FILE_SUFFIX = ".lock"
 
@@ -36,6 +44,8 @@ private const val LOCK_FILE_SUFFIX = ".lock"
  */
 fun main() = runBlocking {
     logger.info { "Crypto Auto-Trading Lab 起動処理を開始します" }
+
+    var notificationHttpClient: HttpClient? = null
 
     try {
         // 設定を読み込む
@@ -91,6 +101,10 @@ fun main() = runBlocking {
             validateOrderPriceSettings(config.realTrading)
             validateAutoStopSettings(config.realTrading)
         }
+
+        // 通知先のURLは秘密情報なので、設定ファイルではなく環境変数から渡す
+        notificationHttpClient = GmoHttpClientFactory.create()
+        val notifier = createNotifier(config.notification, notificationHttpClient)
 
         // 定期実行が重複して起動すると、2つの実行が同じ状態を「保有なし」と読み、
         // どちらも注文を出しうる。実注文では、これがそのまま二重注文になる。
@@ -154,12 +168,46 @@ fun main() = runBlocking {
         if (executed == null) {
             logger.info { "別の実行がロックを保持していたため、今回の実行をスキップしました" }
         }
+
     } catch (e: Exception) {
         logger.error(e) { "アプリケーションの起動・実行中に予期せぬエラーが発生しました: ${e.message}" }
         throw e
     } finally {
+        notificationHttpClient?.close()
         logger.info { "Crypto Auto-Trading Lab 起動処理が終了しました" }
     }
+}
+
+/**
+ * 設定と環境変数から通知の送り先を組み立てる。
+ *
+ * 送信先のURLは秘密情報なので、設定ファイルではなく環境変数から受け取る。
+ * 通知が無効な場合や、URLが渡されていない場合は、送らない実装を返す。
+ * 通知が無いことを理由に起動を止めない。売買そのものは通知が無くても動く。
+ *
+ * @param notificationConfig 通知の設定
+ * @param httpClient 通知の送信に使う HTTP クライアント
+ * @return 通知の送り先
+ */
+private fun createNotifier(notificationConfig: NotificationConfig, httpClient: HttpClient): Notifier {
+    if (!notificationConfig.enabled) {
+        logger.info { "通知は無効です。" }
+        return NoOpNotifier
+    }
+
+    val webhookUrl = System.getenv(NOTIFICATION_WEBHOOK_URL_ENV)
+    if (webhookUrl.isNullOrBlank()) {
+        // URL をログに出さないよう、環境変数名だけを示す
+        logger.warn { "通知が有効ですが $NOTIFICATION_WEBHOOK_URL_ENV が未設定のため、通知を送りません。" }
+        return NoOpNotifier
+    }
+
+    logger.info { "通知を有効にしました。payloadKey=${notificationConfig.payloadKey}" }
+    return WebhookNotifier(
+        webhookUrl = webhookUrl,
+        payloadKey = notificationConfig.payloadKey,
+        httpClient = httpClient
+    )
 }
 
 /**

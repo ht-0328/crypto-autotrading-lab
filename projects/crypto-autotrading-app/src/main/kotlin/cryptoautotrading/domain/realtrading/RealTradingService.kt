@@ -12,6 +12,10 @@ import cryptoautotrading.domain.model.order.ExecutedOrder
 import cryptoautotrading.domain.model.realtrading.ExecutionSummary
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingState
+import cryptoautotrading.domain.notification.NoOpNotifier
+import cryptoautotrading.domain.notification.NotificationMessage
+import cryptoautotrading.domain.notification.NotificationSeverity
+import cryptoautotrading.domain.notification.Notifier
 import cryptoautotrading.domain.realtrading.RealTradingClient
 import cryptoautotrading.domain.time.TradingTime
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -27,11 +31,13 @@ import java.time.format.DateTimeFormatter
  * @property exchangeClient リアル取引の取引所操作を行うクライアント
  * @property safetyChecker 実注文前安全チェックを行うサービス
  * @property clock 注文時刻と日次上限の日付判定に使う時計。テストでは固定した時刻に差し替える
+ * @property notifier 注文や停止を人に伝える通知の口
  */
 class RealTradingService(
     private val exchangeClient: RealTradingClient? = null,
     private val safetyChecker: RealTradingSafetyChecker = RealTradingSafetyChecker(),
-    private val clock: Clock = TradingTime.systemClock()
+    private val clock: Clock = TradingTime.systemClock(),
+    private val notifier: Notifier = NoOpNotifier
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -366,7 +372,7 @@ class RealTradingService(
      * @param config リアル取引設定
      * @return 乖離が許容範囲を超えていれば停止させた状態、そうでなければ入力のままの状態
      */
-    private fun stopIfSlippageExceeded(
+    private suspend fun stopIfSlippageExceeded(
         currentState: SimulationState,
         latestOrder: RealOrderState,
         averagePrice: BigDecimal,
@@ -398,13 +404,14 @@ class RealTradingService(
      * @param summary 約定情報の集計結果
      * @return 更新されたシミュレーション状態
      */
-    private fun applyExecutedBuy(
+    private suspend fun applyExecutedBuy(
         currentState: SimulationState,
         updatedRealTrading: RealTradingState,
         averagePrice: BigDecimal,
         summary: ExecutionSummary
     ): SimulationState {
         logger.info { "リアル取引: 買いの約定を反映します。isHolding=true, price=$averagePrice, size=${summary.totalSize}" }
+        notifyOrderExecuted(RealOrderSide.BUY, averagePrice, summary, profitAndLoss = null)
         return currentState.copy(
             isHolding = true,
             buyPrice = averagePrice,
@@ -425,7 +432,7 @@ class RealTradingService(
      * @param summary 約定情報の集計結果
      * @return 更新されたシミュレーション状態
      */
-    private fun applyExecutedSell(
+    private suspend fun applyExecutedSell(
         currentState: SimulationState,
         updatedRealTrading: RealTradingState,
         averagePrice: BigDecimal,
@@ -443,6 +450,7 @@ class RealTradingService(
             "リアル取引: 売りの約定を反映します。price=$averagePrice, size=${summary.totalSize}, " +
                 "確定損益=$profitAndLoss, 残量=$remainingSize"
         }
+        notifyOrderExecuted(RealOrderSide.SELL, averagePrice, summary, profitAndLoss)
 
         // 1日の損失上限と連敗の判定に使うため、確定した損益をその日の集計に足す
         val realTradingWithResult = updatedRealTrading.withRealizedResult(
@@ -532,6 +540,16 @@ class RealTradingService(
 
             if (!safetyCheckResult.passed) {
                 logger.info { "リアル取引: 安全チェックで注文が見送られました。理由: ${safetyCheckResult.reason}" }
+                if (safetyCheckResult.shouldNotify) {
+                    notifier.notify(
+                        NotificationMessage(
+                            severity = NotificationSeverity.WARN,
+                            title = "新規の買いを止めました",
+                            body = "理由: ${safetyCheckResult.reason}\n" +
+                                "保有を解消する売りは止まりません。日付が変われば自動で解除されます。"
+                        )
+                    )
+                }
                 return currentState
             }
 
@@ -553,6 +571,14 @@ class RealTradingService(
                 executionType = "MARKET",
                 size = size,
                 price = null
+            )
+
+            notifyOrderPlaced(
+                side = RealOrderSide.BUY,
+                symbol = symbol,
+                size = size,
+                price = currentPrice,
+                amountJpy = totalCostWithFee.toString()
             )
 
             return buildOrderedState(
@@ -646,6 +672,14 @@ class RealTradingService(
                 executionType = "MARKET",
                 size = sellSize,
                 price = null
+            )
+
+            notifyOrderPlaced(
+                side = RealOrderSide.SELL,
+                symbol = symbol,
+                size = sellSize,
+                price = currentPrice,
+                amountJpy = sellSize.multiply(currentPrice).toPlainString()
             )
 
             return buildSellOrderedState(
@@ -820,18 +854,81 @@ class RealTradingService(
     }
 
     /**
+     * 注文を送信したことを通知する。
+     *
+     * 手動の承認を置かないため、発注の直前に人が内容を見る機会がない。
+     * 実際にお金が動いたことは、事後に必ず伝える。
+     *
+     * @param side 売買区分
+     * @param symbol 銘柄
+     * @param size 注文数量
+     * @param price 発注時の想定価格
+     * @param amountJpy 想定金額(JPY)
+     */
+    private suspend fun notifyOrderPlaced(
+        side: RealOrderSide,
+        symbol: String,
+        size: BigDecimal,
+        price: BigDecimal,
+        amountJpy: String
+    ) {
+        notifier.notify(
+            NotificationMessage(
+                severity = NotificationSeverity.INFO,
+                title = "実注文を送信しました（$side）",
+                body = "銘柄: $symbol / 数量: ${size.toPlainString()} / 想定価格: $price / 想定金額: $amountJpy 円"
+            )
+        )
+    }
+
+    /**
+     * 約定を確認したことを通知する。
+     *
+     * @param side 売買区分
+     * @param averagePrice 平均約定価格
+     * @param summary 約定情報の集計結果
+     * @param profitAndLoss 売りの場合の確定損益。買いの場合は null
+     */
+    private suspend fun notifyOrderExecuted(
+        side: RealOrderSide,
+        averagePrice: BigDecimal,
+        summary: ExecutionSummary,
+        profitAndLoss: BigDecimal?
+    ) {
+        val profitAndLossText = profitAndLoss?.let { " / 確定損益: $it 円" } ?: ""
+        notifier.notify(
+            NotificationMessage(
+                severity = NotificationSeverity.INFO,
+                title = "約定を確認しました（$side）",
+                body = "約定価格: $averagePrice / 数量: ${summary.totalSize.toPlainString()} / " +
+                    "手数料: ${summary.totalFee}円$profitAndLossText"
+            )
+        )
+    }
+
+    /**
      * エラー時にリアル取引を停止モードにする。
      *
      * @param currentState 現在のシミュレーション状態
      * @param reason 停止理由
      * @return 更新されたシミュレーション状態
      */
-    private fun stopRealTrading(currentState: SimulationState, reason: String): SimulationState {
+    private suspend fun stopRealTrading(currentState: SimulationState, reason: String): SimulationState {
         val newRealTradingState = currentState.realTrading.copy(
             isStopped = true,
             stopReason = reason,
             stoppedAt = LocalDateTime.now(clock).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         )
+
+        // 停止は人が確認して復旧する必要がある。気付けないと売買が止まったままになる
+        notifier.notify(
+            NotificationMessage(
+                severity = NotificationSeverity.CRITICAL,
+                title = "リアル取引を停止しました",
+                body = "理由: $reason\n復旧は自動では行われません。docs/operations/real-trading-recovery.md を参照してください。"
+            )
+        )
+
         return currentState.copy(realTrading = newRealTradingState)
     }
 
