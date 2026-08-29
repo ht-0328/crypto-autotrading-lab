@@ -34,7 +34,7 @@
 | interface `TradingStrategy` | 全ての戦略が実装すべきメソッド（`judge()`）を定義する |
 | class 各種Strategy | 渡されたK線データと状態をもとに `TradeDecision` を返す |
 | enum `TradeAction` | 判定の種類（`BUY_CANDIDATE`, `SELL_CANDIDATE`, `HOLDING`, `SKIP`）を表す。`domain.model` に配置する |
-| data class `TradeDecision` | 判定結果を表す。`TradeAction` と判定理由、ATR を保持する。`domain.model` に配置する |
+| data class `TradeDecision` | 判定結果。`TradeAction` と判定理由、ATR を保持する（`domain.model`） |
 | class `SimulationService` | Strategyの判定結果を受け取り、仮想資産の計算・更新を行う |
 
 ## 5. 配置予定のクラス・ファイル

@@ -12,11 +12,12 @@
 
 
 ## 1. 目的
-本詳細設計書は、GMOコイン Private API を利用した「リアル注文処理」の実装に向けて、呼び出すAPIの特定、DTOやアプリ内モデルの設計、ならびに安全な実注文実行に関する処理手順を定義することを目的とする。
+この文書は、GMOコイン Private API を利用した「リアル注文処理」の実装に必要な設計を定める。
+扱うのは、呼び出す API の特定・DTO とアプリ内モデルの設計・安全な実注文実行の処理手順である。
 
 ## 2. 実装対象
 - `dry_run=false` かつ `real_trade_enabled=true` の場合にのみ動作する実注文処理
-- GMOコイン Private API の呼び出し（対象API: 資産残高取得、有効注文一覧、新規注文、注文情報取得、約定情報取得）
+- GMOコイン Private API の呼び出し。対象は資産残高取得・有効注文一覧・新規注文・注文情報取得・約定情報取得
 - infrastructure層に配置するリクエスト/レスポンスDTO（1クラス1ファイル）の作成と、アプリ内モデルへの変換処理
 - GMO APIキーを GCP Secret Manager から取得する処理（必要なタイミングのみ）
 - 注文後、約定が確認できた場合のみ `state.json` を更新する仕組み
@@ -30,7 +31,7 @@
 
 ## 4. 既存シミュレーション処理との関係
 - リアル注文処理と既存の `Strategy` は明確に責務を分離する。
-- 既存の `Strategy` は相場データ（KLineなど）を分析し、`TradeDecision` （`BUY_CANDIDATE`、`SELL_CANDIDATE`、`SKIP`、`HOLDING`）を出力するのみとする。
+- 既存の `Strategy` は相場データを分析し、`TradeDecision` を出力するのみとする。値は `BUY_CANDIDATE` / `SELL_CANDIDATE` / `SKIP` / `HOLDING`。
 - リアル注文処理は `TradeDecision` を受け取り、残高や上限設定などの「安全面」のチェックを行い、条件をクリアした場合のみAPI呼び出しを行う。
 
 ## 5. dry-run 時の処理

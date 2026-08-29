@@ -110,7 +110,7 @@ flowchart TD
 
 ### 例1: サマリー作成時の責務
 
-`BacktestEngine` はすべてのループが終了した後、最終の `totalAssetValue`、保持している最大資産額からの `maxDrawdown`、全体の `tradeCount` 等を計算し、`BacktestSummary` モデルを組み立てる。この計算処理はドメイン知識（バックテストの成績評価）であるため、`BacktestEngine` または専用のドメインサービス内で行う。
+`BacktestEngine` はすべてのループが終了した後に `BacktestSummary` を組み立てる。計算する値は最終の `totalAssetValue`・最大資産額からの `maxDrawdown`・全体の `tradeCount` などである。この計算処理はドメイン知識（バックテストの成績評価）であるため、`BacktestEngine` または専用のドメインサービス内で行う。
 
 ## 12. テスト方針
 

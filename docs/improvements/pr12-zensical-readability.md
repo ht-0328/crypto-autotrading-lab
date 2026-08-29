@@ -56,7 +56,7 @@
 | ファイル | 変更内容 | 対象 |
 | --- | --- | --- |
 | [plans/README.md](../plans/README.md) | 「最重要」の節を `!!! danger` に | A |
-| [docs/README.md](README.md) | 「リアル注文について」を `!!! warning` に。ディレクトリ構成に `infrastructure/` を追加。リンク方針に `nav` の更新ルールを追加 | A / C / D |
+| [docs/README.md](README.md) | 「リアル注文について」を `!!! warning` に。ディレクトリ構成へ `infrastructure/` を、リンク方針へ `nav` の更新ルールを追加 | A / C / D |
 | [specifications/features/real-trading-gmo-order.md](../specifications/features/real-trading-gmo-order.md) | 冒頭の Phase3 注記を `!!! warning` に。他4件を `!!! note` に | A |
 | [operations/real-trading-recovery.md](../operations/real-trading-recovery.md) | Phase1 の注記を `!!! warning` に | A |
 | [operations/gcp/06-deploy-cloud-run-job.md](../operations/gcp/06-deploy-cloud-run-job.md) | Phase1 の注意を `!!! warning` に | A |

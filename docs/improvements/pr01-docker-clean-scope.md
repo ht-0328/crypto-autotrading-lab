@@ -68,7 +68,7 @@ docker rm -f unrelated-check
 
 ## 実施結果
 
-- 構文チェック、`--help`、不明オプション（exit 1）、`--dry-run` の分岐、`./scripts/docker-clean.sh` の直接実行は確認済み。
+- 確認済み: 構文チェック・`--help`・不明オプション（exit 1）・`--dry-run` の分岐・`./scripts/docker-clean.sh` の直接実行
 - **未検証**: 実際の削除挙動。作業時の環境に `docker` コマンドが無かったため。DevContainer 上で上記の検証手順を一度実行してください。
 
 ## スコープ外
