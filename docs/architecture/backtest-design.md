@@ -31,8 +31,9 @@
 | data class| `domain.backtest.BacktestResult` | バックテスト全体の戻り値（サマリーと明細を保持） |
 | data class| `domain.backtest.BacktestSummary` | サマリー情報モデル |
 | data class| `domain.backtest.BacktestStepResult` | 各時点の明細情報モデル |
-| interface | `domain.repository.BacktestResultWriter` | 結果出力の抽象 |
-| class | `infrastructure.output.BacktestResultCsvWriter` | 結果のCSV出力実装 |
+| data class| `domain.backtest.BacktestCostConfig` | 手数料率・スリッページ率の設定 |
+| interface | `domain.repository.BacktestResultOutputPort` | 結果出力の抽象 |
+| class | `infrastructure.output.BacktestCsvFileRepository` | 結果のCSV出力実装 |
 
 ## 6. 処理フロー
 
@@ -40,10 +41,13 @@
 2. `BacktestApplication` が `KlineCsvReader` を使って過去K線リストを取得する
 3. `BacktestApplication` が設定から指定された `TradingStrategy` のインスタンスを生成する
 4. `BacktestApplication` が `BacktestEngine` にK線リスト、Strategy、初期資金を渡す
-5. `BacktestEngine` はK線を1本ずつループし、Strategyに判定を依頼する
-6. `BacktestEngine` は判定結果を受け取り、`SimulationService` に状態更新を依頼する
-7. `BacktestEngine` は毎ステップの `BacktestStepResult` を記録し、最後に `BacktestSummary` を作成して `BacktestResult` を返す
-8. `BacktestApplication` が `BacktestResultWriter` を使ってCSVファイルを出力する
+5. `BacktestEngine` はK線を1本ずつループする
+6. 直前のK線で受け取った判定結果があれば、**このK線の始値**を約定価格として `SimulationService` に状態更新を依頼する。約定価格には手数料率とスリッページ率を織り込む
+7. `BacktestEngine` はその時点までのK線を Strategy に渡して判定を依頼し、結果を「次のK線で約定させるシグナル」として保持する
+8. `BacktestEngine` は毎ステップの `BacktestStepResult` を記録し、最後に `BacktestSummary` を作成して `BacktestResult` を返す
+9. `BacktestApplication` が `BacktestResultOutputPort` を使ってCSVファイルを出力する
+
+判定と約定を1本ずらしているのは、判定に使った終値でそのまま約定させると成績が構造的に楽観化するためです（詳細は [バックテスト機能の仕様](../specifications/features/backtest.md)）。
 
 ## 7. Mermaid による設計フロー
 
@@ -53,13 +57,13 @@ flowchart TD
     B -->|List<Kline>| A
     A --> C[BacktestEngine]
     C --> D[ループ: K線を1本ずつ処理]
-    D --> E[TradingStrategy: evaluate]
-    E --> F[SimulationService: updateState]
-    F --> G[明細ステップ記録]
+    D --> F[SimulationService: updateState<br/>前の足のシグナルをこの足の始値で約定]
+    F --> E[TradingStrategy: judge<br/>次の足で約定させるシグナルを生成]
+    E --> G[明細ステップ記録<br/>評価はこの足の終値]
     G --> D
     D --> H[サマリー生成]
     H -->|BacktestResult| A
-    A --> I[BacktestResultWriter]
+    A --> I[BacktestResultOutputPort]
     I --> J[CSVファイル保存]
 ```
 

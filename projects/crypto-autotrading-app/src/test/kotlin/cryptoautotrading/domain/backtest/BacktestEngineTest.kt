@@ -52,14 +52,16 @@ class BacktestEngineTest {
         val engine = BacktestEngine()
         val mockStrategy = mockk<TradingStrategy>()
 
-        // 判定のシナリオ:
-        // 1回目: 買い (価格100) -> 数量: 10
-        // 2回目: 利確売り (価格120) -> 損益: +200
-        // 3回目: 買い (価格100) -> 数量: 10
-        // 4回目: 損切り売り (価格80) -> 損益: -200
-        // 5回目: 買い (価格100) -> 数量: 10
-        // 6回目: 損切り売り (価格90) -> 損益: -100
-        // 7回目: 買い (価格100) -> 数量: 10 (未売却で終了)
+        // 判定は各K線で行い、約定は次のK線の始値で行われる。
+        // 判定のシナリオ（カッコ内は約定価格 = 次のK線の始値）:
+        // 1回目: 買い (100) -> 数量: 10
+        // 2回目: 利確売り (120) -> 損益: +200
+        // 3回目: 買い (100) -> 数量: 10
+        // 4回目: 損切り売り (80) -> 損益: -200
+        // 5回目: 買い (100) -> 数量: 10
+        // 6回目: 損切り売り (90) -> 損益: -100
+        // 7回目: 買い (100) -> 数量: 10 (未売却で終了)
+        // 8回目: 見送り（最後のK線の判定は約定させる足がないため実行されない）
 
         every { mockStrategy.judge(any(), any()) } returnsMany listOf(
             TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 1"),
@@ -68,17 +70,19 @@ class BacktestEngineTest {
             TradeDecision(TradeAction.SELL_CANDIDATE, "Sell 2 (Loss)"),
             TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 3"),
             TradeDecision(TradeAction.SELL_CANDIDATE, "Sell 3 (Loss)"),
-            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 4")
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy 4"),
+            TradeDecision(TradeAction.SKIP, "Skip (最終足)")
         )
 
         val klines = listOf(
             Kline("1", "100", "100", "100", "100", "10"),
-            Kline("2", "120", "120", "120", "120", "10"),
-            Kline("3", "100", "100", "100", "100", "10"),
-            Kline("4", "80", "80", "80", "80", "10"),
-            Kline("5", "100", "100", "100", "100", "10"),
-            Kline("6", "90", "90", "90", "90", "10"),
-            Kline("7", "100", "100", "100", "100", "10")
+            Kline("2", "100", "100", "100", "100", "10"),
+            Kline("3", "120", "120", "120", "120", "10"),
+            Kline("4", "100", "100", "100", "100", "10"),
+            Kline("5", "80", "80", "80", "80", "10"),
+            Kline("6", "100", "100", "100", "100", "10"),
+            Kline("7", "90", "90", "90", "90", "10"),
+            Kline("8", "100", "100", "100", "100", "10")
         )
         val initialCapital = BigDecimal("10000")
         val tradeAmount = 1000
@@ -131,7 +135,8 @@ class BacktestEngineTest {
 
         val klines = listOf(
             Kline("1", "100", "100", "100", "100", "10"),
-            Kline("2", "120", "120", "120", "120", "10")
+            // 始値100で約定し、終値120で評価される
+            Kline("2", "100", "120", "100", "120", "10")
         )
         val initialCapital = BigDecimal("10000")
         val tradeAmount = 1000 // これは無視されるはず
@@ -143,19 +148,104 @@ class BacktestEngineTest {
         // Assert
         assertEquals(2, result.steps.size)
 
-        // 1回目のステップ（購入）
+        // 1回目のステップ: 買いシグナルは出るが、約定は次の足の始値なのでまだ保有していない
         val step1 = result.steps[0]
         assertEquals(TradeAction.BUY_CANDIDATE, step1.action)
-        assertEquals(0, BigDecimal.ZERO.compareTo(step1.cashBalance)) // 残高は0になる
-        assertEquals(0, BigDecimal("100").compareTo(step1.holdingAmount)) // 10000 / 100 = 100
-        assertEquals(0, BigDecimal("100").compareTo(step1.buyPrice))
+        assertEquals(0, BigDecimal("10000").compareTo(step1.cashBalance))
+        assertEquals(0, BigDecimal.ZERO.compareTo(step1.holdingAmount))
 
-        // 2回目のステップ（スキップ）
+        // 2回目のステップ: 始値100で約定済み
         val step2 = result.steps[1]
         assertEquals(TradeAction.SKIP, step2.action)
-        assertEquals(0, BigDecimal.ZERO.compareTo(step2.cashBalance)) // 残高は0のまま
-        assertEquals(0, BigDecimal("100").compareTo(step2.holdingAmount)) // 数量は100のまま
+        assertEquals(0, BigDecimal.ZERO.compareTo(step2.cashBalance)) // 残高は0になる
+        assertEquals(0, BigDecimal("100").compareTo(step2.holdingAmount)) // 10000 / 100 = 100
+        assertEquals(0, BigDecimal("100").compareTo(step2.buyPrice))
         // 資産評価額は 100 * 120 = 12000 になる
         assertEquals(0, BigDecimal("12000").compareTo(step2.totalAssetValue))
+    }
+
+    @Test
+    fun `判定に使ったK線の終値ではなく次のK線の始値で約定すること`() {
+        // Arrange
+        val engine = BacktestEngine()
+        val mockStrategy = mockk<TradingStrategy>()
+
+        every { mockStrategy.judge(any(), any()) } returnsMany listOf(
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy"),
+            TradeDecision(TradeAction.SKIP, "Skip")
+        )
+
+        val klines = listOf(
+            // 判定に使う足。終値は100
+            Kline("1", "100", "100", "100", "100", "10"),
+            // 約定させる足。始値は200
+            Kline("2", "200", "200", "200", "200", "10")
+        )
+
+        // Act
+        val result = engine.run(klines, mockStrategy, BigDecimal("10000"), 1000)
+
+        // Assert
+        // 終値100で約定していたら買値は100・数量は10になる。次足の始値200で約定するのが正しい
+        val step2 = result.steps[1]
+        assertEquals(0, BigDecimal("200").compareTo(step2.buyPrice))
+        assertEquals(0, BigDecimal("5").compareTo(step2.holdingAmount))
+    }
+
+    @Test
+    fun `最後のK線で出たシグナルは約定しないこと`() {
+        // Arrange
+        val engine = BacktestEngine()
+        val mockStrategy = mockk<TradingStrategy>()
+
+        every { mockStrategy.judge(any(), any()) } returns TradeDecision(TradeAction.BUY_CANDIDATE, "Buy")
+
+        val klines = listOf(
+            Kline("1", "100", "100", "100", "100", "10"),
+            Kline("2", "100", "100", "100", "100", "10")
+        )
+
+        // Act
+        val result = engine.run(klines, mockStrategy, BigDecimal("10000"), 1000)
+
+        // Assert
+        // 2本とも買いシグナルだが、約定するのは1本目のシグナルだけ
+        assertEquals(1, result.summary.buyCount)
+    }
+
+    @Test
+    fun `手数料とスリッページが約定価格に反映されること`() {
+        // Arrange
+        val engine = BacktestEngine()
+        val mockStrategy = mockk<TradingStrategy>()
+
+        every { mockStrategy.judge(any(), any()) } returnsMany listOf(
+            TradeDecision(TradeAction.BUY_CANDIDATE, "Buy"),
+            TradeDecision(TradeAction.SKIP, "Skip")
+        )
+
+        val klines = listOf(
+            Kline("1", "100", "100", "100", "100", "10"),
+            Kline("2", "100", "100", "100", "100", "10")
+        )
+        val costConfig = BacktestCostConfig(
+            feeRate = BigDecimal("0.01"),
+            slippageRate = BigDecimal("0.01")
+        )
+
+        // Act
+        val result = engine.run(
+            klines = klines,
+            strategy = mockStrategy,
+            initialCapital = BigDecimal("10000"),
+            tradeAmount = 1000,
+            costConfig = costConfig
+        )
+
+        // Assert
+        // 買いは不利な方向に寄る: 100 * 1.01 * 1.01 = 102.01
+        assertEquals(0, BigDecimal("102.01").compareTo(result.steps[1].buyPrice))
+        assertEquals(0, BigDecimal("0.01").compareTo(result.summary.feeRate))
+        assertEquals(0, BigDecimal("0.01").compareTo(result.summary.slippageRate))
     }
 }

@@ -4,6 +4,7 @@ import cryptoautotrading.domain.model.Kline
 import cryptoautotrading.domain.model.OrderSizingMode
 import cryptoautotrading.domain.model.SimulationState
 import cryptoautotrading.domain.model.TradeAction
+import cryptoautotrading.domain.model.TradeDecision
 import cryptoautotrading.domain.simulation.SimulationService
 import cryptoautotrading.domain.strategy.TradingStrategy
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -21,11 +22,16 @@ class BacktestEngine {
     /**
      * 過去K線データを使って指定された戦略をバックテストする。
      *
+     * 判定に使ったK線の終値でそのまま約定させると、終値を見てから同じ終値で売買できる
+     * ことになり成績が過大評価される。そのため、K線 N の確定後に出したシグナルは
+     * **K線 N+1 の始値**で約定させる。最後のK線で出たシグナルは約定させる足がないため実行しない。
+     *
      * @param klines 過去K線データのリスト (openTime昇順でソートされている前提)
      * @param strategy 使用する売買戦略
      * @param initialCapital 初期資金
      * @param tradeAmount 1回の取引額
      * @param orderSizingMode 注文数量モード (デフォルト: FIXED_AMOUNT)
+     * @param costConfig 手数料とスリッページの設定 (デフォルト: いずれも0)
      * @return バックテスト結果
      */
     fun run(
@@ -33,9 +39,13 @@ class BacktestEngine {
         strategy: TradingStrategy,
         initialCapital: BigDecimal,
         tradeAmount: Int,
-        orderSizingMode: OrderSizingMode = OrderSizingMode.FIXED_AMOUNT
+        orderSizingMode: OrderSizingMode = OrderSizingMode.FIXED_AMOUNT,
+        costConfig: BacktestCostConfig = BacktestCostConfig()
     ): BacktestResult {
-        logger.info { "バックテストを開始します。データ件数: ${klines.size}, 初期資金: $initialCapital, 注文数量モード: $orderSizingMode" }
+        logger.info {
+            "バックテストを開始します。データ件数: ${klines.size}, 初期資金: $initialCapital, " +
+                "注文数量モード: $orderSizingMode, 手数料率: ${costConfig.feeRate}, スリッページ率: ${costConfig.slippageRate}"
+        }
 
         var currentState = SimulationState(cashBalance = initialCapital)
 
@@ -56,31 +66,37 @@ class BacktestEngine {
 
         val processedKlines = mutableListOf<Kline>()
 
+        // 直前のK線で出たシグナル。次のK線の始値で約定させる
+        var pendingDecision: TradeDecision? = null
+
         for (kline in klines) {
+            val currentPrice = BigDecimal(kline.close)
+            val previousIsHolding = currentState.isHolding
+            val previousRealizedProfitAndLoss = currentState.realizedProfitAndLoss
+
+            // 直前のK線で出たシグナルを、このK線の始値で約定させる
+            val executedDecision = pendingDecision
+            if (executedDecision != null) {
+                val executionPrice = resolveExecutionPrice(
+                    action = executedDecision.action,
+                    openPrice = BigDecimal(kline.open),
+                    costConfig = costConfig
+                )
+                currentState = simulationService.updateState(
+                    currentState = currentState,
+                    decision = executedDecision,
+                    currentPrice = executionPrice,
+                    tradeAmount = tradeAmount,
+                    eventTime = kline.openTime,
+                    orderSizingMode = orderSizingMode
+                )
+            }
+
             processedKlines.add(kline)
 
-            val currentPrice = BigDecimal(kline.close)
-
-            // 戦略による判定
+            // 戦略による判定。結果は次のK線の始値で約定させる
             val decision = strategy.judge(processedKlines, currentState)
-
-            val previousIsHolding = currentState.isHolding
-
-            // 状態の更新
-            currentState = simulationService.updateState(
-                currentState = currentState,
-                decision = decision,
-                currentPrice = currentPrice,
-                tradeAmount = tradeAmount,
-                eventTime = kline.openTime,
-                orderSizingMode = orderSizingMode
-            )
-
-            val previousRealizedProfitAndLoss = if (processedKlines.size == 1) {
-                BigDecimal.ZERO
-            } else {
-                steps.lastOrNull()?.realizedProfitAndLoss ?: BigDecimal.ZERO
-            }
+            pendingDecision = decision
 
             // 買い・売りのカウント
             if (!previousIsHolding && currentState.isHolding) {
@@ -190,11 +206,39 @@ class BacktestEngine {
             maxProfit = maxProfit,
             maxLoss = maxLoss,
             maxConsecutiveLossCount = maxConsecutiveLossCount,
-            hasOpenPosition = currentState.isHolding
+            hasOpenPosition = currentState.isHolding,
+            feeRate = costConfig.feeRate,
+            slippageRate = costConfig.slippageRate
         )
 
         logger.info { "バックテストが完了しました。総資産: $finalAssetValue, 利益率: $totalReturnRate, ドローダウン: $maxDrawdown" }
 
         return BacktestResult(summary = summary, steps = steps)
+    }
+
+    /**
+     * 約定価格を決定する。
+     *
+     * 手数料とスリッページを価格に織り込む。買いは不利な方向（高く）に、
+     * 売りは不利な方向（安く）に寄せることで、実際の取引に近づける。
+     * 買い・売り以外のアクションでは始値をそのまま返す。
+     *
+     * @param action 約定させる売買アクション
+     * @param openPrice 約定させるK線の始値
+     * @param costConfig 手数料とスリッページの設定
+     * @return コストを織り込んだ約定価格
+     */
+    private fun resolveExecutionPrice(
+        action: TradeAction,
+        openPrice: BigDecimal,
+        costConfig: BacktestCostConfig
+    ): BigDecimal {
+        return when (action) {
+            TradeAction.BUY_CANDIDATE ->
+                openPrice * (BigDecimal.ONE + costConfig.slippageRate) * (BigDecimal.ONE + costConfig.feeRate)
+            TradeAction.SELL_CANDIDATE ->
+                openPrice * (BigDecimal.ONE - costConfig.slippageRate) * (BigDecimal.ONE - costConfig.feeRate)
+            TradeAction.SKIP, TradeAction.HOLDING -> openPrice
+        }
     }
 }

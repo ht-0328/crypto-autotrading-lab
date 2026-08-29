@@ -31,6 +31,8 @@
 
 過去のK線データを古い順に1本ずつ処理し、その時点のデータを使って売買判定（Strategy）を行います。判定結果に応じて仮想の残高・保有数量・損益を更新し、バックテスト結果をサマリーおよび明細のCSVとして出力します。
 
+判定に使ったK線の終値でそのまま約定させると、「終値を見てから、その終値で売買できる」ことになり成績が実態より良く出ます。これを避けるため、**K線 N の確定後に出したシグナルは K線 N+1 の始値で約定させます**。
+
 ## 5. 入力仕様
 
 | 項目 | 例 | 必須 | 説明 |
@@ -40,7 +42,11 @@
 | BACKTEST_INITIAL_CAPITAL | 1000000 | 必須 | 開始時の仮想資金 |
 | BACKTEST_SUMMARY_OUTPUT_PATH | data/backtest/output/summary_...csv | 必須 | サマリーの出力先 |
 | BACKTEST_STEPS_OUTPUT_PATH | data/backtest/output/steps_...csv | 必須 | 明細の出力先 |
+| BACKTEST_FEE_RATE | 0.0005 | 任意 | 約定額に対する手数料率。未指定時は 0 |
+| BACKTEST_SLIPPAGE_RATE | 0.0005 | 任意 | 約定価格に対するスリッページ率。未指定時は 0 |
 | APP_CONFIG_PATH | config/application-test.yaml | 必須 | 設定ファイルのパス |
+
+`BACKTEST_FEE_RATE` と `BACKTEST_SLIPPAGE_RATE` は、指定されているのに数値として解釈できない場合、または負の値の場合はエラーとします（成績を誤って評価しないため）。
 
 ## 6. 出力仕様
 
@@ -70,6 +76,8 @@
 | 最大損失 | 1回の売却で出た最大損失 |
 | 最大連続損切り回数 | 連続して損切りした最大回数 |
 | 未決済ポジションあり | バックテスト終了時点で未売却の保有が残っているか |
+| 手数料率 | 約定価格に織り込んだ手数料率。結果の前提として記録する |
+| スリッページ率 | 約定価格に織り込んだスリッページ率。結果の前提として記録する |
 
 ### 明細情報
 
@@ -95,19 +103,25 @@
 3. 使用する売買戦略を取得する
 4. 初期資金から SimulationState を作成する
 5. K線データを openTime 昇順に処理する
-6. 各時点で、その時点までのK線一覧を TradingStrategy に渡す
-7. TradingStrategy の判定結果を受け取る
-8. K線の close を現在価格として扱う
-9. SimulationService を使って状態を更新する
-10. cashBalance、holdingAmount、buyPrice、realizedProfitAndLoss を記録する
-11. estimatedHoldingValue と totalAssetValue を計算する
+6. 直前のK線で出たシグナルがあれば、**このK線の始値（open）を約定価格として** SimulationService で状態を更新する
+7. その時点までのK線一覧を TradingStrategy に渡す
+8. TradingStrategy の判定結果を受け取り、次のK線で約定させるシグナルとして保持する
+9. cashBalance、holdingAmount、buyPrice、realizedProfitAndLoss を記録する
+10. estimatedHoldingValue と totalAssetValue を、そのK線の終値（close）で計算する
+11. 最後のK線で出たシグナルは、約定させるK線が存在しないため実行しない
 12. 全K線の処理が完了したらサマリー情報を作成する
 13. バックテスト結果をサマリー用と明細用の2つのファイルに出力する
+
+明細CSVの各行は「そのK線で出たシグナル」と「そのK線の始値で約定した結果の状態」を並べて表します。したがって、ある行の売買判定が状態に反映されるのは次の行です。
 
 ## 8. 判定条件・業務ルール
 
 | 条件 | 結果 |
 | --- | --- |
+| 約定価格の基準 | 判定に使ったK線の次のK線の始値(Kline.open) |
+| 約定価格: 買い | 始値 × (1 + スリッページ率) × (1 + 手数料率) |
+| 約定価格: 売り | 始値 × (1 - スリッページ率) × (1 - 手数料率) |
+| 最後のK線の判定 | 約定させるK線がないため実行しない |
 | 資産計算: estimatedHoldingValue | holdingAmount × 現在価格(Kline.close) |
 | 資産計算: totalAssetValue | cashBalance + estimatedHoldingValue |
 | 資産計算: finalAssetValue | 最後のK線時点の totalAssetValue |
@@ -124,6 +138,7 @@
 | 戦略名が対応していない | エラーにする | 利用可能な戦略名を提示する |
 | 初期資金が0以下、または不正な値 | エラーにする | 正しい数値を指定するよう伝える |
 | 出力先パスが未指定、または保存失敗 | エラーにする | 出力先パスと書き込み権限を確認させる |
+| 手数料率・スリッページ率が不正な値、または負の値 | エラーにする | 設定名と正しい指定方法を伝える |
 
 ## 10. 具体例
 

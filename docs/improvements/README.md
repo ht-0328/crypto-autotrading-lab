@@ -34,7 +34,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 
 - Cloud Run では設定ファイルが存在せず、一部の環境変数も名前違いで無視される。
 - [docs/overview/product.md](../overview/product.md) が「安全設計」として宣言している内容（時刻ズレ検知・指数バックオフ・重複実行スキップ）が実装されていない。
-- バックテストが同一足の終値で判定し同じ終値で約定するため、**全戦略の成績評価が構造的に楽観化**している。
+- バックテストが同一足の終値で判定し同じ終値で約定し、手数料・スリッページも考慮していない（実測の結果、影響は当初の想定より小さかった。[findings.md](findings.md) の「誤りだった指摘」を参照）。
 
 個々の指摘とその根拠は [findings.md](findings.md) を参照してください。
 
@@ -58,7 +58,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 | 状態 | ファイル | 内容 | 重要度 |
 | --- | --- | --- | --- |
 | 実施済み | [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md) | CI / Compose の整合と安全側固定 | 高 |
-| 未着手 | [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md) | バックテストの約定モデルを是正する | 高 |
+| 実施済み | [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md) | バックテストの約定モデルを是正する | 高 |
 | 未着手 | [pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md) | 実注文機能を Phase1 の仕様から分離する | 高 |
 | 未着手 | [pr08-doc-consistency.md](pr08-doc-consistency.md) | 仕様書・設計書の食い違いを解消する | 中 |
 | 未着手 | [pr10-config-fail-fast.md](pr10-config-fail-fast.md) | 設定の fail-fast と環境変数契約の統一 | 中 |

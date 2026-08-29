@@ -20,6 +20,8 @@ fun main() {
         val initialCapitalStr = System.getenv("BACKTEST_INITIAL_CAPITAL")
         val summaryOutputPath = System.getenv("BACKTEST_SUMMARY_OUTPUT_PATH")
         val stepsOutputPath = System.getenv("BACKTEST_STEPS_OUTPUT_PATH")
+        val feeRateStr = System.getenv("BACKTEST_FEE_RATE")
+        val slippageRateStr = System.getenv("BACKTEST_SLIPPAGE_RATE")
 
         // 設定を読み込む。APP_CONFIG_PATH が未指定、またはファイルがない場合は
         // ConfigLoader 内でデフォルト設定にフォールバックされる
@@ -35,7 +37,9 @@ fun main() {
             strategyName = strategyName,
             initialCapitalStr = initialCapitalStr,
             summaryOutputPath = summaryOutputPath,
-            stepsOutputPath = stepsOutputPath
+            stepsOutputPath = stepsOutputPath,
+            feeRateStr = feeRateStr,
+            slippageRateStr = slippageRateStr
         )
 
         logger.info { "バックテストプロセスが正常に終了しました。" }
