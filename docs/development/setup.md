@@ -1,5 +1,15 @@
 # 開発環境のセットアップ
 
+| 項目 | 内容 |
+| --- | --- |
+| 想定読者 | このリポジトリで初めて開発する人 |
+| 読んだあとできること | Dev Container を立ち上げ、テストとアプリを自分の環境で動かせる |
+| 状態 | 現行 |
+| 機密区分 | 公開可 |
+| 作成者 | リポジトリ管理者 |
+| 保守責任者 | リポジトリ管理者 |
+| 最終確認日 | 2026-08-30 |
+
 ## 文書の目的
 
 - 開発環境（VS Code Dev Containers）の準備
@@ -17,13 +27,15 @@
 
 ## 概要
 
-このプロジェクトでは、自分のパソコンの環境を汚さないように **VS Code Dev Containers**（Dockerを使った開発環境）を使うことをお勧めします。
+このプロジェクトでは **VS Code Dev Containers** を使います。Docker の中に開発環境を作る仕組みです。
+自分のパソコンの環境を汚さずに済みます。
+
 プログラムのコードは `projects/crypto-autotrading-app/` フォルダに入っています。
 
 ## 開発環境の準備
 
 1. **VS Code** と **Docker** をインストールします。
-2. VS Code でこのプロジェクトを開き、右下に出る「Reopen in Container」をクリックして、Dev Container を立ち上げます。
+2. VS Code でこのプロジェクトを開きます。右下に出る「Reopen in Container」を押します。Dev Container が立ち上がります。
 3. Kotlinを書くために、VS Code拡張機能の `Kotlin/kotlin-lsp` を入れると便利です。
 
 ## GitHub CLI (gh) を使った設定の管理
@@ -54,7 +66,10 @@ export VARIABLE_VALUE="my_value"
 gh variable set $VARIABLE_NAME --body "$VARIABLE_VALUE" --repo ht-0328/crypto-autotrading-lab
 ```
 
-**【注意】** APIキーやパスワードなどの**秘密情報は、このコマンド（Variables）ではなく、GitHubの画面から「Secrets」として登録**してください。
+!!! warning "秘密情報は Variables に登録しない"
+
+    APIキーやパスワードは、このコマンド（Variables）では登録しません。
+    GitHub の画面から **Secrets** として登録してください。
 
 ## アプリケーションの実行・テスト手順
 
@@ -92,7 +107,7 @@ docker compose -f docker/compose/local.yml up --build
 
 ## ドキュメントサイト（Zensical）
 
-`docs/` 配下の Markdown は [Zensical](https://zensical.org/) で静的サイト化し、GitHub Pages で公開しています。
+`docs/` 配下の Markdown は [Zensical](https://zensical.org/) で静的サイト化しています。公開先は GitHub Pages です。
 
 - 公開先: [crypto-autotrading-lab ドキュメント](https://ht-0328.github.io/crypto-autotrading-lab/)
 - サイトの設定: [zensical.toml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/zensical.toml)（章立て・テーマ・Markdown 拡張）
@@ -151,7 +166,7 @@ CI のビルドは `--strict` で実行しており、リンク切れの警告�
 
 ## 用語補足
 
-- **Dev Containers**: パソコンの中に「開発専用の小さなパソコン（コンテナ）」を作って、そこで作業する仕組み。
+- **Dev Containers**: 開発専用のコンテナを作り、その中で作業する仕組み。
 - **Variables**: プログラムを動かすための設定値。
 - **Secrets**: APIキーなど、人に見られてはいけない秘密の情報。
 
