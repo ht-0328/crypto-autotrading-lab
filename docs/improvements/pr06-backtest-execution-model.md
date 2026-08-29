@@ -17,7 +17,7 @@
 
 ## なぜ直すか
 
-[BacktestEngine.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) は、対象の K線を履歴に追加してから判定し、**同じ K線の終値でそのまま約定**させる。
+[BacktestEngine.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) の約定モデルに問題がある。対象の K線を履歴に追加してから判定し、**同じ K線の終値でそのまま約定**させる。
 
 ```kotlin
 processedKlines.add(kline)
@@ -26,9 +26,10 @@ val decision = strategy.judge(processedKlines, currentState)
 currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 ```
 
-つまり「終値を見てから、その終値で買える／売れる」前提であり、現実には成立しない。手数料・スプレッド・スリッページも一切考慮していない。結果として**全戦略の成績が構造的に楽観化**しており、Phase1 の目的である「戦略の検証」が成り立たない。
+つまり「終値を見てから、その終値で買える／売れる」前提である。現実には成立しない。
+手数料・スプレッド・スリッページも一切考慮していない。結果として**全戦略の成績が構造的に楽観化**する。Phase1 の目的である「戦略の検証」が成り立たない。
 
-仕様書 [backtest.md](../specifications/features/backtest.md) の処理仕様（6〜8）も同じ前提で書かれているため、**仕様書を直してから実装を直します**。
+仕様書 [backtest.md](../specifications/features/backtest.md) の処理仕様も同じ前提である。**仕様書を直してから実装を直す。**
 
 ## 変更対象
 
@@ -64,7 +65,7 @@ currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 
 手数料とスリッページは**約定価格に織り込む**。買いは `始値 × (1 + スリッページ率) × (1 + 手数料率)`、売りは `始値 × (1 - スリッページ率) × (1 - 手数料率)` とする。
 
-手数料を残高から別途差し引く方式にしないのは、`ALL_IN` モードで残高をすべて使い切ったあとに手数料を引くと残高がマイナスになるため。価格に織り込めば注文金額の計算と整合し、損益にもそのまま反映される。
+手数料を残高から別途差し引く方式は採らない。`ALL_IN` で残高を使い切ったあとに引くと、残高がマイナスになるため。価格に織り込めば注文金額の計算と整合し、損益にもそのまま反映される。
 
 ### 2. 実装を直す
 
@@ -76,7 +77,7 @@ currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 
 ### 3. テストを直す
 
-[BacktestEngineTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/domain/backtest/BacktestEngineTest.kt) の期待値は現行モデル前提なので、新モデルの期待値に更新する。手数料率・スリッページが 0 のケースと、0 でないケースの両方を用意する。
+[BacktestEngineTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/domain/backtest/BacktestEngineTest.kt) の期待値は現行モデル前提である。新モデルの期待値に更新する。手数料率・スリッページが 0 のケースと、0 でないケースの両方を用意する。
 
 ## 受け入れ条件
 
@@ -104,18 +105,19 @@ export BACKTEST_INITIAL_CAPITAL=10000
 
 ## 実施結果（重要な補足）
 
-600本の合成K線（`open[i+1] == close[i]` の連続データ）で変更前後を比較したところ、**手数料率・スリッページ率が 0 のときは新旧モデルの結果が完全に一致した。**
+600本の合成K線で変更前後を比較した。**手数料率・スリッページ率が 0 のとき、結果は完全に一致した。**
 
 原因は、暗号資産のような連続取引の市場では「次の足の始値」が「前の足の終値」と一致するため。この場合、次足始値での約定と当足終値での約定は同じ価格になる。
 
-つまり当初の見立て「look-ahead により全戦略の成績が構造的に楽観化している」は、**この条件下では成立しない**。約定モデルの修正が数値に効くのは次の場合に限られる。
+当初の見立ては「look-ahead で成績が構造的に楽観化している」だった。**この条件下では成立しない。**約定モデルの修正が数値に効くのは次の場合に限られる。
 
 - K線に欠損・ギャップがあり `open[i+1] != close[i]` になる場合（取引所メンテナンス、データ取得漏れ、日跨ぎなど）
 - 手数料・スリッページを設定した場合
 
-実際、手数料率とスリッページ率を 0.0005 にすると確定損益は -31.47 → -88.51 に悪化した。
+手数料率とスリッページ率を 0.0005 にすると、確定損益は -88.51 になった。元は -31.47 である。
 
-修正自体は維持する。「観測した終値でそのまま約定できる」という前提はモデルとして誤っており、ギャップのあるデータでは実際に成績を歪めるため。ただし**この修正の主な価値は手数料・スリッページを反映できるようになったこと**であり、look-ahead の解消ではない。
+修正自体は維持する。「観測した終値でそのまま約定できる」という前提は誤りである。
+ギャップのあるデータでは成績を歪める。ただし**この修正の主な価値は手数料・スリッページを反映できるようになったこと**であり、look-ahead の解消ではない。
 
 ## 注意
 

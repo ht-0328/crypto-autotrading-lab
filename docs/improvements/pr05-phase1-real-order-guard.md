@@ -17,12 +17,17 @@
 
 ## なぜ直すか
 
-[roadmap.md](../overview/roadmap.md) の Phase1 禁止事項は「実際の注文を送ること」ですが、それを担保しているのは変更可能な2つの Boolean（`real_trade_enabled` と `dry_run`）だけです。
+[roadmap.md](../overview/roadmap.md) の Phase1 禁止事項は「実際の注文を送ること」です。しかしそれを担保しているのは、変更可能な2つの Boolean だけです。
 
-- **O**: [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) は、この2つが揃うだけで Private API クライアントを構築します。設定ミスや新しいデプロイ経路の追加だけで禁止事項を破れます。
-- **K**: [ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) の `dry_run: false` を選ぶと [prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) が `real_trade_enabled: true` を生成します。現状は Private API が WireMock 固定なので実発注は届きませんが、Phase1 の CI に実取引経路を有効化する選択肢があること自体が禁止事項と衝突します。
-- **L**: 実取引モードで SELL 判定が出ると、`RealTradingService` はログを出すだけなのに `SimulationService` が仮想売却して `isHolding=false` にします。取引所には BTC が残ったまま state が「未保有」になり、以降の損切り・保有上限判断がすべて狂います。
-- **S**: 注文 POST 後、コンソール・CSV 出力を経てから最後に state を保存します。POST 後・保存前に落ちると orderId を失い、再発注につながります。
+- **O**: [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) は、2つが揃うだけで Private API を構築します。
+  設定ミスや新しいデプロイ経路の追加だけで、禁止事項を破れます。
+- **K**: [ci.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/ci.yml) で `dry_run: false` を選ぶと、[prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) が `real_trade_enabled: true` を生成します。
+  Private API は WireMock 固定なので実発注は届きません。
+  それでも、CI に実取引経路を有効化する選択肢があること自体が禁止事項と衝突します。
+- **L**: 実取引モードで SELL 判定が出ると、`RealTradingService` はログを出すだけです。しかし `SimulationService` が仮想売却して `isHolding=false` にします。
+  取引所には BTC が残ったまま state が「未保有」になり、以降の判断がすべて狂います。
+- **S**: 注文 POST 後、コンソール・CSV 出力を経てから state を保存します。
+  POST 後・保存前に落ちると orderId を失い、再発注につながります。
 
 ## 変更対象
 
@@ -57,7 +62,7 @@
    }
    ```
 
-   実注文が許されるのが Phase3 からなのは、[roadmap.md](../overview/roadmap.md) で実注文が Phase3「実注文 + 手動承認 + 安全制御」のスコープだからです。Phase2 の禁止事項にも「自動で実際の注文を出すこと」があります。
+   実注文が許されるのは Phase3 からです。[roadmap.md](../overview/roadmap.md) で実注文が Phase3 のスコープだからです。Phase2 の禁止事項にも「自動で実際の注文を出すこと」があります。
 
 4. `config/application-gmo.yaml` の `app` に `phase: 1` を明示する。
 
@@ -74,11 +79,12 @@ val shouldBypassSimulationStateUpdate = isRealTradeActive &&
     (decision.action == TradeAction.BUY_CANDIDATE || decision.action == TradeAction.SELL_CANDIDATE)
 ```
 
-SELL 検知時は状態を維持したまま警告ログを出す。実売却は Phase3 で実装する。
+SELL 検知時は状態を維持したまま警告ログを出す。実売却は Phase3 で実装します。
 
 ### 3. 実注文時の保存順序を変える
 
-実注文パス（`isRealTradeActive` が true）に限り、`realTradingService.executeOrderIfNeeded()` の直後に `stateRepository.save()` を呼んでから、コンソール・CSV 出力へ進む。最後の保存はそのまま残してよい（同じ内容の再保存になる）。
+実注文パスに限り、`executeOrderIfNeeded()` の直後に `stateRepository.save()` を呼ぶ。
+そのあとコンソール・CSV 出力へ進む。最後の保存はそのまま残してよい（同じ内容の再保存になる）。
 
 ### 4. CI の実取引経路を塞ぐ
 
@@ -95,7 +101,7 @@ SELL 検知時は状態を維持したまま警告ログを出す。実売却は
 
 ## 受け入れ条件
 
-- [ ] `app.phase: 1` かつ `real_trade_enabled: true` かつ `dry_run: false` のとき、Private API クライアントを構築せずに異常終了すること
+- [ ] Phase1 で実注文が有効な設定なら、Private API を構築せず異常終了すること
 - [ ] Phase1 では `APP_TRADING_*` などの環境変数をどう操作しても実注文経路に入らないこと
 - [ ] 実取引モードで SELL 判定が出たとき、`isHolding` と `holdingAmount` が変化しないこと
 - [ ] 実注文パスで、注文受付直後に state が保存されること
