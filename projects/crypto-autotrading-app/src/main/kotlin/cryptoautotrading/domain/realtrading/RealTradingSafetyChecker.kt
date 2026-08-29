@@ -36,6 +36,11 @@ class RealTradingSafetyChecker {
         currentPrice: BigDecimal
     ): SafetyCheckResult {
 
+        // 0. 入力値の妥当性チェック
+        // 安全境界なので、上流が正しい値を渡してくることを前提にしない。
+        // 不正値をそのまま通すと、下流のゼロ除算や数量0のチェックで偶然弾かれることに頼ることになる。
+        validateBuyOrderInputs(config, tradeAmount, state, currentPrice)?.let { return it }
+
         // 1. 強制停止フラグのチェック
         if (state.realTrading.isStopped) {
             val reason = "realTrading.isStopped=true"
@@ -106,6 +111,79 @@ class RealTradingSafetyChecker {
     }
 
     /**
+     * 買い注文の入力値が妥当かどうかを検証する。
+     *
+     * 金額・価格・上限値に0以下の値が来ると、上限の比較が意味をなさなくなったり、
+     * 数量の計算でゼロ除算になったりする。安全境界の入口で明示的に拒否する。
+     *
+     * @param config リアル取引設定
+     * @param tradeAmount 手数料を含めた注文予定金額(JPY)
+     * @param state 現在のシミュレーション(およびリアル取引)の状態
+     * @param currentPrice 注文に使う価格
+     * @return 不正値があれば注文不可の結果、問題なければ null
+     */
+    private fun validateBuyOrderInputs(
+        config: RealTradingConfig,
+        tradeAmount: Int,
+        state: SimulationState,
+        currentPrice: BigDecimal
+    ): SafetyCheckResult? {
+        if (tradeAmount <= 0) {
+            return reject("注文予定金額 ($tradeAmount) が0以下")
+        }
+
+        if (currentPrice <= BigDecimal.ZERO) {
+            return reject("注文に使う価格 ($currentPrice) が0以下")
+        }
+
+        if (state.holdingAmount < BigDecimal.ZERO) {
+            return reject("保有数量 (${state.holdingAmount}) が負の値")
+        }
+
+        if (state.realTrading.dailyOrderedJpy < BigDecimal.ZERO) {
+            return reject("1日の累計注文額 (${state.realTrading.dailyOrderedJpy}) が負の値")
+        }
+
+        return validatePositiveLimits(config)
+    }
+
+    /**
+     * 注文上限の設定値が正の数かどうかを検証する。
+     *
+     * 上限が0以下だと、どんな注文も通らないか、比較が意味をなさなくなる。
+     * 未設定かどうかは各チェックで個別に扱うため、ここでは値が入っている場合だけを見る。
+     *
+     * @param config リアル取引設定
+     * @return 不正値があれば注文不可の結果、問題なければ null
+     */
+    private fun validatePositiveLimits(config: RealTradingConfig): SafetyCheckResult? {
+        val limits = listOf(
+            "max_order_jpy" to config.maxOrderJpy,
+            "max_daily_order_jpy" to config.maxDailyOrderJpy,
+            "max_position_jpy" to config.maxPositionJpy
+        )
+
+        limits.forEach { (name, value) ->
+            if (value != null && value <= 0) {
+                return reject("$name ($value) が0以下")
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * 安全チェックを不可として記録する。
+     *
+     * @param reason 注文できない理由
+     * @return 注文不可を表す結果
+     */
+    private fun reject(reason: String): SafetyCheckResult {
+        logger.warn { "安全チェックNG: $reason" }
+        return SafetyCheckResult(passed = false, reason = reason)
+    }
+
+    /**
      * 売り注文（保有解消）の前の安全チェックを行う。
      *
      * 買いの [checkPreOrderSafety] とは判定内容が異なる。買いは「保有していたら注文しない」が、
@@ -130,9 +208,17 @@ class RealTradingSafetyChecker {
         activeOrders: List<ExchangeActiveOrder>
     ): SafetyCheckResult {
 
-        // 1. 売却数量の妥当性チェック
+        // 1. 入力値の妥当性チェック
         if (sellSize <= BigDecimal.ZERO) {
             return rejectSell("売却数量 ($sellSize) が0以下")
+        }
+
+        if (recordedHoldingSize <= BigDecimal.ZERO) {
+            return rejectSell("記録上の保有数量 ($recordedHoldingSize) が0以下")
+        }
+
+        if (exchangeAvailableSize < BigDecimal.ZERO) {
+            return rejectSell("取引所の売却可能残高 ($exchangeAvailableSize) が負の値")
         }
 
         // 2. このアプリが記録している保有数量を超えて売らないことのチェック。

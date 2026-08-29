@@ -48,12 +48,13 @@
 - **方向性**: `cooldownUntilOpenTime` または残り本数を `SimulationState` に保存し、epoch 時刻と interval から判定する。基準時刻が未来・不明・欠損なら安全側に `SKIP` とする。下記6の `Clock` 注入とセットで実施したい。
 - **重要度**: 中 / **工数感**: S
 
-### 5. RealTradingSafetyChecker の入力値検証を追加する
+### 5. RealTradingSafetyChecker の入力値検証を追加する（実施済み）
 
 - **対象**: [findings.md](findings.md) の AB
 - **問題**: [RealTradingSafetyChecker](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) が `tradeAmount <= 0` / `currentPrice <= 0` / 上限値が0以下といった不正値を明示的に拒否していない。現状は下流（注文数量が0以下のチェックやゼロ除算例外）で偶然弾かれているだけ。安全境界は上流の妥当性を信用すべきではない。
 - **方向性**: 安全チェックの冒頭で金額・価格・上限値の正数検証を行い、不正値は注文不可にする。
 - **重要度**: 中（Phase3 着手前には必須） / **工数感**: S
+- **状態**: 実施済み。[PLAN02](../plans/plan02-order-safety-guards.md) の一環として対応した。
 
 ### 6. ArchitectureTest の依存方向を厳格化し、Clock を注入する
 
