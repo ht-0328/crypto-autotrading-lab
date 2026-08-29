@@ -1,6 +1,6 @@
 # PR07: 実注文機能を Phase1 の仕様から分離する
 
-**状態**: 未着手（[pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md) の後に実施すること）
+**状態**: 実施済み（ブランチ `docs/real-order-phase-separation`）
 
 ## 対象の指摘
 

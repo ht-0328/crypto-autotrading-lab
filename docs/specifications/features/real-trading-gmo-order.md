@@ -1,5 +1,9 @@
 # リアル購入処理（GMOコイン） 仕様書
 
+> **この仕様は Phase3（実注文 + 手動承認 + 安全制御）のスコープです。**
+> 現在進行中の Phase1 では有効化しません。運用設定は `dry_run: true` / `real_trade_enabled: false` で固定されており、`app.phase` が 3 未満の場合は起動時ガードにより実注文経路に入る前に異常終了します。
+> フェーズの定義は [ロードマップ](../../overview/roadmap.md)、Phase1 側の扱いは [Phase1 仕様書](../phase1-simulation.md) を参照してください。
+
 ## 1. 文書の目的
 
 この文書は、GMOコイン Private API を利用した「リアル注文処理」の仕様を定義するものです。
