@@ -104,4 +104,69 @@ class RealTradingSafetyChecker {
 
         return SafetyCheckResult(passed = true)
     }
+
+    /**
+     * 売り注文（保有解消）の前の安全チェックを行う。
+     *
+     * 買いの [checkPreOrderSafety] とは判定内容が異なる。買いは「保有していたら注文しない」が、
+     * 売りは「保有していなければ注文できない」ためである。買いのチェックをそのまま売りに使うと
+     * 保有中だけ売れないという逆の挙動になる。
+     *
+     * `realTrading.isStopped` は**意図的に見ていない**。停止中に売りまで止めると、
+     * ポジションを抱えたまま損切りできなくなるためである。停止は新規の買いだけを止める。
+     *
+     * @param sellSize 売却しようとしている数量
+     * @param recordedHoldingSize このアプリが約定として記録している保有数量
+     * @param exchangeAvailableSize 取引所側で売却に使える残高
+     * @param state 現在のシミュレーション(およびリアル取引)の状態
+     * @param activeOrders 取引所から取得した現在の未約定注文のリスト
+     * @return SafetyCheckResult 注文可否と理由
+     */
+    fun checkPreSellOrderSafety(
+        sellSize: BigDecimal,
+        recordedHoldingSize: BigDecimal,
+        exchangeAvailableSize: BigDecimal,
+        state: SimulationState,
+        activeOrders: List<ExchangeActiveOrder>
+    ): SafetyCheckResult {
+
+        // 1. 売却数量の妥当性チェック
+        if (sellSize <= BigDecimal.ZERO) {
+            return rejectSell("売却数量 ($sellSize) が0以下")
+        }
+
+        // 2. このアプリが記録している保有数量を超えて売らないことのチェック。
+        //    同じ口座にこのアプリ以外が買った資産がある場合に、それを巻き込んで売らないための境界。
+        if (sellSize > recordedHoldingSize) {
+            return rejectSell("売却数量 ($sellSize) が記録上の保有数量 ($recordedHoldingSize) を超過")
+        }
+
+        // 3. 取引所側の残高チェック
+        if (sellSize > exchangeAvailableSize) {
+            return rejectSell("売却数量 ($sellSize) が取引所の売却可能残高 ($exchangeAvailableSize) を超過")
+        }
+
+        // 4. 未確認・未約定注文チェック
+        val latestOrderStatus = state.realTrading.latestOrder?.status
+        val hasUnconfirmedOrder = latestOrderStatus == RealOrderStatus.WAITING ||
+                                  latestOrderStatus == RealOrderStatus.ORDERED ||
+                                  latestOrderStatus == RealOrderStatus.UNCONFIRMED
+
+        if (hasUnconfirmedOrder || activeOrders.isNotEmpty()) {
+            return rejectSell("未確認または受付中の注文が存在")
+        }
+
+        return SafetyCheckResult(passed = true)
+    }
+
+    /**
+     * 売り注文の安全チェックを不可として記録する。
+     *
+     * @param reason 注文できない理由
+     * @return 注文不可を表す結果
+     */
+    private fun rejectSell(reason: String): SafetyCheckResult {
+        logger.warn { "売り注文の安全チェックNG: $reason" }
+        return SafetyCheckResult(passed = false, reason = reason)
+    }
 }

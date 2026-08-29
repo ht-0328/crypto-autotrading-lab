@@ -11,6 +11,7 @@ import cryptoautotrading.domain.model.order.ExchangeAsset
 import cryptoautotrading.domain.model.order.ExecutedOrder
 import cryptoautotrading.domain.model.realtrading.ExecutionSummary
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
+import cryptoautotrading.domain.model.realtrading.RealTradingState
 import cryptoautotrading.domain.realtrading.RealTradingClient
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
@@ -34,8 +35,11 @@ class RealTradingService(
     /**
      * 判定結果と設定に基づいてリアル注文を実行するかどうかを判断し、処理を行う。
      *
-     * BUY_CANDIDATE の場合、安全チェックを通過した場合のみ GMO Private API の placeOrder を呼び、
-     * 返ってきた orderId を state の realTrading.latestOrder に保存する。
+     * BUY_CANDIDATE / SELL_CANDIDATE の場合、安全チェックを通過した場合のみ GMO Private API の
+     * placeOrder を呼び、返ってきた orderId を state の realTrading.latestOrder に保存する。
+     *
+     * 注文の受付と約定は別のため、ここでは保有状態を変更しない。約定の反映は次回以降の実行で
+     * [checkLatestOrderStatus] が行う。
      *
      * @param decision 戦略判定によって下された売買判定結果
      * @param config リアル取引に関する設定
@@ -75,12 +79,13 @@ class RealTradingService(
                 currentPrice = currentPrice,
                 orderSizingMode = orderSizingMode
             )
-            TradeAction.SELL_CANDIDATE -> {
-                logger.info { "リアル取引: SELL_CANDIDATE を検知しましたが、現行フェーズでは売り注文は実行しません。" }
-                currentState
-            }
+            TradeAction.SELL_CANDIDATE -> executeSellCandidateOrder(
+                symbol = symbol,
+                currentState = currentState,
+                currentPrice = currentPrice
+            )
             else -> {
-                logger.debug { "売買判定が BUY_CANDIDATE ではないため、リアル取引は実行しません。action=${decision.action}" }
+                logger.debug { "売買判定が注文対象ではないため、リアル取引は実行しません。action=${decision.action}" }
                 currentState
             }
         }
@@ -108,7 +113,7 @@ class RealTradingService(
      */
     private fun handleMissingExchangeClient(action: TradeAction): Boolean {
         if (exchangeClient == null) {
-            if (action == TradeAction.BUY_CANDIDATE) {
+            if (action == TradeAction.BUY_CANDIDATE || action == TradeAction.SELL_CANDIDATE) {
                 logger.warn { "リアル取引: exchangeClient が設定されていないため、実注文処理をスキップします。" }
             }
             return true
@@ -210,15 +215,16 @@ class RealTradingService(
      * @return 集計結果
      */
     private fun summarizeExecutions(executions: List<ExecutedOrder>): ExecutionSummary {
-        return executions.fold(ExecutionSummary(BigDecimal.ZERO, BigDecimal.ZERO, "")) { acc, execution ->
+        return executions.fold(ExecutionSummary(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, "")) { acc, execution ->
             val newTotalSize = acc.totalSize.add(execution.actualSize)
             val newTotalCost = acc.totalCost.add(execution.actualSize.multiply(execution.actualPrice))
+            val newTotalFee = acc.totalFee.add(execution.fee)
             val newLatestTimestamp = if (acc.latestTimestamp.isEmpty() || execution.timestamp > acc.latestTimestamp) {
                 execution.timestamp
             } else {
                 acc.latestTimestamp
             }
-            ExecutionSummary(newTotalSize, newTotalCost, newLatestTimestamp)
+            ExecutionSummary(newTotalSize, newTotalCost, newTotalFee, newLatestTimestamp)
         }
     }
 
@@ -259,11 +265,76 @@ class RealTradingService(
         )
         val updatedRealTrading = currentState.realTrading.copy(latestOrder = updatedOrder)
 
-        logger.info { "リアル取引: 約定情報を反映します。isHolding=true, price=$averagePrice, size=${summary.totalSize}" }
+        // 売買区分によって保有状態への反映が正反対になる。買いの約定を売りに流用すると
+        // 「売ったのに保有中」になり、以降の損切り判断がすべて狂う。
+        return when (latestOrder.side) {
+            RealOrderSide.BUY -> applyExecutedBuy(currentState, updatedRealTrading, averagePrice, summary)
+            RealOrderSide.SELL -> applyExecutedSell(currentState, updatedRealTrading, averagePrice, summary)
+        }
+    }
+
+    /**
+     * 買い注文の約定を状態に反映する。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param updatedRealTrading 約定を反映済みのリアル取引状態
+     * @param averagePrice 平均約定価格
+     * @param summary 約定情報の集計結果
+     * @return 更新されたシミュレーション状態
+     */
+    private fun applyExecutedBuy(
+        currentState: SimulationState,
+        updatedRealTrading: RealTradingState,
+        averagePrice: BigDecimal,
+        summary: ExecutionSummary
+    ): SimulationState {
+        logger.info { "リアル取引: 買いの約定を反映します。isHolding=true, price=$averagePrice, size=${summary.totalSize}" }
         return currentState.copy(
             isHolding = true,
             buyPrice = averagePrice,
             holdingAmount = summary.totalSize,
+            realTrading = updatedRealTrading
+        )
+    }
+
+    /**
+     * 売り注文の約定を状態に反映する。
+     *
+     * 確定損益は「売却代金 - 取得原価 - 売却時の手数料」で計算する。買い時の手数料は
+     * `buyPrice`（平均約定価格）に含まれないため、この損益には反映されない。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param updatedRealTrading 約定を反映済みのリアル取引状態
+     * @param averagePrice 平均約定価格
+     * @param summary 約定情報の集計結果
+     * @return 更新されたシミュレーション状態
+     */
+    private fun applyExecutedSell(
+        currentState: SimulationState,
+        updatedRealTrading: RealTradingState,
+        averagePrice: BigDecimal,
+        summary: ExecutionSummary
+    ): SimulationState {
+        val proceeds = summary.totalCost.subtract(summary.totalFee)
+        val acquisitionCost = currentState.buyPrice.multiply(summary.totalSize)
+        val profitAndLoss = proceeds.subtract(acquisitionCost)
+
+        // 部分約定に備えて残量から保有継続を判断する。全量売れていれば残量は0になる。
+        val remainingSize = currentState.holdingAmount.subtract(summary.totalSize).max(BigDecimal.ZERO)
+        val isStillHolding = remainingSize > BigDecimal.ZERO
+
+        logger.info {
+            "リアル取引: 売りの約定を反映します。price=$averagePrice, size=${summary.totalSize}, " +
+                "確定損益=$profitAndLoss, 残量=$remainingSize"
+        }
+
+        return currentState.copy(
+            isHolding = isStillHolding,
+            buyPrice = if (isStillHolding) currentState.buyPrice else BigDecimal.ZERO,
+            holdingAmount = remainingSize,
+            cashBalance = currentState.cashBalance.add(proceeds),
+            realizedProfitAndLoss = currentState.realizedProfitAndLoss.add(profitAndLoss),
+            entryAtr = if (isStillHolding) currentState.entryAtr else null,
             realTrading = updatedRealTrading
         )
     }
@@ -359,6 +430,127 @@ class RealTradingService(
             logger.error(e) { "リアル取引: 注文処理中にエラーが発生しました。" }
             return stopRealTrading(currentState, e.message ?: "不明なエラーが発生しました")
         }
+    }
+
+    /**
+     * SELL_CANDIDATE の場合の売り注文処理を実行する。
+     *
+     * 保有解消は損失を止めるための操作なので、`realTrading.isStopped` でも実行する。
+     * 停止中に売りまで止めると、ポジションを抱えたまま損切りできなくなるためである。
+     * 停止が止めるのは新規の買いだけである。
+     *
+     * @param symbol 通貨ペアシンボル
+     * @param currentState 現在のシミュレーション状態
+     * @param currentPrice 現在の市場価格
+     * @return 更新されたシミュレーション状態
+     */
+    private suspend fun executeSellCandidateOrder(
+        symbol: String,
+        currentState: SimulationState,
+        currentPrice: BigDecimal
+    ): SimulationState {
+        logger.info { "リアル取引: SELL_CANDIDATE を検知しました。安全チェックを開始します。" }
+
+        try {
+            val client = exchangeClient ?: return currentState
+
+            val recordedHoldingSize = currentState.holdingAmount
+            if (recordedHoldingSize <= BigDecimal.ZERO) {
+                logger.info { "リアル取引: 記録上の保有数量が0以下のため、売り注文は行いません。" }
+                return currentState
+            }
+
+            val assets = client.getAssets()
+            val exchangeAvailableSize = assets.find { it.symbol == symbol }?.available ?: BigDecimal.ZERO
+
+            // 取引所の残高が記録より少ない場合、このアプリの知らないところで資産が動いている。
+            // そのまま売ると状態が食い違ったまま進むため、停止して人の確認を待つ。
+            if (exchangeAvailableSize < recordedHoldingSize) {
+                val reason = "取引所の売却可能残高 ($exchangeAvailableSize) が記録上の保有数量 " +
+                    "($recordedHoldingSize) より少ないため、売り注文を中止しました"
+                logger.error { "リアル取引: $reason" }
+                return stopRealTrading(currentState, reason)
+            }
+
+            // 同じ口座にこのアプリ以外が買った資産があっても巻き込まないよう、
+            // 取引所の残高ではなく記録上の保有数量を売る。
+            val sellSize = recordedHoldingSize
+
+            val activeOrders = client.getActiveOrders(symbol)
+            val safetyCheckResult = safetyChecker.checkPreSellOrderSafety(
+                sellSize = sellSize,
+                recordedHoldingSize = recordedHoldingSize,
+                exchangeAvailableSize = exchangeAvailableSize,
+                state = currentState,
+                activeOrders = activeOrders
+            )
+
+            if (!safetyCheckResult.passed) {
+                logger.info { "リアル取引: 安全チェックで売り注文が見送られました。理由: ${safetyCheckResult.reason}" }
+                return currentState
+            }
+
+            logger.info { "リアル取引: 売りの安全チェックを通過しました。注文処理を開始します。" }
+
+            val acceptedOrder = client.placeOrder(
+                symbol = symbol,
+                side = "SELL",
+                executionType = "MARKET",
+                size = sellSize,
+                price = null
+            )
+
+            return buildSellOrderedState(
+                currentState = currentState,
+                orderId = acceptedOrder.orderId,
+                symbol = symbol,
+                size = sellSize,
+                currentPrice = currentPrice
+            )
+        } catch (e: Exception) {
+            logger.error(e) { "リアル取引: 売り注文の処理中にエラーが発生しました。" }
+            return stopRealTrading(currentState, e.message ?: "売り注文の処理中に不明なエラーが発生しました")
+        }
+    }
+
+    /**
+     * 売り注文の受付後の RealOrderState を作成し、状態に反映する。
+     *
+     * 日次の注文上限（`dailyOrderedJpy`）は新規の買いによる露出を絞るためのものなので、
+     * 保有を解消する売りは加算しない。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param orderId 注文ID
+     * @param symbol 通貨ペアシンボル
+     * @param size 注文数量
+     * @param currentPrice 現在の市場価格
+     * @return 更新されたシミュレーション状態
+     */
+    private fun buildSellOrderedState(
+        currentState: SimulationState,
+        orderId: String,
+        symbol: String,
+        size: BigDecimal,
+        currentPrice: BigDecimal
+    ): SimulationState {
+        val nowStr = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+        val newLatestOrder = RealOrderState(
+            orderId = orderId,
+            symbol = symbol,
+            side = RealOrderSide.SELL,
+            status = RealOrderStatus.ORDERED,
+            requestedAmountJpy = size.multiply(currentPrice),
+            requestedSize = size,
+            requestedPrice = currentPrice,
+            orderedAt = nowStr
+        )
+
+        logger.info { "リアル取引: 売り注文の受付完了。orderId: $orderId を保存しました。" }
+
+        return currentState.copy(
+            realTrading = currentState.realTrading.copy(latestOrder = newLatestOrder)
+        )
     }
 
     /**

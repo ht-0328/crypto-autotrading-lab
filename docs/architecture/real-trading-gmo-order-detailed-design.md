@@ -14,7 +14,7 @@
 ## 3. 実装対象外
 - 自動売買の相場判断ロジック（Strategy の買い条件・売り条件の再実装は行わない）
 - レバレッジ取引の対応
-- 「売り注文（SELL）」の実売却自動化（初期対応では実売却注文は送信せず、ログへの記録のみに留める）
+- 指値注文（買い・売りとも成行のみ）、分割売却、トレーリングストップ
 - `GmoPrivateApiModels.kt` のような複数DTOを1つのファイルにまとめる実装
 
 ## 4. 既存シミュレーション処理との関係
@@ -59,15 +59,36 @@
 - **dry-run時の処理:**
   既存シミュレーションとして売却処理を実行し、`state.json` とCSV/ログを更新する。
 - **実注文ON時の処理:**
-  初期対応として実売却注文は行わず、ログに「実売却指示が発生（自動実行は未対応）」の旨を記録するのみとする。
+  1. 記録上の保有数量（`holdingAmount`）が0以下なら何もしない。
+  2. `/private/v1/account/assets` で取引所の売却可能残高を取得する。
+  3. 取引所の残高が記録上の保有数量より少ない場合、**売らずに `isStopped=true` にして人の確認を待つ**。このアプリの知らないところで資産が動いているため、そのまま売ると状態が食い違ったまま進む。
+  4. 売却数量は**記録上の保有数量を上限**とする。取引所の残高をそのまま全量売ると、同じ口座にある「このアプリ以外が買った資産」まで売ってしまう。
+  5. `RealTradingSafetyChecker.checkPreSellOrderSafety()` で安全チェックを行う。買いの `checkPreOrderSafety()` は「保有していたら注文しない」判定なので、売りには使えない。
+  6. 通過した場合のみ `/private/v1/order` に `side=SELL` / `executionType=MARKET` で送信し、`orderId` を `state.json` に保存する。
+  7. **保有状態はこの時点では変更しない。** 次回以降の実行で注文照会と約定照会を経て反映する。
+
+### 8.1 停止中（`isStopped=true`）の振る舞い
+
+停止が止めるのは**新規の買いだけ**である。売りは実行する。停止中に売りまで止めると、ポジションを抱えたまま損切りできなくなるためである。この例外は `checkPreSellOrderSafety()` が `isStopped` を参照しないことで表現している。
+
+### 8.2 約定の反映
+
+`handleExecutedOrder()` は `latestOrder.side` で処理を分ける。買いの約定処理（`isHolding=true` にする）を売りに流用すると「売ったのに保有中」になり、以降の損切り判断がすべて狂う。
+
+| side | 反映内容 |
+| --- | --- |
+| BUY | `isHolding=true`、`buyPrice`＝平均約定価格、`holdingAmount`＝約定数量 |
+| SELL | 残量が0なら `isHolding=false` / `buyPrice=0`、`cashBalance` に売却代金（手数料控除後）を加算、`realizedProfitAndLoss` に確定損益を加算 |
+
+確定損益は「売却代金 - 取得原価 - 売却時の手数料」で計算する。**買い時の手数料は `buyPrice` に含まれないため反映されない。**
 
 ## 9. GMO Private API IFマッピング
 
 | 処理 | GMO API | HTTP Method | Request DTO | Response DTO | アプリ内モデル | 利用箇所 | 備考 |
 |---|---|---|---|---|---|---|---|
-| 残高確認 | `/private/v1/account/assets` | GET | なし | `GmoAccountAssetsResponseDto` | `ExchangeAsset` | `BUY_CANDIDATE`時の残高チェック | 利用可能残高(available)を確認 |
-| 未約定注文確認 | `/private/v1/activeOrders` | GET | `GmoActiveOrdersRequestDto` | `GmoActiveOrdersResponseDto` | `ExchangeActiveOrder` | `BUY_CANDIDATE`時の二重注文防止チェック | 処理中の注文がないか確認 |
-| 買い注文送信 | `/private/v1/order` | POST | `GmoPlaceOrderRequestDto` | `GmoPlaceOrderResponseDto` | `AcceptedOrder` | 安全チェック通過後の注文発注 | 戻り値の orderId を取得 |
+| 残高確認 | `/private/v1/account/assets` | GET | なし | `GmoAccountAssetsResponseDto` | `ExchangeAsset` | `BUY_CANDIDATE`時のJPY残高チェック、`SELL_CANDIDATE`時の売却可能残高チェック | 利用可能残高(available)を確認 |
+| 未約定注文確認 | `/private/v1/activeOrders` | GET | `GmoActiveOrdersRequestDto` | `GmoActiveOrdersResponseDto` | `ExchangeActiveOrder` | `BUY_CANDIDATE` / `SELL_CANDIDATE` 時の二重注文防止チェック | 処理中の注文がないか確認 |
+| 注文送信 | `/private/v1/order` | POST | `GmoPlaceOrderRequestDto` | `GmoPlaceOrderResponseDto` | `AcceptedOrder` | 安全チェック通過後の注文発注（買い・売り共通） | `side` に BUY / SELL を指定。戻り値の orderId を取得 |
 | 注文状態確認 | `/private/v1/orders` | GET | `GmoOrdersRequestDto` | `GmoOrdersResponseDto` | `ExchangeOrderStatus` | 注文送信直後または次回起動時の状態確認 | status (EXECUTED/CANCELED等) を確認 |
 | 約定確認 | `/private/v1/executions` | GET | `GmoExecutionsRequestDto` | `GmoExecutionsResponseDto` | `ExecutedOrder` | `ExchangeOrderStatus`が約定済みの場合の詳細確認 | 実約定価格・実約定数量の取得 |
 
@@ -734,5 +755,7 @@ flowchart TD
 - 全ての要件（DTO/モデル分離、1クラス1ファイル、設定デフォルトなしルール）が遵守されたコードが実装されていること。
 - 既存の `dry-run` 時のシミュレーション動作に影響を与えていないこと（既存テストが全てパスすること）。
 - ArchitectureTest などの Konsist テストを通過すること。
-- 売り注文指示時、実売却は行われずログへの記録が行われること。
+- `SELL_CANDIDATE` 時に売り注文が送信され、約定確認後に保有が解消され確定損益が加算されること。
+- 取引所の残高が記録上の保有数量より少ない場合、売らずに停止すること。
+- `isStopped=true` でも売り注文は実行され、買い注文は実行されないこと。
 - APIエラー発生時や未確認注文発生時に、次回以降の実注文が強制的にスキップされる仕組みが確認できること。

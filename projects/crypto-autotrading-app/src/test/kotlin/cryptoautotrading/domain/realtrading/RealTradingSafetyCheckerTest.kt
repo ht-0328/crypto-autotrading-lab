@@ -254,4 +254,89 @@ class RealTradingSafetyCheckerTest {
         assertFalse(result.passed)
         assertEquals("max_position_jpyが未設定", result.reason)
     }
+
+    @Test
+    fun `売り 条件を満たす場合は注文可になること`() {
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.01"),
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("0.01"),
+            state = SimulationState(isHolding = true, holdingAmount = BigDecimal("0.01")),
+            activeOrders = emptyList()
+        )
+
+        assertTrue(result.passed)
+    }
+
+    @Test
+    fun `売り 売却数量が0以下の場合は注文不可になること`() {
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal.ZERO,
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("0.01"),
+            state = SimulationState(isHolding = true, holdingAmount = BigDecimal("0.01")),
+            activeOrders = emptyList()
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `売り 記録上の保有数量を超える売却は注文不可になること`() {
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.02"),
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("0.5"),
+            state = SimulationState(isHolding = true, holdingAmount = BigDecimal("0.01")),
+            activeOrders = emptyList()
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `売り 取引所の売却可能残高を超える売却は注文不可になること`() {
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.01"),
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("0.005"),
+            state = SimulationState(isHolding = true, holdingAmount = BigDecimal("0.01")),
+            activeOrders = emptyList()
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `売り 未約定注文がある場合は注文不可になること`() {
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.01"),
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("0.01"),
+            state = SimulationState(isHolding = true, holdingAmount = BigDecimal("0.01")),
+            activeOrders = listOf(
+                ExchangeActiveOrder("active_id", "BTC", "SELL", BigDecimal("0.01"), BigDecimal.ZERO, "ORDERED")
+            )
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `売り isStoppedでも注文可のままであること`() {
+        // 停止中に売りまで止めると、ポジションを抱えたまま損切りできなくなる
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.01"),
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("0.01"),
+            state = SimulationState(
+                isHolding = true,
+                holdingAmount = BigDecimal("0.01"),
+                realTrading = RealTradingState(isStopped = true, stopReason = "テスト用の停止")
+            ),
+            activeOrders = emptyList()
+        )
+
+        assertTrue(result.passed)
+    }
 }

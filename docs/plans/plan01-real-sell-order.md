@@ -1,6 +1,6 @@
 # PLAN01: 売り注文（SELL）を実注文で自動化する
 
-**状態**: 未着手
+**状態**: 実施済み（ブランチ `feat/real-sell-order`）。ただし下記「積み残し」は別PRに分離
 
 ## なぜやるか
 
@@ -107,6 +107,15 @@ cd projects/crypto-autotrading-app
 ```
 
 加えて、WireMock を使った結合確認で「買い → 約定 → 保有 → 売り → 約定 → 未保有」の一巡が通ることを確認します。売り用のスタブは [mocks/wiremock/](../../mocks/wiremock/) に追加が必要です。
+
+## 積み残し（別PRに分離）
+
+論点5の**発注意図の先行保存は、このPRには含めていません。** 注文の送信前に状態を保存するには、ドメインサービスから状態リポジトリを呼ぶ必要があり、売り注文の実装とは独立した変更になるためです（[pr-and-commit](../../.agents/skills/pr-and-commit/SKILL.md) の1PR1変更）。**[PLAN05](plan05-canary-with-real-money.md) の着手条件には含まれるので、実資金を入れる前に必ず実施してください。**
+
+実装後に判明した制約も、[PLAN02](plan02-order-safety-guards.md) までに解消が必要です。
+
+- 確定損益に**買い時の手数料が反映されません**。売り時の手数料のみ差し引いています。
+- 実注文の売りでは `lastStopLossTime` を更新しないため、**クールダウンを使う Strategy を実取引で使えません**。`CooldownReboundStrategy` / `TrendConfirmReboundStrategy` / `AtrTrendConfirmReboundStrategy` が該当します。実取引は `SafeReboundStrategy` に限定してください（[PLAN00](plan00-phase-and-safety-contract.md) の Strategy allowlist）。
 
 ## やらないこと
 
