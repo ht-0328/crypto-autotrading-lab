@@ -2,6 +2,7 @@ package cryptoautotrading.presentation
 
 import cryptoautotrading.application.TradingApplication
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
+import cryptoautotrading.domain.time.TradingTime
 import cryptoautotrading.infrastructure.config.ConfigLoader
 import cryptoautotrading.infrastructure.exchange.gmo.GmoHttpClientFactory
 import cryptoautotrading.infrastructure.exchange.gmo.GmoPrivateApiClientImpl
@@ -9,6 +10,7 @@ import cryptoautotrading.infrastructure.exchange.gmo.GmoPublicApiClient
 import cryptoautotrading.infrastructure.exchange.gmo.auth.DummyGmoCredentialProvider
 import cryptoautotrading.infrastructure.exchange.gmo.auth.EnvGmoCredentialProvider
 import cryptoautotrading.infrastructure.exchange.gmo.auth.GmoSignatureGeneratorImpl
+import cryptoautotrading.infrastructure.lock.ExecutionLock
 import cryptoautotrading.infrastructure.output.ConsoleOutput
 import cryptoautotrading.infrastructure.output.CsvRepository
 import cryptoautotrading.infrastructure.output.StateRepository
@@ -25,6 +27,9 @@ private val logger = KotlinLogging.logger {}
  * ロードマップ上、実注文は Phase3（実注文 + 安全制御）のスコープ。
  */
 private const val REAL_TRADING_ALLOWED_PHASE = 3
+
+/** 実行ロックのファイル名に付ける接尾辞 */
+private const val LOCK_FILE_SUFFIX = ".lock"
 
 /**
  * アプリケーションのエントリーポイント
@@ -86,24 +91,48 @@ fun main() = runBlocking {
             validateOrderPriceSettings(config.realTrading)
         }
 
-        if (isRealTradeActive) {
-            val isWireMockPrivateApi = privateBaseUrl.contains("wiremock") ||
-                privateBaseUrl.contains("localhost")
+        // 定期実行が重複して起動すると、2つの実行が同じ状態を「保有なし」と読み、
+        // どちらも注文を出しうる。実注文では、これがそのまま二重注文になる。
+        val executionLock = ExecutionLock(
+            lockFile = File("$statePath$LOCK_FILE_SUFFIX"),
+            clock = TradingTime.systemClock()
+        )
 
-            val credentialProvider = if (isWireMockPrivateApi) {
-                DummyGmoCredentialProvider()
+        val executed = executionLock.withLock {
+            if (isRealTradeActive) {
+                val isWireMockPrivateApi = privateBaseUrl.contains("wiremock") ||
+                    privateBaseUrl.contains("localhost")
+
+                val credentialProvider = if (isWireMockPrivateApi) {
+                    DummyGmoCredentialProvider()
+                } else {
+                    EnvGmoCredentialProvider()
+                }
+
+                GmoHttpClientFactory.create().use { httpClient ->
+                    val privateApiClient = GmoPrivateApiClientImpl(
+                        httpClient = httpClient,
+                        baseUrl = privateBaseUrl,
+                        signatureGenerator = GmoSignatureGeneratorImpl(),
+                        credentialProvider = credentialProvider
+                    )
+
+                    GmoPublicApiClient(publicBaseUrl, retryCount).use { apiClient ->
+                        val app = TradingApplication(
+                            config = config,
+                            marketDataClient = apiClient,
+                            stateRepository = stateRepository,
+                            tradeHistoryRepository = csvRepository,
+                            resultOutputPort = resultOutputPort,
+                            realTradingExchangeClient = privateApiClient
+                        )
+
+                        logger.info { "TradingApplication の実行を開始します(実注文有効)" }
+                        app.run()
+                        logger.info { "TradingApplication の実行が終了しました" }
+                    }
+                }
             } else {
-                EnvGmoCredentialProvider()
-            }
-
-            GmoHttpClientFactory.create().use { httpClient ->
-                val privateApiClient = GmoPrivateApiClientImpl(
-                    httpClient = httpClient,
-                    baseUrl = privateBaseUrl,
-                    signatureGenerator = GmoSignatureGeneratorImpl(),
-                    credentialProvider = credentialProvider
-                )
-
                 GmoPublicApiClient(publicBaseUrl, retryCount).use { apiClient ->
                     val app = TradingApplication(
                         config = config,
@@ -111,29 +140,18 @@ fun main() = runBlocking {
                         stateRepository = stateRepository,
                         tradeHistoryRepository = csvRepository,
                         resultOutputPort = resultOutputPort,
-                        realTradingExchangeClient = privateApiClient
+                        realTradingExchangeClient = null
                     )
 
-                    logger.info { "TradingApplication の実行を開始します(実注文有効)" }
+                    logger.info { "TradingApplication の実行を開始します(シミュレーションのみ)" }
                     app.run()
                     logger.info { "TradingApplication の実行が終了しました" }
                 }
             }
-        } else {
-            GmoPublicApiClient(publicBaseUrl, retryCount).use { apiClient ->
-                val app = TradingApplication(
-                    config = config,
-                    marketDataClient = apiClient,
-                    stateRepository = stateRepository,
-                    tradeHistoryRepository = csvRepository,
-                    resultOutputPort = resultOutputPort,
-                    realTradingExchangeClient = null
-                )
+        }
 
-                logger.info { "TradingApplication の実行を開始します(シミュレーションのみ)" }
-                app.run()
-                logger.info { "TradingApplication の実行が終了しました" }
-            }
+        if (executed == null) {
+            logger.info { "別の実行がロックを保持していたため、今回の実行をスキップしました" }
         }
     } catch (e: Exception) {
         logger.error(e) { "アプリケーションの起動・実行中に予期せぬエラーが発生しました: ${e.message}" }
