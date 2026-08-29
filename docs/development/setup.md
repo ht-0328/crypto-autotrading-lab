@@ -90,6 +90,41 @@ docker compose -f docker/compose/local.yml up --build
 3. **GitHub Actions CI**: コードを変更したときに、自動でテストしたいとき。
 4. **GCP Cloud Run Job**: クラウド上で定期的にシミュレーションを動かしたいとき。
 
+## ドキュメントサイト（Zensical）
+
+`docs/` 配下の Markdown は [Zensical](https://zensical.org/) で静的サイト化し、GitHub Pages で公開しています。
+
+- 公開先: [crypto-autotrading-lab ドキュメント](https://ht-0328.github.io/crypto-autotrading-lab/)
+- サイトの設定: [zensical.toml](../../zensical.toml)（章立て・テーマ・Markdown 拡張）
+- 公開の仕組み: [.github/workflows/docs.yml](../../.github/workflows/docs.yml)
+
+`main` への push で自動的にビルドとデプロイが走ります。PR では公開せず、ビルドが通るかだけを確認します。
+
+### 手元で見た目を確認する
+
+Python 3.10 以上が必要です。仮想環境を作ってから実行してください。
+
+```bash
+# リポジトリのルートで実行する
+python3 -m venv .venv
+.venv/bin/pip install zensical==0.0.57
+
+# http://localhost:8000 で確認できる。Markdown を保存すると自動で再ビルドされる
+.venv/bin/zensical serve
+```
+
+静的ファイルだけを出力したい場合は `zensical build` を使います。出力先の `site/` はコミットしません（[.gitignore](../../.gitignore) で除外済み）。
+
+### 章立てを変えるとき
+
+ドキュメントを追加・移動・削除したら、[zensical.toml](../../zensical.toml) の `nav` も更新してください。`nav` に書かれていないファイルはサイトの目次に出ません。
+
+### 現時点の既知の問題
+
+ビルドは成功しますが、`docs/` の外を指す相対リンク（リポジトリ直下の Markdown、Kotlin のソースコード、ワークフロー定義など）はサイト上でリンク切れになります。GitHub 上で Markdown を直接読む分には正しく動くリンクです。
+
+解消は別途対応します。ドキュメントを新しく書くときは、`docs/` の外を参照する場合に GitHub の URL を使ってください。
+
 ## 用語補足
 
 - **Dev Containers**: パソコンの中に「開発専用の小さなパソコン（コンテナ）」を作って、そこで作業する仕組み。

@@ -27,7 +27,11 @@
 ## 開発ドキュメント
 
 各種ドキュメント（人間向け・AI向け）は `docs/` 配下に整理されています。
-詳細は以下のリンクから参照してください。
+GitHub Pages でも公開しており、目次付きで読めます。
+
+- [**ドキュメントサイト（GitHub Pages）**](https://ht-0328.github.io/crypto-autotrading-lab/)
+
+リポジトリ上で直接読む場合は以下から参照してください。
 
 - [**ドキュメント一覧 (docs/README.md)**](docs/README.md)
 - [ドキュメント一覧（全体像） (docs/overview/README.md)](docs/overview/README.md)

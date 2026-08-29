@@ -5,6 +5,8 @@
 このディレクトリ（`docs/`）には、本プロジェクトに関するすべてのドキュメントが格納されています。
 読む目的に合わせて、必要なフォルダのドキュメントを参照してください。
 
+この内容は [Zensical](https://zensical.org/) で静的サイト化し、[GitHub Pages](https://ht-0328.github.io/crypto-autotrading-lab/) で公開しています。手元での確認方法とサイトの設定は [開発環境のセットアップ (development/setup.md)](development/setup.md) を参照してください。
+
 ## 目的別の案内（どこから読めばよいか）
 
 ### 🔰 初めてこのプロジェクトに参加する方
