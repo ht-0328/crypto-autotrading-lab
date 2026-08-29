@@ -339,4 +339,169 @@ class RealTradingSafetyCheckerTest {
 
         assertTrue(result.passed)
     }
+
+    @Test
+    fun `買い 注文予定金額が0以下の場合は注文不可になること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 0,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+        assertEquals("注文予定金額 (0) が0以下", result.reason)
+    }
+
+    @Test
+    fun `買い 注文予定金額が負の場合は注文不可になること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = -1000,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `買い 注文に使う価格が0以下の場合は注文不可になること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = BigDecimal.ZERO
+        )
+
+        assertFalse(result.passed)
+        assertEquals("注文に使う価格 (0) が0以下", result.reason)
+    }
+
+    @Test
+    fun `買い 保有数量が負の場合は注文不可になること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = defaultState.copy(holdingAmount = BigDecimal("-0.01")),
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `買い 1日の累計注文額が負の場合は注文不可になること`() {
+        val brokenState = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(dailyOrderedJpy = BigDecimal("-1"))
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = brokenState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `買い max_order_jpyが0以下の場合は注文不可になること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig.copy(maxOrderJpy = 0),
+            tradeAmount = 1000,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+        assertEquals("max_order_jpy (0) が0以下", result.reason)
+    }
+
+    @Test
+    fun `買い max_daily_order_jpyが0以下の場合は注文不可になること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig.copy(maxDailyOrderJpy = -1),
+            tradeAmount = 1000,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `買い max_position_jpyが0以下の場合は注文不可になること`() {
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig.copy(maxPositionJpy = 0),
+            tradeAmount = 1000,
+            state = defaultState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `買い 入力値の検証は停止フラグより先に行われること`() {
+        // 停止中かどうかに関係なく、不正値はそれ自体の理由で拒否されることを固定する
+        val stoppedState = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(isStopped = true)
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 0,
+            state = stoppedState,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice
+        )
+
+        assertFalse(result.passed)
+        assertEquals("注文予定金額 (0) が0以下", result.reason)
+    }
+
+    @Test
+    fun `売り 記録上の保有数量が0以下の場合は注文不可になること`() {
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.01"),
+            recordedHoldingSize = BigDecimal.ZERO,
+            exchangeAvailableSize = BigDecimal("0.01"),
+            state = SimulationState(),
+            activeOrders = emptyList()
+        )
+
+        assertFalse(result.passed)
+    }
+
+    @Test
+    fun `売り 取引所の売却可能残高が負の場合は注文不可になること`() {
+        val result = checker.checkPreSellOrderSafety(
+            sellSize = BigDecimal("0.01"),
+            recordedHoldingSize = BigDecimal("0.01"),
+            exchangeAvailableSize = BigDecimal("-0.01"),
+            state = SimulationState(isHolding = true, holdingAmount = BigDecimal("0.01")),
+            activeOrders = emptyList()
+        )
+
+        assertFalse(result.passed)
+    }
 }
