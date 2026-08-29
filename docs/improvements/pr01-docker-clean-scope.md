@@ -1,6 +1,6 @@
 # PR01: ホストの Docker を全消しするスクリプトを安全にする
 
-**状態**: 実施済み（ブランチ `fix/docker-clean-scope`、コミット未実施）
+**状態**: 実施済み（ブランチ `fix/docker-clean-scope`）
 
 ## 対象の指摘
 

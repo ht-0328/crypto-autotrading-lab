@@ -1,6 +1,6 @@
 # PR03: Private API レスポンスのログ流出を止める
 
-**状態**: 未着手
+**状態**: 実施済み（ブランチ `fix/private-api-log-leak`）
 
 ## 対象の指摘
 
