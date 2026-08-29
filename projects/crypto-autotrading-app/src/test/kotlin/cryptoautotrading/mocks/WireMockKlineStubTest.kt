@@ -27,8 +27,8 @@ class WireMockKlineStubTest {
     private fun loadKlines(): List<Map<String, String>> {
         val stub = Json.parseToJsonElement(stubFile.readText()).jsonObject
         val body = stub["response"]!!.jsonObject["body"]!!.jsonPrimitive.content
-        // 先頭のテンプレート宣言を取り除いて JSON 本体だけを読む
-        val jsonBody = body.substringAfter(ASSIGN_END_MARKER)
+        // 先頭のテンプレート宣言（複数ある）を取り除いて JSON 本体だけを読む
+        val jsonBody = body.substringAfterLast(ASSIGN_END_MARKER)
         return Json.parseToJsonElement(jsonBody).jsonObject["data"]!!.jsonArray.map { element ->
             element.jsonObject.mapValues { it.value.jsonPrimitive.content }
         }
@@ -75,16 +75,34 @@ class WireMockKlineStubTest {
 
     @Test
     fun `開始時刻がテンプレートで実行時刻に追従すること`() {
-        val body = Json.parseToJsonElement(stubFile.readText())
-            .jsonObject["response"]!!.jsonObject["body"]!!.jsonPrimitive.content
+        val body = templateBody()
 
         // 各足で now を評価すると描画のタイミングで間隔がずれるため、基点は1回だけ評価する
         assertEquals(1, Regex("\\{\\{now").findAll(body).count(), "now の評価は1回だけにしてください")
         assertTrue(body.contains("{{#assign 'base'}}"), "基点を base として保持してください")
     }
 
+    @Test
+    fun `開始時刻が刻みの境界に切り下げられること`() {
+        val body = templateBody()
+
+        // アプリは前営業日分と当営業日分を別々に取得する。2回のリクエストは別々に描画され、
+        // now がミリ秒単位でずれる。境界に切り下げないと、つなげたときに間隔が合わなくなる
+        assertTrue(
+            body.contains("'%' $FIVE_MINUTES_MILLIS"),
+            "基点を5分の境界に切り下げてください: $body"
+        )
+    }
+
+    /** スタブのレスポンス本文（テンプレートを含む）を返す */
+    private fun templateBody(): String = Json.parseToJsonElement(stubFile.readText())
+        .jsonObject["response"]!!.jsonObject["body"]!!.jsonPrimitive.content
+
     private companion object {
         /** 基点を宣言するテンプレートブロックの終わり */
         const val ASSIGN_END_MARKER = "{{/assign}}"
+
+        /** 5分のミリ秒 */
+        const val FIVE_MINUTES_MILLIS = 300000
     }
 }
