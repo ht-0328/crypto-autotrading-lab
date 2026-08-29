@@ -46,14 +46,13 @@ GCPへのデプロイ準備は、以下の順番で進めてください。
 7. [Cloud Scheduler による定期実行設定 (operations/gcp/07-scheduler.md)](operations/gcp/07-scheduler.md)
 8. （不要になった場合）[リソースのクリーンアップ (operations/gcp/08-cleanup.md)](operations/gcp/08-cleanup.md)
 
-### 🤖 JulesやCodex（AI）に作業させたい方
+### 🤖 AI（Claude Code / Codex / Antigravity）に作業させたい方
 
 AIエージェントに開発を依頼する前に、人間が内容を把握しておくべきルールです。
 
-1. [AIエージェント用コアルール (../AGENTS.md)](../AGENTS.md)
-2. [AIの禁止事項・必須チェック項目 (ai/agents-guidelines.md)](ai/agents-guidelines.md)
-3. [PRの粒度に関するルール (ai/change-granularity.md)](ai/change-granularity.md)
-4. AI向けドキュメントの一覧は [こちら (ai/README.md)](ai/README.md) を参照。
+1. [AIエージェント用の共通ルール (../AGENTS.md)](../AGENTS.md)
+2. [作業別の詳細ルール（スキル） (../.agents/skills/)](../.agents/skills/)
+3. [3ツール共用の仕組みと編集方法 (../.agents/README.md)](../.agents/README.md)
 
 ## ディレクトリ構成
 
@@ -63,7 +62,6 @@ AIエージェントに開発を依頼する前に、人間が内容を把握し
 - `overview/`: プロダクトの目的やロードマップ
 - `development/`: 開発環境の構築手順や日々の開発フロー
 - `operations/`: GCP環境の構築やデプロイ手順
-- `ai/`: AIエージェント向けのルールや制約事項
 
 ## ドキュメントリンク方針
 

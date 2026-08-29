@@ -28,3 +28,10 @@ data/
 terraform.tfvars
 terraform.tfstate
 terraform.tfstate.backup
+
+# AI agent local settings (共有しない個人設定)
+# .claude/skills は .agents/skills へのシンボリックリンクなので追跡する
+.claude/*
+!.claude/skills
+!.claude/settings.json
+.codex/

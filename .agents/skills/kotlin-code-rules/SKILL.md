@@ -1,4 +1,14 @@
-# Skill: kotlin-readable-code
+---
+name: kotlin-code-rules
+description: >-
+  crypto-autotrading-lab の Kotlin コードを書く・直す・レビューするときの実装ルール。
+  Scope functions と拡張関数の使い分け、命名、KDoc、data class の配置、
+  お金に関わる値のデフォルト値禁止、売買ロジック特有の注意点を扱う。
+  projects/crypto-autotrading-app の .kt ファイルを追加・変更するとき、
+  および Kotlin の可読性をレビューするときに使用する。
+---
+
+# Kotlin 実装ルール
 
 ## 1. 目的
 
@@ -162,27 +172,16 @@ class SaveMarketPriceUseCase(
 - 分かりにくくなっている場合は、通常の関数、明示的な変数名、`if`、`return` への書き換えを提案できているか。
 - 自動売買ロジックにおいて、重要な判定や注文処理が明示的な名前で表現されているか。
 
-## 8. 出力要件
+## 8. data class の配置ルール
 
-AIエージェントがKotlinコードを変更した場合、完了報告に必ず以下を含めてください。
+- `data class` は1ファイルに1つだけ定義してください。例外はありません。
+- GMO API レスポンスモデルのように似た型が多い場合も、1ファイル1 `data class` にしてください。
+- このルールは `ArchitectureTest` がテストコードを含む全ファイルに対して機械的に検査します。違反すると `./gradlew build` が失敗します。
 
-- Scope functions を使った箇所と理由
-- Scope functions をあえて使わなかった箇所と理由
-- 追加・変更した拡張関数と、その配置理由
-- 読みやすさの観点で改善した点
-- 実行した検証コマンドと結果
+## 9. KDoc必須ルール
 
-## 9. data class の配置ルール
-
-- `data class` は原則として1ファイルに1つだけ定義してください。
-- 複数の `data class` を1ファイルにまとめないでください。
-- 例外を作る場合は、理由をKDocとPR本文に明記してください。
-- GMO API レスポンスモデルのように似た型が多い場合でも、基本は1ファイル1 `data class` にしてください。
-
-## 10. KDoc必須ルール
-
-- `public` / `internal` / `private` を問わず、追加・変更した関数にはKDocを書いてください。
-- `private` 関数でもKDocを書いてください。
+- 検査範囲は「プロダクションコード（`src/main`）のすべての class / interface / 関数」です。追加・変更した分だけではありません。`ArchitectureTest` が機械的に検査し、KDocのない宣言が1つでもあると `./gradlew build` が失敗します。
+- `public` / `internal` / `private` を問わず、すべての関数にKDocを書いてください。
 - `class` / `data class` / `enum class` / `interface` にもKDocを書いてください。
 - 関数のKDocには、引数がある場合は `@param` を書いてください。
 - 戻り値がある場合は `@return` を書いてください。
@@ -190,7 +189,7 @@ AIエージェントがKotlinコードを変更した場合、完了報告に必
 - KDocは実際の処理内容に合わせて書いてください。
 - 別メソッドの説明をコピーしないでください。
 
-## 11. デフォルト値のルール
+## 10. デフォルト値のルール
 
 - 初期資金、注文金額、最大注文額、最大保有額、APIキー名、Secret名など、運用やお金に関係する値に安易なデフォルト値を入れないでください。
 - 特に `initialCapital`, `tradeAmount`, `maxOrderJpy`, `maxDailyOrderJpy`, `maxPositionJpy` などは、設定ファイルや環境変数から明示的に与える方針にしてください。
@@ -201,10 +200,14 @@ AIエージェントがKotlinコードを変更した場合、完了報告に必
   - `stop_on_order_error=true`
   - `stop_on_unconfirmed_order=true`
 
-## 12. 依存関係チェックのルール
+## 11. レイヤ依存
 
-- `domain` 層が `infrastructure` 層に依存しないことをテストで確認してください。
-- `domain` 層が `presentation` 層に依存しないことをテストで確認してください。
-- `domain` の `interface` に `infrastructure.exchange.gmo.model` の型を出さないでください。
-- GMO API レスポンスモデルは `infrastructure` 層に閉じ込めてください。
-- レイヤー依存ルールは目視だけでなく、Konsistテストで検査してください。
+レイヤ依存と境界のルールは [kotlin-layer-boundaries](../kotlin-layer-boundaries/SKILL.md) にまとめてあります。
+`domain` に外部I/Oや `infrastructure` の型を持ち込む変更をするときは、そちらも読んでください。
+
+## 12. 変更後に報告すること
+
+Kotlin コードを変更したら、完了報告に以下を含めてください（該当がなければ書かなくて構いません）。
+
+- 読みやすさのために迷った箇所と、そこでどう判断したか（Scope functions を使った/使わなかった理由、拡張関数の配置理由）。
+- `./gradlew build` の実行結果。

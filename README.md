@@ -32,7 +32,7 @@
 - [**ドキュメント一覧 (docs/README.md)**](docs/README.md)
 - [ドキュメント一覧（全体像） (docs/overview/README.md)](docs/overview/README.md)
   - [売買ロジック説明 (docs/architecture/trading-logic.md)](docs/architecture/trading-logic.md)
-- [AI向けドキュメント一覧 (docs/ai/README.md)](docs/ai/README.md)
+- [AIエージェント向けルール (AGENTS.md)](AGENTS.md)
 
 ### 本プロジェクトの前提事項と注意事項
 
@@ -42,7 +42,7 @@
   - CSVにも資金情報（残金、保有BTC数量、買値、確定損益）を出力します。
 - **Strategyの切り替え:** アプリケーションは複数の取引ロジックを持っており、設定や環境変数（`APP_TRADING_STRATEGY_NAME`）によりStrategyの切り替えが可能です。
 - **デプロイ手順:** GCP Cloud Run Job デプロイ手順は [docs/operations/gcp/README.md](docs/operations/gcp/README.md) を参照してください。
-- **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) を必ず参照させてください。
+- **AIへの指示:** AIエージェントに作業させる場合のルールは [AGENTS.md](AGENTS.md) にまとまっています。Claude Code / Codex / Antigravity はいずれも自動で読み込みます（仕組みは [.agents/README.md](.agents/README.md) を参照）。
 
 ### 注文サイズの設定 (order_sizing_mode)
 
@@ -81,7 +81,7 @@ trading:
 - `mocks/wiremock/`: WireMock のスタブ定義
 - `docker/`: ローカル実行用の Dockerfile / Compose 定義
 - `docs/overview/`, `docs/architecture/`, `docs/development/`, `docs/operations/`: 人間向けの各種ドキュメント
-- `docs/ai/`: AIエージェント向けのプロンプト・制約ルール
+- `AGENTS.md`, `.agents/`: AIエージェント向けの共通ルールとスキル（構成の説明は [.agents/README.md](.agents/README.md)）
 
 ## 起動方法 (ローカル実行)
 
