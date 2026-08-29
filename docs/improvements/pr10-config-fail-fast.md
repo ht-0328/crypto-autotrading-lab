@@ -23,7 +23,7 @@
 - **Z（低）**: 設定の切り替えが sed による YAML 書き換えで2箇所に散在しています。`ConfigLoader` は環境変数上書きに対応済みなので sed は不要です。
 - **C（中、乖離解消のみ）**: gcloud と Terraform で Cloud Run Job に渡す環境変数の集合が食い違っています。一本化は [backlog.md](backlog.md) 送りですが、食い違いだけは消します。
 - **AD（中、作業中に発見）**: Terraform の `output_path` / `state_path` の既定値が絶対パスですが、アプリは `Paths.get(APP_DATA_DIR, statePath)` で連結するため `/mnt/gcs/data/mnt/gcs/data/state.json` になります。`terraform apply` を運用していないため実害は出ていません。
-- **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡すため、[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を実際に読むようにしたことで「API のベースURLが空のまま起動する」経路ができていました。
+- **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡すため、[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を実際に読むようにしたことで「API のベースURLが空のまま起動する」経路ができています。
 
 ## 変更対象
 

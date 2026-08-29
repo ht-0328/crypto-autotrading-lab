@@ -17,7 +17,7 @@
 
 ## なぜ直すか
 
-[BacktestEngine.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) は、対象の K線を履歴に追加してから判定し、**同じ K線の終値でそのまま約定**させています。
+[BacktestEngine.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) は、対象の K線を履歴に追加してから判定し、**同じ K線の終値でそのまま約定**させる。
 
 ```kotlin
 processedKlines.add(kline)
@@ -26,7 +26,7 @@ val decision = strategy.judge(processedKlines, currentState)
 currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 ```
 
-つまり「終値を見てから、その終値で買える／売れる」前提です。現実には成立しません。手数料・スプレッド・スリッページも一切考慮していません。結果として**全戦略の成績が構造的に楽観化**しており、Phase1 の目的である「戦略の検証」そのものが成り立っていません。
+つまり「終値を見てから、その終値で買える／売れる」前提であり、現実には成立しない。手数料・スプレッド・スリッページも一切考慮していない。結果として**全戦略の成績が構造的に楽観化**しており、Phase1 の目的である「戦略の検証」が成り立たない。
 
 仕様書 [backtest.md](../specifications/features/backtest.md) の処理仕様（6〜8）も同じ前提で書かれているため、**仕様書を直してから実装を直します**。
 
@@ -43,7 +43,7 @@ currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 
 ## 実施手順
 
-上から順に実施してください。前の手順が終わってから次に進みます。
+上から順に実施する。前の手順が終わってから次に進む。
 
 ### 1. 仕様書を直す
 

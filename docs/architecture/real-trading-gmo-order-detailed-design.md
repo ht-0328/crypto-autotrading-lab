@@ -212,7 +212,7 @@
 
 ## 11. state.json の拡張内容
 
-実注文の状態は `realTrading` の下に置きます。
+実注文の状態は `realTrading` の下に置く。
 
 | キー | 内容 |
 | --- | --- |
@@ -273,7 +273,7 @@
 
 ## 14. 追加・変更するファイル一覧
 
-1ファイルにつき1つのDTO、1つのモデルという原則に従います。DTO は必ず `infrastructure` 側に置きます。
+1ファイルにつき1つのDTO、1つのモデルという原則に従う。DTO は必ず `infrastructure` 側に置く。
 
 **DTO（`infrastructure/exchange/gmo/dto/`）**
 

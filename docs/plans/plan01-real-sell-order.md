@@ -18,16 +18,16 @@
 - [RealTradingService.executeOrderIfNeeded()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は `SELL_CANDIDATE` を受け取ってもログを1行出すだけで、取引所には何も送りません。
 - [TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は実取引モードのとき、SELL でシミュレーション状態を更新しないよう意図的にバイパスしています（[PR05](../improvements/pr05-phase1-real-order-guard.md) で入れた安全措置）。つまり保有状態は「保有中」のまま固定されます。
 - 結果として、この状態で実注文を有効にすると次が起きます。
-  1. 買い注文だけが約定し、BTC を保有する。
-  2. Strategy が利確・損切りの `SELL_CANDIDATE` を出しても、注文は送られない。
+  1. 買い注文だけが約定し、BTC を保有します。
+  2. Strategy が利確・損切りの `SELL_CANDIDATE` を出しても、注文は送られません。
   3. **プログラムによる損切りが一度も発動せず、相場が下げ続ける限り含み損を抱え続ける。**
-  4. 同時に `isHolding=true` のまま固定されるため、安全チェック（保有中は買わない）に永久に引っかかり、新規注文も出なくなる。
+  4. 同時に `isHolding=true` のまま固定されるため、安全チェック（保有中は買わない）に永久に引っかかり、新規注文も出なくなります。
 
 `max_order_jpy` などの上限は「1回に賭ける金額」を制限するだけで、**すでに持っているポジションの下落は一切止めません**。上限設定はこのリスクの代替になりません。
 
 ## ゴール
 
-「買い → 保有 → 売り（利確・損切り） → 現金に戻る」の1サイクルが、人手を介さず取引所側で完結する。
+「買い → 保有 → 売り（利確・損切り） → 現金に戻る」の1サイクルが、人手を介さず取引所側で完結します。
 
 ## 変更対象
 

@@ -16,14 +16,14 @@
 実資金を動かすとき、**人間が異常に気づけないことが最大のリスク**です。現在このリポジトリには通知の実装が1つもありません（`grep` で確認済み）。分かるのは Cloud Logging を自分で見に行ったときだけです。
 
 - 注文が失敗して `isStopped=true` になっても、誰も気づかない。復旧は手動でしかできないのに、止まったことが伝わりません（[復旧手順](../operations/real-trading-recovery.md)）。
-- 未確認注文を抱えたまま止まっても、気づかない。
+- 未確認注文を抱えたまま止まっても、気づけません。
 - **手動承認を置かない方針を取ったため（[PLAN00](plan00-phase-and-safety-contract.md)）、通知の重要度はさらに上がります。** 発注の直前に人間が内容を見るタイミングが無いので、「起きたことを事後に必ず知る」ことだけが人間側の歯止めになります。
 
 Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の決定どおり、Phase2 のうち通知だけを先に出します。
 
 ## ゴール
 
-売買と異常が起きたことを人間が即座に知り、必要なら止められる。
+売買と異常が起きたことを人間が即座に知り、必要なら止められます。
 
 ## 含む作業
 
@@ -32,7 +32,7 @@ Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の�
 ### A. 通知の送信
 
 - 送信先を決める（LINE Messaging API、Discord Webhook など）。**Webhook URL やトークンは秘密情報**です。[AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) のとおり、コードにも設定ファイルにも書かず、環境変数と Secret Manager 経由で渡してください。
-- 通知する内容に、APIキー・シークレット・署名・個人情報を含めない。
+- 通知する内容に、APIキー・シークレット・署名・個人情報を含めません。
 - 通知の送信に失敗しても、**売買処理そのものは落とさない**（通知はあくまで観測手段）。ただし失敗はログに残す。
 
 ### B. 通知するイベント
@@ -70,7 +70,7 @@ Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の�
 
 ### D. 緊急停止（kill switch）
 
-**追加の実装は不要です。** [PLAN00](plan00-phase-and-safety-contract.md) で「Cloud Scheduler の停止と設定フラグ」を正と決めました。手順は [ロードマップ](../overview/roadmap.md) の「緊急停止（kill switch）」にあります。**実際に一度試して、止まることを確認してください**（[PLAN05](plan05-canary-with-real-money.md) の着手条件）。
+**追加の実装は不要です。** [PLAN00](plan00-phase-and-safety-contract.md) で「Cloud Scheduler の停止と設定フラグ」を正と決めています。手順は [ロードマップ](../overview/roadmap.md) の「緊急停止（kill switch）」にあります。**実際に一度試して、止まることを確認してください**（[PLAN05](plan05-canary-with-real-money.md) の着手条件）。
 
 ## 変更対象
 

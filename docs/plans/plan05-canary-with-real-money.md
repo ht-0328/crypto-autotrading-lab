@@ -45,12 +45,12 @@
 2. `config` を実注文用に切り替える。
    - `app.phase: 3`
    - `real_trading.dry_run: false`, `real_trading.real_trade_enabled: true`
-   - `max_order_jpy` / `max_daily_order_jpy` / `max_position_jpy` を [PLAN00](plan00-phase-and-safety-contract.md) で決めた最小額にする
+   - `max_order_jpy` / `max_daily_order_jpy` / `max_position_jpy` を [PLAN00](plan00-phase-and-safety-contract.md) で決めた最小額にします
    - `trading.strategy_name` は許可した Strategy のみ、`order_sizing_mode: FIXED_AMOUNT`
 3. **人が画面を見ている時間帯に、手動でジョブを1回実行する。** 定期実行から始めないでください。
-4. 買い注文が出たら、取引所の管理画面で約定を確認する。`state.json` と通知の内容が一致していることを確認する。
-5. 売り判定が出るまで保有し、売り注文が自動で出ることを確認する。出ない場合は原因を調べ、必要なら手動で決済する。
-6. 1サイクル完結したら、記録の3点（取引所・`state.json`・通知）を突き合わせる。
+4. 買い注文が出たら、取引所の管理画面で約定を確認する。`state.json` と通知の内容が一致していることを確認します。
+5. 売り判定が出るまで保有し、売り注文が自動で出ることを確認する。出ない場合は原因を調べ、必要なら手動で決済します。
+6. 1サイクル完結したら、記録の3点（取引所・`state.json`・通知）を突き合わせます。
 7. 問題がなければ定期実行に戻し、数サイクル繰り返す。
 
 ## 受け入れ条件

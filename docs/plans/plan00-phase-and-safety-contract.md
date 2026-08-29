@@ -43,7 +43,7 @@
 
 ### 2. 手動承認を挟むか
 
-**決定済み: 手動承認は実装しない。無人で運転し、安全は「金額の上限」と「自動停止」で担保する。**（オーナー判断 / 2026-08-29）
+**決定済み: 手動承認は実装しません。無人で運転し、安全は「金額の上限」と「自動停止」で担保します。**（オーナー判断 / 2026-08-29）
 
 この決定により、[ロードマップ](../overview/roadmap.md) の Phase3 禁止事項**「手動の承認なしで実際の注文を出すこと」を正式に書き換える必要があります。** 黙って破らないでください。書き換えるときは、承認の代わりに何が安全を担保するのかを同じ文書に明記します。
 
@@ -81,9 +81,9 @@
 
 ### 4. 緊急停止（kill switch）の手段
 
-**決定済み: Cloud Scheduler の停止と設定フラグを正とする。**（オーナー判断 / 2026-08-29）
+**決定済み: Cloud Scheduler の停止と設定フラグを正とします。**（オーナー判断 / 2026-08-29）
 
-手順は [ロードマップ](../overview/roadmap.md) の「緊急停止（kill switch）」に記載しました。既存の [scheduler-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/scheduler-gcp.yml) に `pause` があるため、追加の実装は不要です。
+手順は [ロードマップ](../overview/roadmap.md) の「緊急停止（kill switch）」に記載しています。既存の [scheduler-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/scheduler-gcp.yml) に `pause` があるため、追加の実装は不要です。
 
 **注意: Scheduler を止めても、すでに保有しているポジションはそのまま残ります。** 決済は取引所の画面から手動で行います。急いで損失を止めたい場合は、Scheduler の停止と並行して手動決済してください。
 

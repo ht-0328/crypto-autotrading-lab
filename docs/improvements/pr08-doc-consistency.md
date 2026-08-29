@@ -70,7 +70,7 @@
 
 ### 3. 復旧手順の新規作成
 
-`docs/operations/real-trading-recovery.md` を作成する。設計書には「復旧は手動によるフラグリセット」とだけ書かれており、具体的な手順がどこにもない。
+`docs/operations/real-trading-recovery.md` を作成します。設計書には「復旧は手動によるフラグリセット」とだけ書かれており、具体的な手順がどこにもありません。
 
 含める内容:
 
@@ -83,12 +83,12 @@
 
 ### 4. 文書の鮮度管理
 
-[docs/templates/](../templates/) のテンプレートに、文書冒頭へ次を入れる欄を追加する。
+[docs/templates/](../templates/) のテンプレートに、文書冒頭へ次を入れる欄を追加します。
 
 - **状態**: 現行 / 将来案 / 廃止
 - **最終確認日**: `YYYY-MM-DD`
 
-[docs/templates/README.md](../templates/README.md) にも運用方法を1行追記する。
+[docs/templates/README.md](../templates/README.md) にも運用方法を1行追記します。
 
 ## 受け入れ条件
 
@@ -101,7 +101,7 @@
 
 ## 検証
 
-ドキュメントのみのため `./gradlew build` は不要。次を確認する。
+ドキュメントのみのため `./gradlew build` は不要です。次を確認します。
 
 - 追加・変更したリンクがすべて有効であること（相対パス）
 - [docs/README.md](../README.md) の「ドキュメントリンク方針」に沿っていること

@@ -76,7 +76,7 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 
 ## 第4波: ドキュメントサイト（Zensical）への対応
 
-`docs/` 配下を [Zensical](https://zensical.org/) で静的サイト化し、[GitHub Pages](https://ht-0328.github.io/crypto-autotrading-lab/) で公開しました。これにより、これまで問題にならなかった書き方が公開サイト上で実害を出しています。
+`docs/` 配下を [Zensical](https://zensical.org/) で静的サイト化し、[GitHub Pages](https://ht-0328.github.io/crypto-autotrading-lab/) で公開しています。これにより、これまで問題にならなかった書き方が公開サイト上で実害を出しています。
 
 | 状態 | ファイル | 内容 | 重要度 |
 | --- | --- | --- | --- |

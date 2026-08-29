@@ -36,7 +36,7 @@
 ### C. 状態の永続化と排他
 
 - [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は GCS を `/mnt/gcs` にマウントしています。GCS の FUSE マウントは**原子的な置き換えに対応していません**（[StateRepository](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) がフォールバックしています）。書き込み中にジョブが落ちたとき、`state.json` が壊れないことを実際に確認してください。
-- [PLAN02](plan02-order-safety-guards.md) で入れた重複実行の抑止が、本番の Cloud Run Job で実際に効くことを確認する。
+- [PLAN02](plan02-order-safety-guards.md) で入れた重複実行の抑止が、本番の Cloud Run Job で実際に効くことを確認してください。
 
 ### D. 障害を起こしてみる（リハーサル）
 

@@ -34,7 +34,7 @@
 
 ## 実施手順
 
-上から順に実施してください。前の手順が終わってから次に進みます。
+上から順に実施する。前の手順が終わってから次に進む。
 
 ### 1. docker/compose/local.yml を直す
 
@@ -48,7 +48,7 @@
   - API_PRIVATE_BASE_URL=${API_PRIVATE_BASE_URL:-http://wiremock:8080/private}
   ```
 
-  既定を WireMock 向けにするのが要点です。README の手順をそのまま実行した人が本物の GMO API を叩かないようにします。
+  既定を WireMock 向けにするのが要点である。README の手順をそのまま実行した人が本物の GMO API を叩かないようにする。
 - `APP_CONFIG_PATH` は `/app/config/application-wiremock.yaml` に変更する（既定を WireMock に寄せるため）。
 - `config` のマウントを読み取り専用（`:ro`）にする。アプリが設定を書き換えることはないため。
 
@@ -65,7 +65,7 @@ options:
   - SimpleContrarianStrategy
 ```
 
-正は [TradingApplication.createStrategy()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `when` 式です。
+正は [TradingApplication.createStrategy()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `when` 式である。
 
 ### 3. ズレを検知するテストを用意する
 

@@ -13,7 +13,7 @@
 
 ## 対象の問題
 
-[Zensical](https://zensical.org/) による [ドキュメントサイト](https://ht-0328.github.io/crypto-autotrading-lab/) を公開したことで、これまで問題にならなかったリンクの書き方が実害を出すようになりました。
+[Zensical](https://zensical.org/) による [ドキュメントサイト](https://ht-0328.github.io/crypto-autotrading-lab/) を公開したことで、これまで問題にならなかったリンクの書き方が実害を出すようになっています。
 
 Zensical がビルドするのは `docs/` 配下だけです。`docs/` の外を指す相対リンクは、GitHub 上で Markdown を直接読むときは正しく動きますが、**公開サイトでは 404 になります**。
 

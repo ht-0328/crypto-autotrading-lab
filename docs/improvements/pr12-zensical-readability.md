@@ -13,7 +13,7 @@
 
 ## 対象の問題
 
-[ドキュメントサイト](https://ht-0328.github.io/crypto-autotrading-lab/) を公開したことで、既存ドキュメントの書き方のうち「GitHub 上で読む前提」で書かれていた部分が目立つようになりました。リンク切れ（[pr11-zensical-broken-links.md](pr11-zensical-broken-links.md)）とは別に、次の4点があります。
+[ドキュメントサイト](https://ht-0328.github.io/crypto-autotrading-lab/) を公開したことで、既存ドキュメントの書き方のうち「GitHub 上で読む前提」で書かれていた部分が目立つようになっています。リンク切れ（[pr11-zensical-broken-links.md](pr11-zensical-broken-links.md)）とは別に、次の4点があります。
 
 ### A. 安全に関わる警告が本文に埋もれる
 
