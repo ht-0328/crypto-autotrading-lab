@@ -121,4 +121,4 @@ grep -A3 'real_trading' build/ci-config/application-ci-docker.yaml   # 常に fa
 
 - 実注文の SELL 自体の実装（Phase3）
 - Cloud Run の Secret / Private API 権限の削除。実注文を Phase3 で使う前提のため今回は残す（[backlog.md](backlog.md) で扱う）
-- 仕様書側の記述整理（[pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md)）
+- 仕様書側の記述整理（[PR07](pr07-real-order-spec-separation.md)）

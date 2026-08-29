@@ -17,13 +17,13 @@
 
 ## なぜ直すか
 
-- **T（中）**: [ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が `toIntOrNull()` / `toBooleanStrictOrNull()` を使っており、環境変数の書き間違いが黙ってベース値へフォールバックします。運用者は設定に失敗したことに気付けません。
-- **B の残り（高）**: `order_sizing_mode` だけ環境変数で上書きできず、Cloud Run では設定ファイルの値から変更できません。
-- **D（低）**: `stop_on_unconfirmed_order` は読み込まれるだけで、どの判定にも使われていません（[RealTradingSafetyChecker](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は値に関係なく常に停止する）。設定項目の意味と実装が一致していません。
+- **T（中）**: [ConfigLoader.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/config/ConfigLoader.kt) が `toIntOrNull()` などを使っています。環境変数の書き間違いが、黙ってベース値へフォールバックします。運用者は設定に失敗したことに気付けません。
+- **B の残り（高）**: `order_sizing_mode` だけ環境変数で上書きできません。Cloud Run では設定ファイルの値から変えられません。
+- **D（低）**: `stop_on_unconfirmed_order` は読み込まれるだけです。どの判定にも使われていません（[RealTradingSafetyChecker](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) は値に関係なく常に停止する）。設定項目の意味と実装が一致していません。
 - **Z（低）**: 設定の切り替えが sed による YAML 書き換えで2箇所に散在しています。`ConfigLoader` は環境変数上書きに対応済みなので sed は不要です。
-- **C（中、乖離解消のみ）**: gcloud と Terraform で Cloud Run Job に渡す環境変数の集合が食い違っています。一本化は [backlog.md](backlog.md) 送りですが、食い違いだけは消します。
-- **AD（中、作業中に発見）**: Terraform の `output_path` / `state_path` の既定値が絶対パスですが、アプリは `Paths.get(APP_DATA_DIR, statePath)` で連結するため `/mnt/gcs/data/mnt/gcs/data/state.json` になります。`terraform apply` を運用していないため実害は出ていません。
-- **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡すため、[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を実際に読むようにしたことで「API のベースURLが空のまま起動する」経路ができています。
+- **C（中、乖離解消のみ）**: gcloud と Terraform で、Cloud Run Job に渡す環境変数が食い違っています。一本化は [backlog.md](backlog.md) 送りですが、食い違いだけは消します。
+- **AD（中、作業中に発見）**: Terraform の `output_path` / `state_path` の既定値は絶対パスです。しかしアプリは `Paths.get(APP_DATA_DIR, statePath)` で連結するため `/mnt/gcs/data/mnt/gcs/data/state.json` になります。`terraform apply` を運用していないため実害は出ていません。
+- **AE（高、作業中に発見）**: 文字列の環境変数が空文字でも値として採用されます。`deploy-gcp.yml` は未登録の GitHub Variable を空文字で渡します。[pr02](pr02-cloud-run-config.md) で `API_PUBLIC_BASE_URL` を実際に読むようにしたことで「API のベースURLが空のまま起動する」経路ができています。
 
 ## 変更対象
 
@@ -43,7 +43,7 @@
 
 ### 1. 環境変数のパースを fail-fast にする
 
-`ConfigLoader.overrideWithEnvVars()` で、**環境変数が空でないのに変換できない場合は起動時例外**にする。
+`ConfigLoader.overrideWithEnvVars()` で、**環境変数が空でないのに変換できない場合は起動時例外**にします。
 
 ```kotlin
 private fun requireInt(name: String, base: Int): Int {
@@ -53,11 +53,11 @@ private fun requireInt(name: String, base: Int): Int {
 }
 ```
 
-**空文字は「未指定」として従来どおりベース値を使うこと。** [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は未設定の GitHub Variable を `${{ vars.X }}` で空文字として渡すため、ここを例外にすると既存デプロイが壊れます。
+**空文字は「未指定」として従来どおりベース値を使うこと。** [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は未設定の GitHub Variable を空文字として渡します。ここを例外にすると既存デプロイが壊れます。
 
-例外メッセージには**変数名だけ**を含め、値は含めないこと（設定値が秘密情報である可能性があるため）。
+例外メッセージには**変数名だけ**を含め、値は含めません。設定値が秘密情報である可能性があるため。
 
-`Boolean` 用にも同様のヘルパを用意する。
+`Boolean` 用にも同様のヘルパを用意します。
 
 ### 2. order_sizing_mode を環境変数で上書きできるようにする
 
@@ -71,13 +71,13 @@ orderSizingMode = System.getenv("TRADING_ORDER_SIZING_MODE")
     ?: base.trading.orderSizingMode
 ```
 
-[cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) と [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) からも渡せるようにする。
+[cloud-run-job.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/cloud-run-job.tf) と [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) からも渡せるようにします。
 
 ### 3. stop_on_unconfirmed_order の扱いを決める
 
 **設定キーは残し、実装は現行の「常に停止」を維持します。** [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) の「既存の公開API、設定キー、その意味を壊しません」に従うためと、`false` を実際に効かせると未確認注文がある状態でも発注できてしまい安全側に倒す原則に反するためです。
 
-- [RealTradingConfig.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/realtrading/RealTradingConfig.kt) の KDoc に「Phase1〜Phase3 では値に関わらず常に停止する。`false` は将来用の予約」と書く。
+- [RealTradingConfig.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/realtrading/RealTradingConfig.kt) の KDoc に方針を書く。「Phase1〜Phase3 では値に関わらず常に停止する。`false` は将来用の予約」とする。
 - `false` が指定された場合は起動時に警告ログを出す。
 - [real-trading-gmo-order.md](../specifications/features/real-trading-gmo-order.md) の該当箇所にも同じ内容を書く。
 
@@ -91,9 +91,9 @@ orderSizingMode = System.getenv("TRADING_ORDER_SIZING_MODE")
 両者が Cloud Run Job に渡す環境変数の集合を突き合わせ、片方にしかないものを埋める。
 
 - `deploy-gcp.yml` に不足: `TRADING_COOLDOWN_LENGTH`, `TRADING_ATR_*`, `REAL_TRADING_*`, `TRADING_ORDER_SIZING_MODE`
-- 双方に `APP_DATA_DIR` があること（[pr02-cloud-run-config.md](pr02-cloud-run-config.md) で Terraform 側に追加済みのはず）
+- 双方に `APP_DATA_DIR` があること（[PR02](pr02-cloud-run-config.md) で Terraform 側に追加済みのはず）
 
-[infra/terraform/gcp/README.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/README.md) に明記する。
+[infra/terraform/gcp/README.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/README.md) に明記します。
 
 > **現状**: `terraform apply` は運用していません。Cloud Run Job の正は GitHub Actions（`deploy-gcp.yml` の `gcloud run jobs deploy`）です。Terraform コードは同じ構成を宣言的に保つために維持しており、環境変数の集合は gcloud 側と一致させています。一本化は今後の課題です。
 

@@ -73,4 +73,4 @@ docker rm -f unrelated-check
 
 ## スコープ外
 
-- [docker/compose/local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) 自体の修正（`restart: unless-stopped` の削除など）は [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md) で行う。
+- [docker/compose/local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) 自体の修正（`restart: unless-stopped` の削除など）は [PR09](pr09-ci-compose-consistency.md) で行う。

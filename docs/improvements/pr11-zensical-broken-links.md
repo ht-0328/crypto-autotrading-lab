@@ -84,23 +84,23 @@ Zensical がビルドするのは `docs/` 配下だけです。`docs/` の外を
 | ファイル | 直す件数 |
 | --- | --- |
 | [findings.md](findings.md) | 47 |
-| [pr10-config-fail-fast.md](pr10-config-fail-fast.md) | 18 |
+| [PR10](pr10-config-fail-fast.md) | 18 |
 | [backlog.md](backlog.md) | 12 |
-| [pr02-cloud-run-config.md](pr02-cloud-run-config.md) | 12 |
-| [pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md) | 11 |
-| [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md) | 11 |
+| [PR02](pr02-cloud-run-config.md) | 12 |
+| [PR05](pr05-phase1-real-order-guard.md) | 11 |
+| [PR09](pr09-ci-compose-consistency.md) | 11 |
 | [plans/plan01-real-sell-order.md](../plans/plan01-real-sell-order.md) | 11 |
-| [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md) | 8 |
-| [pr08-doc-consistency.md](pr08-doc-consistency.md) | 7 |
-| [pr03-private-api-log-leak.md](pr03-private-api-log-leak.md) | 6 |
+| [PR06](pr06-backtest-execution-model.md) | 8 |
+| [PR08](pr08-doc-consistency.md) | 7 |
+| [PR03](pr03-private-api-log-leak.md) | 6 |
 | [docs/README.md](README.md) | 4 |
-| [pr04-state-repository-crash-safe.md](pr04-state-repository-crash-safe.md) | 5 |
+| [PR04](pr04-state-repository-crash-safe.md) | 5 |
 | [plans/plan00-phase-and-safety-contract.md](../plans/plan00-phase-and-safety-contract.md) | 5 |
 | [plans/plan02-order-safety-guards.md](../plans/plan02-order-safety-guards.md) | 5 |
 | [plans/plan03-notification.md](../plans/plan03-notification.md) | 5 |
 | [development/setup.md](../development/setup.md) | 4 |
-| [pr01-docker-clean-scope.md](pr01-docker-clean-scope.md) | 4 |
-| [pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md) | 4 |
+| [PR01](pr01-docker-clean-scope.md) | 4 |
+| [PR07](pr07-real-order-spec-separation.md) | 4 |
 | [improvements/README.md](README.md) | 3 |
 | [plans/plan04-production-wiring-and-rehearsal.md](../plans/plan04-production-wiring-and-rehearsal.md) | 3 |
 | [plans/README.md](../plans/README.md) | 2 |
@@ -239,6 +239,6 @@ sys.exit(1 if found else 0)
 
 ## スコープ外
 
-- 公開サイトでの読みやすさの改善（[pr12-zensical-readability.md](pr12-zensical-readability.md)）
+- 公開サイトでの読みやすさの改善（[PR12](pr12-zensical-readability.md)）
 - ドキュメントの内容そのものの修正。**リンク先を変えるだけで、文章は書き換えません。**
 - `.md` 以外へのリンク切れを CI で検出する仕組み。`--strict` でも検出できませんが、手順1のスクリプトで代替できるため今回は入れません。必要になったら [backlog.md](backlog.md) に登録してください。

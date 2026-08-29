@@ -123,6 +123,6 @@ terraform validate
 
 ## スコープ外
 
-- `order_sizing_mode` の環境変数上書き追加（[pr10-config-fail-fast.md](pr10-config-fail-fast.md)）
-- gcloud と Terraform の環境変数集合の突き合わせ（[pr10-config-fail-fast.md](pr10-config-fail-fast.md)）
-- [docker/compose/local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) の修正（[pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md)）
+- `order_sizing_mode` の環境変数上書き追加（[PR10](pr10-config-fail-fast.md)）
+- gcloud と Terraform の環境変数集合の突き合わせ（[PR10](pr10-config-fail-fast.md)）
+- [docker/compose/local.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/docker/compose/local.yml) の修正（[PR09](pr09-ci-compose-consistency.md)）

@@ -113,6 +113,6 @@
 - **対象**: [findings.md](findings.md) の X
 - **問題**: [resolveKlineTargetDate()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) が取得対象日を朝6時で切り替える。
   そのため毎日 6:00〜約7:15 は必要な本数（最大15本）が揃わず、判定がスキップされる。保有中でも利確・損切りが働かない。
-- **方向性**: 前日分と当日分の2日分を取得してマージする。[pr08-doc-consistency.md](pr08-doc-consistency.md) で挙動を仕様書に明記するところまでは実施済みの想定。
+- **方向性**: 前日分と当日分の2日分を取得してマージする。[PR08](pr08-doc-consistency.md) で挙動を仕様書に明記するところまでは実施済みの想定。
 - **重要度**: 中 / **工数感**: M
 - **状態**: 実施済み（[PLAN02](../plans/plan02-order-safety-guards.md) の一環）。

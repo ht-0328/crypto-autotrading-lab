@@ -23,7 +23,7 @@
 - [roadmap.md](../overview/roadmap.md) の Phase1 禁止事項に「**実際の注文を送ること**」と書かれている。
 - しかし [RealTradingService.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は `placeOrder` まで実装済みで、[secrets.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/secrets.tf) は GMO APIキーの Secret も作っている。
 
-どちらが正なのか読み手が判断できません。**実装を消すのではなく、仕様側で「Phase3 の先行実装であり Phase1 では実行できない」と位置づけ直します**（[pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md) で実際に実行できなくします）。
+どちらが正なのか読み手が判断できません。**実装を消すのではなく、仕様側で「Phase3 の先行実装であり Phase1 では実行できない」と位置づけ直します**（[PR05](pr05-phase1-real-order-guard.md) で実際に実行できなくします）。
 
 分離先を Phase3 にする理由: [roadmap.md](../overview/roadmap.md) 上、実注文は Phase3「実注文 + 手動承認 + 安全制御」の内容です。Phase2 の禁止事項にも「自動で実際の注文を出すこと」があります。
 
@@ -83,5 +83,5 @@
 
 ## スコープ外
 
-- 実注文を実行不能にする実装（[pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md)）
-- その他の仕様書の食い違い（[pr08-doc-consistency.md](pr08-doc-consistency.md)）
+- 実注文を実行不能にする実装（[PR05](pr05-phase1-real-order-guard.md)）
+- その他の仕様書の食い違い（[PR08](pr08-doc-consistency.md)）

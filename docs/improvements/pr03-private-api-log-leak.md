@@ -25,7 +25,7 @@ logger.info { "GMO Private API raw response: $responseText" }
 
 口座残高・保有数量・注文内容が `APP_DATA_DIR/app.log` に平文で残ります。[AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) の絶対厳守事項「秘密情報を…ログにも出しません」に抵触します。
 
-**[pr02-cloud-run-config.md](pr02-cloud-run-config.md) より先に実施してください。** 先に標準出力へのログ出力を追加すると、この情報が Cloud Logging にも載ります。
+**[PR02](pr02-cloud-run-config.md) より先に実施してください。** 先に標準出力へのログ出力を追加すると、この情報が Cloud Logging にも載ります。
 
 ## 変更対象
 
@@ -81,5 +81,5 @@ grep -iE 'available|amount|orderId|"data"' data/local-devcontainer/app.log
 
 ## スコープ外
 
-- 標準出力へのログ出力の追加（[pr02-cloud-run-config.md](pr02-cloud-run-config.md)）
+- 標準出力へのログ出力の追加（[PR02](pr02-cloud-run-config.md)）
 - HTTP ステータス検証やリトライ方針の見直し（[backlog.md](backlog.md) の指摘 AC）

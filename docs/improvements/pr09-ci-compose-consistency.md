@@ -109,6 +109,6 @@ docker compose -f docker/compose/local.yml down
 
 ## スコープ外
 
-- `ci.yml` の `dry_run` 入力の削除（[pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md)）
-- Dockerfile への設定ファイル同梱（[pr02-cloud-run-config.md](pr02-cloud-run-config.md)）
-- `docker-clean.sh` の修正（[pr01-docker-clean-scope.md](pr01-docker-clean-scope.md)）
+- `ci.yml` の `dry_run` 入力の削除（[PR05](pr05-phase1-real-order-guard.md)）
+- Dockerfile への設定ファイル同梱（[PR02](pr02-cloud-run-config.md)）
+- `docker-clean.sh` の修正（[PR01](pr01-docker-clean-scope.md)）

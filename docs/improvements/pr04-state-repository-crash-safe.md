@@ -83,5 +83,5 @@ cd projects/crypto-autotrading-app
 
 ## スコープ外
 
-- 注文 POST と状態保存の順序変更（[pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md)）
+- 注文 POST と状態保存の順序変更（[PR05](pr05-phase1-real-order-guard.md)）
 - CSV 出力（`CsvRepository`）の同様の対応。今回は state.json に絞る

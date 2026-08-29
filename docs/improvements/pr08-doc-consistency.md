@@ -46,7 +46,7 @@
 ### 1. phase1-simulation.md の修正
 
 - **53行付近（出力仕様）**: `data/history_20260501.csv` → `data/trades_20260501.csv`。実装は [CsvRepository.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/CsvRepository.kt) で `trades.csv` → `trades_YYYYMMDD.csv` に変換している。
-- **54行付近（出力仕様）**: ログ出力を「標準出力とファイル（`APP_DATA_DIR/app.log`）の両方」に修正する。[pr02-cloud-run-config.md](pr02-cloud-run-config.md) の実施後の状態に合わせること。
+- **54行付近（出力仕様）**: ログ出力を「標準出力とファイル（`APP_DATA_DIR/app.log`）の両方」に修正する。[PR02](pr02-cloud-run-config.md) の実施後の状態に合わせること。
 - **74行付近（判定条件・業務ルール）**: `order_sizing_mode` の節を追加する。
 
   | モード | 動作 | Phase1 での扱い |
@@ -108,6 +108,6 @@
 
 ## スコープ外
 
-- 実注文の Phase 分離（[pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md)）
-- バックテスト仕様の約定モデル変更（[pr06-backtest-execution-model.md](pr06-backtest-execution-model.md)）
+- 実注文の Phase 分離（[PR07](pr07-real-order-spec-separation.md)）
+- バックテスト仕様の約定モデル変更（[PR06](pr06-backtest-execution-model.md)）
 - 6時境界の挙動そのものの改善（記載のみ。改善は [backlog.md](backlog.md)）
