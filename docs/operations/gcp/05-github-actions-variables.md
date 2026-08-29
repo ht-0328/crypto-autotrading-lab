@@ -94,7 +94,7 @@ GitHub の画面から設定値を登録します。
 
 !!! warning "API_BASE_URL は使われません"
 
-    以前は `API_BASE_URL` を登録する運用でしたが、アプリはこの名前を読みません。`API_PUBLIC_BASE_URL` と `API_PRIVATE_BASE_URL` に登録し直し、古い `API_BASE_URL` は削除してください。
+    `API_BASE_URL` を登録する運用は廃止しました。アプリはこの名前を読みません。`API_PUBLIC_BASE_URL` と `API_PRIVATE_BASE_URL` に登録し直し、古い `API_BASE_URL` は削除してください。
 
 !!! note "取引戦略（strategy_name）について"
 

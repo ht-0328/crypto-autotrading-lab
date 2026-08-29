@@ -42,7 +42,7 @@ logger.info { "GMO Private API raw response: $responseText" }
    grep -n 'responseText' projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt
    ```
 
-   現時点では 54, 58, 64, 76, 80, 89, 121, 129, 144, 150, 165, 171 行付近に、レスポンス本文をログ・例外メッセージへ入れている箇所があります。
+   2026-08-29 時点では 54, 58, 64, 76, 80, 89, 121, 129, 144, 150, 165, 171 行付近に、レスポンス本文をログ・例外メッセージへ入れている箇所があります。
 
 2. 各箇所を、本文を含まない形に置き換える。残してよいのは次の情報だけ。
    - HTTP ステータスコード

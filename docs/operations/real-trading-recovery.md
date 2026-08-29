@@ -49,7 +49,7 @@
 | `realTrading.isStopped` | `true` |
 | `realTrading.stopReason` | 停止のきっかけになった例外のメッセージ |
 | `realTrading.stoppedAt` | 停止した日時（Asia/Tokyo） |
-| `realTrading.latestOrder` | 停止時点で把握していた最新の注文情報 |
+| `realTrading.latestOrder` | 停止時点で把握していた最後の注文情報 |
 
 ## ロックファイルが残っている場合
 

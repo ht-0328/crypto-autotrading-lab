@@ -98,7 +98,7 @@ flowchart TD
 - `application` が GMO APIから最新価格 10,000,000 円を取得する
 - `domain` の `SafeReboundStrategy` が `BUY_CANDIDATE` を返す
 - `domain` の `SimulationService` が仮想資金を減らし保有量を増やす
-- `infrastructure` が `state.json` に最新の保有情報を書き込む
+- `infrastructure` が `state.json` に直近の保有情報を書き込む
 
 ## 12. テスト方針
 

@@ -72,9 +72,9 @@ options:
 選択肢と実装が再びズレないよう、[TradingApplicationTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/application/TradingApplicationTest.kt) で次を確認する。
 
 - 5つの戦略名すべてで対応する Strategy が生成されること
-- 未知の戦略名を渡すと例外になること（現在は `error()`）
+- 未知の戦略名を渡すと例外になること（着手前の実装では `error()`）
 
-**既存のテストがすでに両方を満たしているため、追加は不要だった。** ワークフロー側の選択肢が実装とズレていても CI は失敗しない点は変わらないので、ズレの検知は今後もレビューで担保する。
+**既存のテストがすでに両方を満たしているため、追加は不要だった。** ワークフロー側の選択肢が実装とズレていても CI は失敗しない点は変わらない。ズレの検知はレビューで担保する。
 
 ### 4. 重複した CI ステップを削除する
 

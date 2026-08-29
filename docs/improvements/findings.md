@@ -83,6 +83,6 @@
 | --- | --- |
 | 朝6時境界で K線が不足し、ATR や MA5 の計算で例外が発生する | 誤り。各 Strategy に「データ不足」ガードがあり例外は起きない。ただし判定がスキップされ続ける問題は実在するため、指摘 X として記録した |
 | Terraform の `APP_DATA_DIR` 欠落により `state.json` と CSV が消える | 半分誤り。`output_path` / `state_path` は `/mnt/gcs/...` の絶対パスなので残る。消えるのは `app.log` だけ（指摘 H として記録） |
-| `ci.yml` で `dry_run: false` を選ぶと実発注が飛ぶ | 現状では起きない。`private_base_url` が常に WireMock 固定で `DummyGmoCredentialProvider` が使われる。ただし将来の踏み外しを招くため指摘 K として記録した |
+| `ci.yml` で `dry_run: false` を選ぶと実発注が飛ぶ | 2026-08-30 時点では起きない。`private_base_url` が常に WireMock 固定で `DummyGmoCredentialProvider` が使われる。ただし将来の踏み外しを招くため指摘 K として記録した |
 | 実注文前に GMO の JPY 残高を確認していない | 誤り。`RealTradingService.checkJpyBalance()` で確認している |
 | バックテストの look-ahead により全戦略の成績が構造的に楽観化している（指摘 P の当初評価） | **過大評価だった。** 実際に修正前後を比較したところ、手数料・スリッページが 0 なら結果は完全に一致した。連続取引の市場では `open[i+1] == close[i]` となるため、次足始値での約定と当足終値での約定が同じ価格になる。差が出るのは K線に欠損・ギャップがある場合と、手数料・スリッページを設定した場合に限られる。修正自体はモデルとして正しいので維持した（詳細は [pr06](pr06-backtest-execution-model.md)） |

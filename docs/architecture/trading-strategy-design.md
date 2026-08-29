@@ -50,7 +50,7 @@
 ## 6. 処理フロー
 
 1. `application` が現在の設定から使用する Strategy 実装クラスを生成・取得する
-2. `application` が最新のK線リストと現在の状態（`SimulationState`）を Strategy に渡す
+2. `application` が直近のK線リストと現在の状態（`SimulationState`）を Strategy に渡す
 3. Strategy が内部で計算（MAやATRなど）を行い、`TradeDecision` を返す
 4. `application` がその `TradeDecision` を `SimulationService`（またはリアル注文サービス）に渡す
 5. `SimulationService` が新しい状態（更新された `SimulationState`）を返す

@@ -85,7 +85,7 @@ return currentState.copy(
 
 ### 5. 発注の「意図」を送信前に保存する
 
-現在は注文が受け付けられてから `orderId` を保存します（[buildOrderedState()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt)）。POST 送信後・保存前に落ちると、取引所には注文があるのにアプリ側に記録が無い状態になります。
+着手前の実装は、注文が受け付けられてから `orderId` を保存します（[buildOrderedState()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt)）。POST 送信後・保存前に落ちると、取引所には注文があるのにアプリ側に記録が無い状態になります。
 
 **発注する直前に「これから何を注文するか」を state に書いてから POST する**（意図の先行保存）ようにしてください。次回起動時に、意図が残っていて結果が未確認なら、注文照会で照合してから次に進みます。これは SELL だけの話ではなく BUY にも必要ですが、SELL の実装で注文の状態遷移に手を入れるこの計画でまとめて直すのが自然です。
 
