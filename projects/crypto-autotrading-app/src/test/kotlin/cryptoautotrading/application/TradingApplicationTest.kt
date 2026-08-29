@@ -85,6 +85,135 @@ class TradingApplicationTest {
         assertEquals("20260831", invokeResolveKlineTargetDate(app))
     }
 
+
+    @Test
+    fun `前営業日の日付も取得対象になること`() {
+        val app = createApp(fixedJstClock("2026-08-29T10:00:00"))
+
+        assertEquals("20260828", invokeResolvePreviousKlineTargetDate(app))
+    }
+
+    @Test
+    fun `朝6時より前は前々日が前営業日になること`() {
+        // 5:59 時点の当営業日は前日(28日)なので、その前は27日になる
+        val app = createApp(fixedJstClock("2026-08-29T05:59:59"))
+
+        assertEquals("20260827", invokeResolvePreviousKlineTargetDate(app))
+    }
+
+    @Test
+    fun `6時を過ぎた直後でも前営業日分を合わせて判定に必要な本数が揃うこと`() = kotlinx.coroutines.test.runTest {
+        // 当営業日はまだ1本しか無い状況を作る
+        val boundaryMillis = java.time.LocalDateTime.parse("2026-08-29T06:00:00")
+            .atZone(cryptoautotrading.domain.time.TradingTime.ZONE)
+            .toInstant()
+            .toEpochMilli()
+        val fiveMinutes = 5 * 60 * 1000L
+
+        val previousDayKlines = (0 until 11).map { index ->
+            flatKline(boundaryMillis - (11 - index) * fiveMinutes)
+        }
+        val currentDayKlines = listOf(flatKline(boundaryMillis))
+
+        val marketDataClient = mockk<cryptoautotrading.domain.repository.MarketDataClient>()
+        io.mockk.coEvery { marketDataClient.getTicker(any()) } returns
+            cryptoautotrading.domain.model.TickerResponse(status = 0, data = emptyList(), responsetime = "2026-01-01")
+        io.mockk.coEvery { marketDataClient.getKlines(any(), any(), "20260828") } returns
+            cryptoautotrading.domain.model.KlineResponse(status = 0, data = previousDayKlines, responsetime = "2026-01-01")
+        io.mockk.coEvery { marketDataClient.getKlines(any(), any(), "20260829") } returns
+            cryptoautotrading.domain.model.KlineResponse(status = 0, data = currentDayKlines, responsetime = "2026-01-01")
+
+        val stateRepository = mockk<cryptoautotrading.domain.repository.SimulationStateRepository>()
+        io.mockk.coEvery { stateRepository.load() } returns cryptoautotrading.domain.model.SimulationState(
+            cashBalance = java.math.BigDecimal("5000"),
+            isHolding = true,
+            buyPrice = java.math.BigDecimal("1000"),
+            holdingAmount = java.math.BigDecimal("0.5"),
+            lastUpdatedAt = "2026-08-29T05:55:00"
+        )
+        val savedStates = mutableListOf<cryptoautotrading.domain.model.SimulationState>()
+        io.mockk.coEvery { stateRepository.save(capture(savedStates)) } returns Unit
+
+        val app = TradingApplication(
+            config = createAppConfig("SafeReboundStrategy"),
+            marketDataClient = marketDataClient,
+            stateRepository = stateRepository,
+            tradeHistoryRepository = mockk(relaxed = true),
+            resultOutputPort = mockk(relaxed = true),
+            realTradingExchangeClient = null,
+            clock = fixedJstClock("2026-08-29T06:05:00")
+        )
+
+        app.run()
+
+        // 前営業日分が無ければデータ不足で見送りになる。合わせて12本になり判定できること
+        io.mockk.coVerify { marketDataClient.getKlines(any(), any(), "20260828") }
+        assertTrue(savedStates.isNotEmpty(), "判定まで到達して状態が保存されること")
+    }
+
+    @Test
+    fun `前営業日分の取得に失敗しても当営業日分で処理が続くこと`() = kotlinx.coroutines.test.runTest {
+        val latestOpenTime = java.time.LocalDateTime.parse("2026-08-29T10:00:00")
+            .atZone(cryptoautotrading.domain.time.TradingTime.ZONE)
+            .toInstant()
+            .toEpochMilli()
+        val fiveMinutes = 5 * 60 * 1000L
+        val currentDayKlines = (0 until 12).map { index ->
+            flatKline(latestOpenTime - (11 - index) * fiveMinutes)
+        }
+
+        val marketDataClient = mockk<cryptoautotrading.domain.repository.MarketDataClient>()
+        io.mockk.coEvery { marketDataClient.getTicker(any()) } returns
+            cryptoautotrading.domain.model.TickerResponse(status = 0, data = emptyList(), responsetime = "2026-01-01")
+        io.mockk.coEvery { marketDataClient.getKlines(any(), any(), "20260828") } throws
+            IllegalStateException("前営業日分の取得に失敗")
+        io.mockk.coEvery { marketDataClient.getKlines(any(), any(), "20260829") } returns
+            cryptoautotrading.domain.model.KlineResponse(status = 0, data = currentDayKlines, responsetime = "2026-01-01")
+
+        val stateRepository = mockk<cryptoautotrading.domain.repository.SimulationStateRepository>()
+        io.mockk.coEvery { stateRepository.load() } returns cryptoautotrading.domain.model.SimulationState(
+            cashBalance = java.math.BigDecimal("5000"),
+            isHolding = true,
+            buyPrice = java.math.BigDecimal("1000"),
+            holdingAmount = java.math.BigDecimal("0.5"),
+            lastUpdatedAt = "2026-08-29T09:55:00"
+        )
+        val savedStates = mutableListOf<cryptoautotrading.domain.model.SimulationState>()
+        io.mockk.coEvery { stateRepository.save(capture(savedStates)) } returns Unit
+
+        val app = TradingApplication(
+            config = createAppConfig("SafeReboundStrategy"),
+            marketDataClient = marketDataClient,
+            stateRepository = stateRepository,
+            tradeHistoryRepository = mockk(relaxed = true),
+            resultOutputPort = mockk(relaxed = true),
+            realTradingExchangeClient = null,
+            clock = fixedJstClock("2026-08-29T10:05:00")
+        )
+
+        app.run()
+
+        // 前営業日分は補助なので、取れなくても当営業日分で判定を続ける
+        assertTrue(savedStates.isNotEmpty(), "処理が続いて状態が保存されること")
+    }
+
+    // Access private method via reflection for testing
+    private fun invokeResolvePreviousKlineTargetDate(app: TradingApplication): String {
+        val method = TradingApplication::class.java.getDeclaredMethod("resolvePreviousKlineTargetDate")
+        method.isAccessible = true
+        return method.invoke(app) as String
+    }
+
+    /** 値動きのない5分足を作る */
+    private fun flatKline(openTime: Long) = cryptoautotrading.domain.model.Kline(
+        openTime = openTime.toString(),
+        open = "1100",
+        high = "1100",
+        low = "1100",
+        close = "1100",
+        volume = "1"
+    )
+
     // Access private method via reflection for testing
     private fun invokeCreateStrategy(app: TradingApplication, config: TradingConfig): Any {
         val method = TradingApplication::class.java.getDeclaredMethod("createStrategy", TradingConfig::class.java)

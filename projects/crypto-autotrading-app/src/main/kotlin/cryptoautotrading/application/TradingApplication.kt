@@ -242,10 +242,60 @@ class TradingApplication(
      * @return 取得したK線データのリスト
      */
     private suspend fun fetchKlineData(): List<Kline> {
-        val targetDate = resolveKlineTargetDate()
-        val klineResponse = marketDataClient.getKlines(config.trading.symbol, config.app.interval, targetDate)
-        logger.debug { "取得したK線データ件数: ${klineResponse.data.size} 件" }
-        return klineResponse.data
+        // 取引所の営業日は朝6時に切り替わる。当日分だけを取得すると、6時を過ぎた直後は
+        // 判定に必要な本数が揃わず、保有中でも利確・損切りが働かない時間帯ができる。
+        // 前営業日分とあわせて取得し、境界をまたいで連続した系列にする。
+        val currentDate = resolveKlineTargetDate()
+        val previousDate = resolvePreviousKlineTargetDate()
+
+        val previousKlines = fetchKlinesForDate(previousDate, isRequired = false)
+        val currentKlines = fetchKlinesForDate(currentDate, isRequired = true)
+
+        val mergedKlines = (previousKlines + currentKlines)
+            .distinctBy { it.openTime }
+            .sortedBy { it.openTime }
+            .takeLast(KLINE_WINDOW_SIZE)
+
+        logger.debug {
+            "取得したK線データ件数: 前営業日=${previousKlines.size} 件, 当営業日=${currentKlines.size} 件, " +
+                "判定に使う直近=${mergedKlines.size} 件"
+        }
+        return mergedKlines
+    }
+
+    /**
+     * 指定した営業日のK線データを取得する。
+     *
+     * @param date 取得する営業日（形式: yyyyMMdd）
+     * @param isRequired 取得できないときに例外にするかどうか。
+     *   前営業日分は補助的なので、取得できなくても当日分だけで判定を続ける
+     * @return 取得したK線データのリスト
+     */
+    private suspend fun fetchKlinesForDate(date: String, isRequired: Boolean): List<Kline> {
+        return try {
+            marketDataClient.getKlines(config.trading.symbol, config.app.interval, date).data
+        } catch (e: Exception) {
+            if (isRequired) {
+                throw e
+            }
+            logger.warn(e) { "前営業日($date)のK線データを取得できませんでした。当営業日分だけで判定します。" }
+            emptyList()
+        }
+    }
+
+    /**
+     * 前営業日の日付を決定する。
+     *
+     * @return 対象日付の文字列（形式: yyyyMMdd）
+     */
+    private fun resolvePreviousKlineTargetDate(): String {
+        val nowJst = ZonedDateTime.now(clock)
+        val date = if (nowJst.hour < BUSINESS_DAY_START_HOUR) {
+            nowJst.minusDays(2)
+        } else {
+            nowJst.minusDays(1)
+        }
+        return date.format(DateTimeFormatter.ofPattern(KLINE_DATE_PATTERN))
     }
 
 /**
@@ -280,12 +330,12 @@ class TradingApplication(
      */
     private fun resolveKlineTargetDate(): String {
         val nowJst = ZonedDateTime.now(clock)
-        val date = if (nowJst.hour < 6) {
+        val date = if (nowJst.hour < BUSINESS_DAY_START_HOUR) {
             nowJst.minusDays(1)
         } else {
             nowJst
         }
-        return date.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+        return date.format(DateTimeFormatter.ofPattern(KLINE_DATE_PATTERN))
     }
 
 /**
@@ -354,5 +404,20 @@ class TradingApplication(
         }
         sb.append("============================================================")
         logger.info { sb.toString() }
+    }
+
+    private companion object {
+        /** 取引所の営業日が切り替わる時刻（日本時間） */
+        const val BUSINESS_DAY_START_HOUR = 6
+
+        /** K線データの取得対象日を表す形式 */
+        const val KLINE_DATE_PATTERN = "yyyyMMdd"
+
+        /**
+         * 判定に使うK線の本数。
+         * 最も多く必要とする Strategy でも15本程度なので、余裕をみてこの本数に絞る。
+         * 1日分すべてを検証対象にすると、判定に使わない古い箇所の欠損で見送りになってしまう。
+         */
+        const val KLINE_WINDOW_SIZE = 60
     }
 }

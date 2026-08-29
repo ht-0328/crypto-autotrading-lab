@@ -76,9 +76,10 @@
 - **重要度**: 中 / **工数感**: L
 - **注意**: [pr10-config-fail-fast.md](pr10-config-fail-fast.md) で「環境変数の食い違いを消す」ところまでは実施済みの想定。
 
-### 8. 6時境界で判定がスキップされる時間帯を減らす
+### 8. 6時境界で判定がスキップされる時間帯を減らす（実施済み）
 
 - **対象**: [findings.md](findings.md) の X
 - **問題**: [TradingApplication.resolveKlineTargetDate()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) が朝6時を境に取得対象日を切り替えるため、毎日 6:00〜約7:15 は必要な本数（最大15本）が揃わず判定がスキップされる。保有中でも利確・損切りが働かない。
 - **方向性**: 前日分と当日分の2日分を取得してマージする。[pr08-doc-consistency.md](pr08-doc-consistency.md) で挙動を仕様書に明記するところまでは実施済みの想定。
 - **重要度**: 中 / **工数感**: M
+- **状態**: 実施済み（[PLAN02](../plans/plan02-order-safety-guards.md) の一環）。

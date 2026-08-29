@@ -40,7 +40,7 @@ Claude Code / Codex / Antigravity の3ツールで現状を評価し、結果を
 | --- | --- | --- | --- |
 | 1 | [PLAN00: フェーズの定義と安全契約を確定する](plan00-phase-and-safety-contract.md) ✅ | どこまで行けば実資金を入れてよいかを数字で決める | 動かさない |
 | 2 | [PLAN01: 売り注文（SELL）を実注文で自動化する](plan01-real-sell-order.md) ✅ | 買い→保有→売り→現金 の1サイクルが閉じる | 動かさない |
-| 3 | [PLAN02: 実注文の前に必要な安全ガードを揃える](plan02-order-safety-guards.md) | 誤発注・二重発注・上限超過を止める | 動かさない |
+| 3 | [PLAN02: 実注文の前に必要な安全ガードを揃える](plan02-order-safety-guards.md) ✅ | 誤発注・二重発注・上限超過を止める | 動かさない |
 | 4 | [PLAN03: 通知を実装する（Phase2a）](plan03-notification.md) | 異常に人間が気づけて、危ないときは自動で止まる | 動かさない |
 | 5 | [PLAN04: 本番へ配線し、実注文なしでリハーサルする](plan04-production-wiring-and-rehearsal.md) | 本番環境と障害時の挙動を確認する | 動かさない |
 | 6 | [PLAN05: 最小額で実資金の1サイクルを通す（Phase3）](plan05-canary-with-real-money.md) | 監視下で実注文が1サイクル完結する | **動かす（最小額）** |
