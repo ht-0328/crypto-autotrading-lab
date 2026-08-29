@@ -25,6 +25,7 @@ class RealTradingSafetyChecker {
      * @param currentHoldingAssets GMO Private APIから取得した現在の保有資産のリスト
      * @param activeOrders GMO Private APIから取得した現在の未約定注文のリスト
      * @param currentPrice 現在の市場価格
+     * @param today 注文しようとしている日付（ISO形式の日付文字列）。1日の累計注文額の判定に使う
      * @return SafetyCheckResult 注文可否と理由
      */
     fun checkPreOrderSafety(
@@ -33,7 +34,8 @@ class RealTradingSafetyChecker {
         state: SimulationState,
         currentHoldingAssets: List<ExchangeAsset>,
         activeOrders: List<ExchangeActiveOrder>,
-        currentPrice: BigDecimal
+        currentPrice: BigDecimal,
+        today: String
     ): SafetyCheckResult {
 
         // 0. 入力値の妥当性チェック
@@ -85,7 +87,8 @@ class RealTradingSafetyChecker {
             logger.warn { "安全チェックNG: $reason" }
             return SafetyCheckResult(passed = false, reason = reason)
         }
-        val currentDailyOrdered = state.realTrading.dailyOrderedJpy
+        // 日付が変わっていれば、その日の累計は0から数え直す
+        val currentDailyOrdered = state.realTrading.dailyOrderedJpyOn(today)
         val newDailyTotal = currentDailyOrdered.add(BigDecimal(tradeAmount))
         if (newDailyTotal > BigDecimal(config.maxDailyOrderJpy)) {
             val reason = "1日の注文限度額超過"

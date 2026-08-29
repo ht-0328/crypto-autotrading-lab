@@ -21,6 +21,7 @@ class RealTradingSafetyCheckerTest {
     private lateinit var defaultConfig: RealTradingConfig
     private lateinit var defaultState: SimulationState
     private val currentPrice = BigDecimal("10000000") // 1,000,0000 JPY
+    private val TODAY = "2026-08-29"
 
     @BeforeEach
     fun setUp() {
@@ -44,7 +45,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertTrue(result.passed)
@@ -63,7 +65,8 @@ class RealTradingSafetyCheckerTest {
             state = state,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -80,7 +83,8 @@ class RealTradingSafetyCheckerTest {
             state = state,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -97,7 +101,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = assets,
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -125,7 +130,8 @@ class RealTradingSafetyCheckerTest {
             state = state,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -144,7 +150,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = activeOrders,
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -159,7 +166,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -176,7 +184,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -186,7 +195,7 @@ class RealTradingSafetyCheckerTest {
     @Test
     fun `dailyOrderedJpyとtradeAmountの合計がmaxDailyOrderJpyを超える場合は注文不可になること`() {
         val state = defaultState.copy(
-            realTrading = RealTradingState(dailyOrderedJpy = BigDecimal("46000"))
+            realTrading = RealTradingState(dailyOrderedDate = TODAY, dailyOrderedJpy = BigDecimal("46000"))
         )
 
         val result = checker.checkPreOrderSafety(
@@ -195,7 +204,8 @@ class RealTradingSafetyCheckerTest {
             state = state,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -212,7 +222,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -231,7 +242,8 @@ class RealTradingSafetyCheckerTest {
             state = state,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -248,7 +260,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -348,7 +361,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -363,7 +377,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -377,7 +392,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = BigDecimal.ZERO
+            currentPrice = BigDecimal.ZERO,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -392,7 +408,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState.copy(holdingAmount = BigDecimal("-0.01")),
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -401,7 +418,7 @@ class RealTradingSafetyCheckerTest {
     @Test
     fun `買い 1日の累計注文額が負の場合は注文不可になること`() {
         val brokenState = defaultState.copy(
-            realTrading = defaultState.realTrading.copy(dailyOrderedJpy = BigDecimal("-1"))
+            realTrading = defaultState.realTrading.copy(dailyOrderedDate = TODAY, dailyOrderedJpy = BigDecimal("-1"))
         )
 
         val result = checker.checkPreOrderSafety(
@@ -410,7 +427,8 @@ class RealTradingSafetyCheckerTest {
             state = brokenState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -424,7 +442,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -439,7 +458,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -453,7 +473,8 @@ class RealTradingSafetyCheckerTest {
             state = defaultState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -472,7 +493,8 @@ class RealTradingSafetyCheckerTest {
             state = stoppedState,
             currentHoldingAssets = emptyList(),
             activeOrders = emptyList(),
-            currentPrice = currentPrice
+            currentPrice = currentPrice,
+            today = TODAY
         )
 
         assertFalse(result.passed)
@@ -503,5 +525,29 @@ class RealTradingSafetyCheckerTest {
         )
 
         assertFalse(result.passed)
+    }
+
+    @Test
+    fun `日付が変わっていれば前日の累計注文額は判定に使われないこと`() {
+        // 前日に上限近くまで注文していても、日付が変われば当日分は0から数え直す。
+        // 日付を見ないと、上限に近づいた翌日以降は1件も注文できなくなる。
+        val stateWithYesterdayTotal = defaultState.copy(
+            realTrading = defaultState.realTrading.copy(
+                dailyOrderedDate = "2026-08-28",
+                dailyOrderedJpy = BigDecimal("46000")
+            )
+        )
+
+        val result = checker.checkPreOrderSafety(
+            config = defaultConfig,
+            tradeAmount = 1000,
+            state = stateWithYesterdayTotal,
+            currentHoldingAssets = emptyList(),
+            activeOrders = emptyList(),
+            currentPrice = currentPrice,
+            today = TODAY
+        )
+
+        assertTrue(result.passed)
     }
 }

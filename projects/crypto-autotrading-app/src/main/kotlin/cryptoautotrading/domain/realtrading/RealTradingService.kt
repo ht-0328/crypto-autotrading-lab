@@ -13,11 +13,12 @@ import cryptoautotrading.domain.model.realtrading.ExecutionSummary
 import cryptoautotrading.domain.model.realtrading.RealTradingConfig
 import cryptoautotrading.domain.model.realtrading.RealTradingState
 import cryptoautotrading.domain.realtrading.RealTradingClient
+import cryptoautotrading.domain.time.TradingTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Clock
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
@@ -25,10 +26,12 @@ import java.time.format.DateTimeFormatter
  *
  * @property exchangeClient リアル取引の取引所操作を行うクライアント
  * @property safetyChecker 実注文前安全チェックを行うサービス
+ * @property clock 注文時刻と日次上限の日付判定に使う時計。テストでは固定した時刻に差し替える
  */
 class RealTradingService(
     private val exchangeClient: RealTradingClient? = null,
-    private val safetyChecker: RealTradingSafetyChecker = RealTradingSafetyChecker()
+    private val safetyChecker: RealTradingSafetyChecker = RealTradingSafetyChecker(),
+    private val clock: Clock = TradingTime.systemClock()
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -517,7 +520,8 @@ class RealTradingService(
                 state = currentState,
                 currentHoldingAssets = checkAssets,
                 activeOrders = activeOrders,
-                currentPrice = currentPrice
+                currentPrice = currentPrice,
+                today = resolveTodayString()
             )
 
             if (!safetyCheckResult.passed) {
@@ -671,7 +675,7 @@ class RealTradingService(
         size: BigDecimal,
         currentPrice: BigDecimal
     ): SimulationState {
-        val nowStr = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        val nowStr = LocalDateTime.now(clock).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
         val newLatestOrder = RealOrderState(
             orderId = orderId,
@@ -689,6 +693,15 @@ class RealTradingService(
         return currentState.copy(
             realTrading = currentState.realTrading.copy(latestOrder = newLatestOrder)
         )
+    }
+
+    /**
+     * 時計から今日の日付を返す。
+     *
+     * @return ISO形式の日付文字列
+     */
+    private fun resolveTodayString(): String {
+        return LocalDateTime.now(clock).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
     }
 
     /**
@@ -766,9 +779,9 @@ class RealTradingService(
         size: BigDecimal,
         currentPrice: BigDecimal
     ): SimulationState {
-        val now = LocalDateTime.now(ZoneId.of("Asia/Tokyo"))
+        val now = LocalDateTime.now(clock)
         val nowStr = now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        val todayStr = now.toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val todayStr = resolveTodayString()
         val isSameDay = currentState.realTrading.dailyOrderedDate == todayStr
         val newDailyOrderedJpy = if (isSameDay) {
             currentState.realTrading.dailyOrderedJpy.add(BigDecimal(tradeAmount))
@@ -811,7 +824,7 @@ class RealTradingService(
         val newRealTradingState = currentState.realTrading.copy(
             isStopped = true,
             stopReason = reason,
-            stoppedAt = LocalDateTime.now(ZoneId.of("Asia/Tokyo")).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            stoppedAt = LocalDateTime.now(clock).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
         )
         return currentState.copy(realTrading = newRealTradingState)
     }
