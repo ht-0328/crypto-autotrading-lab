@@ -87,13 +87,21 @@ Claude Code / Codex / Antigravity の3ツールで同じリポジトリをレビ
 
 ## 推奨する着手順
 
+**第1波: 実害を止める**
+
 1. [pr01-docker-clean-scope.md](pr01-docker-clean-scope.md)（実行1回で被害が出るため最優先）
 2. [pr03-private-api-log-leak.md](pr03-private-api-log-leak.md) → [pr02-cloud-run-config.md](pr02-cloud-run-config.md)（ログ流出を止めてから標準出力へ流す。順序が逆だと流出が増える）
 3. [pr04-state-repository-crash-safe.md](pr04-state-repository-crash-safe.md)
 4. [pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md)
+
+**第2波: 整合を取る**
+
 5. [pr09-ci-compose-consistency.md](pr09-ci-compose-consistency.md)
 6. [pr06-backtest-execution-model.md](pr06-backtest-execution-model.md)
 7. [pr07-real-order-spec-separation.md](pr07-real-order-spec-separation.md) → [pr08-doc-consistency.md](pr08-doc-consistency.md) → [pr10-config-fail-fast.md](pr10-config-fail-fast.md)
+
+**第4波: ドキュメントサイト**
+
 8. [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) → [pr12-zensical-readability.md](pr12-zensical-readability.md)（どちらも実装には影響しないため、第1波・第2波とは独立に進められる）
 
 ## 今回やらないこと

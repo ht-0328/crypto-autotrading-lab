@@ -103,14 +103,28 @@ PLAN01 と PLAN02 は互いに独立なので、並行して進められます�
 
 3ツールの評価で新しく出た項目です。すべて [PLAN01](plan01-real-sell-order.md) または [PLAN02](plan02-order-safety-guards.md) に含めています。
 
+**未解消**
+
 1. **売り注文が実装されていない**（[PLAN01](plan01-real-sell-order.md)）— 最重要。
 2. **約定の反映が買い専用**（[PLAN01](plan01-real-sell-order.md)）— 約定を確認すると無条件に `isHolding = true` にします。売りの約定でこれを通すと、売ったのに保有中になります。
 3. **安全チェックが買い専用**（[PLAN01](plan01-real-sell-order.md)）— 「保有中なら注文しない」という条件なので、そのまま売りに使うと逆の挙動になります。
+
+**解消済み**
+
 4. ~~**数量の刻み（`sizeStep`）に丸めていない**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) の A）。GMOコインの BTC は最小注文数量・刻みとも 0.00001 です。
 5. ~~**注文数量の計算にK線の終値を使っている**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) の B）。Ticker の最新価格を使い、手数料も上限判定に含めるようにしました。
+
+**未解消（続き）**
+
 6. **発注の「意図」を送信前に保存していない**（[PLAN01](plan01-real-sell-order.md)）— POST 後・保存前に落ちると、取引所に注文があるのにアプリ側に記録が残りません。
+
+**解消済み（続き）**
+
 7. ~~**通知が1つも実装されていない**~~ — 解消済み（[PLAN03](plan03-notification.md)）。日次サマリーと沈黙の検知は積み残しです。
 8. ~~**損失上限・連敗停止・スリッページ上限が未実装**~~ — 解消済み（[PLAN02](plan02-order-safety-guards.md) と [PLAN03](plan03-notification.md)）。
+
+**未解消（口座）**
+
 9. **同一口座の既存資産を巻き込む危険**（[PLAN01](plan01-real-sell-order.md)）— 取引所の残高をそのまま全量売ると、ボット以外が買った BTC まで売ります。専用口座を推奨します。
 10. **緊急停止の手段が state.json の直接編集しかない**（[PLAN00](plan00-phase-and-safety-contract.md)）。
 

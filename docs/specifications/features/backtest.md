@@ -111,10 +111,15 @@
 
 ## 7. 処理仕様
 
+**準備する**
+
 1. 入力値から過去K線CSVのパスを取得する
 2. 過去K線CSV読み込み機能を使って List<Kline> を取得する
 3. 使用する売買戦略を取得する
 4. 初期資金から SimulationState を作成する
+
+**K線を1本ずつ回す**
+
 5. K線データを openTime 昇順に処理する
 6. 直前のK線で出たシグナルがあれば、**このK線の始値（open）を約定価格として** SimulationService で状態を更新する
 7. その時点までのK線一覧を TradingStrategy に渡す
@@ -122,6 +127,9 @@
 9. cashBalance、holdingAmount、buyPrice、realizedProfitAndLoss を記録する
 10. estimatedHoldingValue と totalAssetValue を、そのK線の終値（close）で計算する
 11. 最後のK線で出たシグナルは、約定させるK線が存在しないため実行しない
+
+**結果を出す**
+
 12. 全K線の処理が完了したらサマリー情報を作成する
 13. バックテスト結果をサマリー用と明細用の2つのファイルに出力する
 

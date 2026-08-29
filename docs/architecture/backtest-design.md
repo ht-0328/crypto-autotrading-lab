@@ -48,13 +48,21 @@
 
 ## 6. 処理フロー
 
+**準備する**
+
 1. presentation が `BacktestApplication` を起動する
 2. `BacktestApplication` が `KlineCsvReader` を使って過去K線リストを取得する
 3. `BacktestApplication` が設定から指定された `TradingStrategy` のインスタンスを生成する
 4. `BacktestApplication` が `BacktestEngine` にK線リスト、Strategy、初期資金を渡す
+
+**K線を1本ずつ回す**
+
 5. `BacktestEngine` はK線を1本ずつループする
 6. 直前のK線で受け取った判定結果があれば、**このK線の始値**を約定価格として `SimulationService` に状態更新を依頼する。約定価格には手数料率とスリッページ率を織り込む
 7. `BacktestEngine` はその時点までのK線を Strategy に渡して判定を依頼し、結果を「次のK線で約定させるシグナル」として保持する
+
+**結果を出す**
+
 8. `BacktestEngine` は毎ステップの `BacktestStepResult` を記録し、最後に `BacktestSummary` を作成して `BacktestResult` を返す
 9. `BacktestApplication` が `BacktestResultOutputPort` を使ってCSVファイルを出力する
 

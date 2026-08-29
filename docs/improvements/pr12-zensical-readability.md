@@ -131,13 +131,21 @@ grep -rn '^> \*\*' docs/
 
 ## 受け入れ条件
 
+**表示を確認する**
+
 - [ ] `grep -rn '^> ' docs/` に残る引用が、他の文書へ書き込む文面を引用している箇所だけであること（[改善計画](README.md) 配下の各PRファイル）
 - [ ] `zensical build --clean` が成功し、警告が [pr11-zensical-broken-links.md](pr11-zensical-broken-links.md) 実施前より増えていないこと
 - [ ] admonition の中身が4スペースでインデントされ、サイト上で色付きボックスとして表示されること
 - [ ] [plans/README.md](../plans/README.md) の「いま実注文を有効にすると何が起きるか」が赤いボックスで表示されること
+
+**目次と案内を確認する**
+
 - [ ] サイトの目次で「インフラ設計」の下に同名のページが並んでいないこと
 - [ ] [docs/README.md](README.md) のディレクトリ構成に `infrastructure/` があること
 - [ ] `nav` の更新ルールが [development/workflow.md](../development/workflow.md) と [docs/README.md](README.md) の両方から辿れること
+
+**壊していないことを確認する**
+
 - [ ] 警告の**内容**を書き換えていないこと（記法だけを変える）
 - [ ] Kotlin コード、Gradle 設定、`config/` に変更が無いこと
 

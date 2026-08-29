@@ -210,21 +210,25 @@
 6. `status` が未約定の場合は、`state.json` に未確認注文として保存し、次回実行時に再度状態確認を行う。
 
 ## 11. state.json の拡張内容
-実注文ONで注文を送信した場合、以下の情報を `state.json`（またはそれに準ずる永続化オブジェクト）にネストした `realTrading` ブロックとして追加する。フラットな構造は避けること。
-- `realTrading.isStopped`: 実注文停止状態のフラグ
-- `realTrading.stopReason`: 停止理由（エラーや未確認など）
-- `realTrading.stoppedAt`: 停止日時
-- `realTrading.latestOrder.orderId`: 注文ID
-- `realTrading.latestOrder.symbol`: 注文対象銘柄
-- `realTrading.latestOrder.side`: 注文方向
-- `realTrading.latestOrder.status`: 注文ステータス
-- `realTrading.latestOrder.requestedAmountJpy`: 注文予定額
-- `realTrading.latestOrder.requestedSize`: 注文数量
-- `realTrading.latestOrder.requestedPrice`: 注文時価格
-- `realTrading.latestOrder.executedPrice`: 実約定価格
-- `realTrading.latestOrder.executedSize`: 実約定数量
-- `realTrading.latestOrder.orderedAt`: 注文実行時刻
-- `realTrading.latestOrder.executedAt`: 約定確認時刻
+
+実注文の状態は `realTrading` の下に置きます。
+
+| キー | 内容 |
+| --- | --- |
+| `isStopped` | 実注文停止状態のフラグ |
+| `stopReason` | 停止理由（エラーや未確認など） |
+| `stoppedAt` | 停止日時 |
+| `latestOrder.orderId` | 注文ID |
+| `latestOrder.symbol` | 注文対象銘柄 |
+| `latestOrder.side` | 注文方向 |
+| `latestOrder.status` | 注文ステータス |
+| `latestOrder.requestedAmountJpy` | 注文予定額 |
+| `latestOrder.requestedSize` | 注文数量 |
+| `latestOrder.requestedPrice` | 注文時価格 |
+| `latestOrder.executedPrice` | 実約定価格 |
+| `latestOrder.executedSize` | 実約定数量 |
+| `latestOrder.orderedAt` | 注文実行時刻 |
+| `latestOrder.executedAt` | 約定確認時刻 |
 
 ## 12. 追加・変更する設定項目
 既存のシミュレーション向け設定（`trading`）と分けるため、実注文制御用の設定は `real_trading` 配下に定義する。
@@ -267,28 +271,39 @@
   - `RealTradeOrderUseCase` または相当する責務を持つService
 
 ## 14. 追加・変更するファイル一覧
-（1ファイルにつき1つのDTO、モデルの原則に従う。DTOは必ず `infrastructure/exchange/gmo/dto/` 配下に置く）
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoAccountAssetsResponseDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoAccountAssetDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersRequestDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersResponseDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrdersDataDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoActiveOrderDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoPlaceOrderRequestDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoPlaceOrderResponseDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersRequestDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersResponseDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrdersDataDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoOrderDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsRequestDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsResponseDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionsDataDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/dto/GmoExecutionDto.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeAsset.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeActiveOrder.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/AcceptedOrder.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExchangeOrderStatus.kt`
-- `projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/order/ExecutedOrder.kt`
+
+1ファイルにつき1つのDTO、1つのモデルという原則に従います。DTO は必ず `infrastructure` 側に置きます。
+
+**DTO（`infrastructure/exchange/gmo/dto/`）**
+
+| ファイル |
+| --- |
+| `GmoAccountAssetsResponseDto.kt` |
+| `GmoAccountAssetDto.kt` |
+| `GmoActiveOrdersRequestDto.kt` |
+| `GmoActiveOrdersResponseDto.kt` |
+| `GmoActiveOrdersDataDto.kt` |
+| `GmoActiveOrderDto.kt` |
+| `GmoPlaceOrderRequestDto.kt` |
+| `GmoPlaceOrderResponseDto.kt` |
+| `GmoOrdersRequestDto.kt` |
+| `GmoOrdersResponseDto.kt` |
+| `GmoOrdersDataDto.kt` |
+| `GmoOrderDto.kt` |
+| `GmoExecutionsRequestDto.kt` |
+| `GmoExecutionsResponseDto.kt` |
+| `GmoExecutionsDataDto.kt` |
+| `GmoExecutionDto.kt` |
+
+**ドメインモデル（`domain/model/order/`）**
+
+| ファイル |
+| --- |
+| `ExchangeAsset.kt` |
+| `ExchangeActiveOrder.kt` |
+| `AcceptedOrder.kt` |
+| `ExchangeOrderStatus.kt` |
+| `ExecutedOrder.kt` |
 
 ## 15. DTO設計とKotlinコード雛形
 
