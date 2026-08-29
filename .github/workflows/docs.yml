@@ -25,11 +25,6 @@ on:
 permissions:
   contents: read
 
-# Pages への公開は同時に1つだけ。実行中のデプロイは中断せず、順番に流す。
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
   # PR の時点でビルドが壊れていないかを確認する。公開はしない。
   build:
@@ -56,6 +51,11 @@ jobs:
   deploy:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    # Pages への公開は同時に1つだけ。実行中のデプロイは中断せず、順番に流す。
+    # PR のビルド確認は待たせたくないので、この concurrency は deploy だけに付ける。
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     permissions:
       contents: read
       pages: write
