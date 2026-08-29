@@ -26,7 +26,7 @@
 
 ## 概要
 
-設定がすべて終わったら、GitHub Actions の画面からボタンを押すだけで、GCP の Cloud Run Job にアプリをデプロイできます。
+設定が終わったら、GitHub Actions の画面からボタンを押すだけでデプロイできます。
 初回は `bootstrap-create-gcp.yml` と `bootstrap-grant-iam.yml` を順番に実行します。
 通常デプロイでは、既に作成済み・権限設定済みのリソースを使います。
 Artifact Registry や GCS などは `deploy-gcp.yml` では自動作成しません。
@@ -38,19 +38,19 @@ GCP へのデプロイ作業は、安全のために以下の3段階のワーク
 
 1. **Bootstrap Create GCP Resources (`bootstrap-create-gcp.yml`)**
    - 初回（またはクリーンアップ後）のみ実行します。
-   - 役割: GCP APIの有効化、Artifact Registry、GCS、サービスアカウントなどの「箱」を作ります。
+   - 役割: GCP API の有効化と、リソースの「箱」を作ります。
 2. **Bootstrap Grant IAM Permissions (`bootstrap-grant-iam.yml`)**
    - リソース作成後（ステップ1の後）に実行します。
    - 役割: 作成済みのリソースに対して、必要なIAM権限を付与します。リソース作成直後の反映待ちによるエラーを防ぐため、ステップ1と分離されています。
 3. **Deploy to GCP (`deploy-gcp.yml`)**
    - アプリの更新や設定変更のたびに実行します。
-   - 役割: 既存の作成済み・権限設定済みのリソース（箱）を使って、Cloud Run Job にアプリを反映します。このフェーズでは新しいリソースを作成しません。
+   - 役割: 作成済みのリソースを使って、Cloud Run Job にアプリを反映します。このフェーズでは新しいリソースを作成しません。
 
 （不要になった場合は `cleanup-gcp.yml` でリソースを削除します）
 
 !!! warning "Phase1 の制約"
 
-    このプロジェクトは現在フェーズ1（Phase1）であり、実際の暗号資産の注文（実注文）は行わないシミュレーション運用です。実注文を行うような設定・説明には変更しないでください。
+    このプロジェクトは Phase1 です。実際の注文は行わないシミュレーション運用です。実注文を行うような設定・説明には変更しないでください。
 
 ## デプロイの手順
 
@@ -59,12 +59,12 @@ GCP へのデプロイ作業は、安全のために以下の3段階のワーク
 ### Step 1: 初期構築リソース作成
 
 1. GitHub リポジトリの **Actions** タブを開きます。
-2. 左側の workflow 一覧から **Bootstrap Create GCP Resources** を選びます。
+2. **Bootstrap Create GCP Resources** を選びます。
 3. 右側の **Run workflow** ボタンを押して実行し、成功するまで待ちます。
 
 ### Step 2: 初期構築IAM権限付与
 
-1. 左側の workflow 一覧から **Bootstrap Grant IAM Permissions** を選びます。
+1. **Bootstrap Grant IAM Permissions** を選びます。
 2. 右側の **Run workflow** ボタンを押して実行し、成功するまで待ちます。
 
 ### Step 3: 通常デプロイ
@@ -73,7 +73,7 @@ GCP へのデプロイ作業は、安全のために以下の3段階のワーク
 2. 右側の **Run workflow** ボタンを押します。
 3. 実行時の設定フォームが表示されます。
    - `execute_after_deploy`:
-     - **チェックを入れる (true)**: デプロイ完了後、すぐに Cloud Run Job を1回動かします。
+     - **true**: デプロイ完了後、すぐに Cloud Run Job を1回動かします。
      - **チェックを外す (false - デフォルト)**: デプロイだけ行い、アプリは動かしません。
    - `strategy_name`:
      - 利用する取引戦略を選択します。（デフォルトは `SafeReboundStrategy`）
@@ -84,9 +84,9 @@ GCP へのデプロイ作業は、安全のために以下の3段階のワーク
 ログを開いて、以下のステップが成功しているか確認してください。
 
 - **Authenticate to Google Cloud**: GCPに正しく接続できたか。
-- **Verify GCP Resources Exist**: 初期構築で作られたリソースが正しく認識されているか。
-- **Build and push Docker image**: プログラムがビルドされて保存されたか。
-- **Deploy to Cloud Run Job**: Cloud Run Job に設定が反映されたか。
+- **Verify GCP Resources Exist**: リソースを認識できているか。
+- **Build and push Docker image**: ビルドと保存ができたか。
+- **Deploy to Cloud Run Job**: 設定が反映されたか。
 
 ## デプロイ後の確認（任意）
 
