@@ -1,5 +1,6 @@
 package cryptoautotrading.application
 
+import cryptoautotrading.domain.backtest.BacktestCostConfig
 import cryptoautotrading.domain.backtest.BacktestEngine
 import cryptoautotrading.domain.model.TradingConfig
 import cryptoautotrading.domain.repository.BacktestResultOutputPort
@@ -32,13 +33,17 @@ class BacktestApplication(
      * @param initialCapitalStr 初期資金（文字列）
      * @param summaryOutputPath サマリーの出力先パス
      * @param stepsOutputPath 明細の出力先パス
+     * @param feeRateStr 手数料率（文字列）。未指定時は 0
+     * @param slippageRateStr スリッページ率（文字列）。未指定時は 0
      */
     fun run(
         klineCsvPath: String?,
         strategyName: String?,
         initialCapitalStr: String?,
         summaryOutputPath: String?,
-        stepsOutputPath: String?
+        stepsOutputPath: String?,
+        feeRateStr: String? = null,
+        slippageRateStr: String? = null
     ) {
         logger.info { "バックテストアプリケーションを開始します" }
 
@@ -62,6 +67,11 @@ class BacktestApplication(
             throw IllegalArgumentException("初期資金が0以下です: $initialCapital")
         }
 
+        val costConfig = BacktestCostConfig(
+            feeRate = parseRate(feeRateStr, "BACKTEST_FEE_RATE"),
+            slippageRate = parseRate(slippageRateStr, "BACKTEST_SLIPPAGE_RATE")
+        )
+
         // CSV読み込み
         val klines = klineCsvReader.read(klineCsvPath)
 
@@ -79,13 +89,39 @@ class BacktestApplication(
             strategy = strategy,
             initialCapital = initialCapital,
             tradeAmount = config.tradeAmount,
-            orderSizingMode = config.orderSizingMode
+            orderSizingMode = config.orderSizingMode,
+            costConfig = costConfig
         )
 
         // 結果出力
         resultOutputPort.output(result, summaryOutputPath, stepsOutputPath)
 
         logger.info { "バックテストアプリケーションが正常に完了しました" }
+    }
+
+    /**
+     * 手数料率・スリッページ率の文字列を解釈する。
+     *
+     * 未指定は 0 として扱う。指定されているのに数値として解釈できない場合や
+     * 負の値の場合は、成績を誤って評価しないように例外にする。
+     *
+     * @param rateStr 率の文字列
+     * @param name エラーメッセージに出す設定名
+     * @return 解釈した率
+     */
+    private fun parseRate(rateStr: String?, name: String): BigDecimal {
+        if (rateStr.isNullOrBlank()) {
+            return BigDecimal.ZERO
+        }
+        val rate = try {
+            BigDecimal(rateStr)
+        } catch (e: NumberFormatException) {
+            throw IllegalArgumentException("$name が数値として解釈できません: $rateStr", e)
+        }
+        if (rate < BigDecimal.ZERO) {
+            throw IllegalArgumentException("$name に負の値は指定できません: $rateStr")
+        }
+        return rate
     }
 
     /**

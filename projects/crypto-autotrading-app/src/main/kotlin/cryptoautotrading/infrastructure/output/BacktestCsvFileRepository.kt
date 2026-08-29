@@ -68,7 +68,9 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
                     "最大利益",
                     "最大損失",
                     "最大連続損切り回数",
-                    "未決済ポジションあり"
+                    "未決済ポジションあり",
+                    "手数料率",
+                    "スリッページ率"
                 )
             )
 
@@ -92,7 +94,9 @@ class BacktestCsvFileRepository : BacktestResultOutputPort {
                     summary.maxProfit.toPlainString(),
                     summary.maxLoss.toPlainString(),
                     summary.maxConsecutiveLossCount.toString(),
-                    summary.hasOpenPosition.toString()
+                    summary.hasOpenPosition.toString(),
+                    summary.feeRate.toPlainString(),
+                    summary.slippageRate.toPlainString()
                 )
             )
         }

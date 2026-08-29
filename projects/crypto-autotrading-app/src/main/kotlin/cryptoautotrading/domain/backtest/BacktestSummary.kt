@@ -24,6 +24,8 @@ import java.math.BigDecimal
  * @property maxLoss 1回の売却で出た最大損失
  * @property maxConsecutiveLossCount 連続して損切りした最大回数
  * @property hasOpenPosition バックテスト終了時点で未売却の保有が残っているか
+ * @property feeRate 約定価格に織り込んだ手数料率
+ * @property slippageRate 約定価格に織り込んだスリッページ率
  */
 data class BacktestSummary(
     val strategyName: String,
@@ -43,5 +45,7 @@ data class BacktestSummary(
     val maxProfit: BigDecimal,
     val maxLoss: BigDecimal,
     val maxConsecutiveLossCount: Int,
-    val hasOpenPosition: Boolean
+    val hasOpenPosition: Boolean,
+    val feeRate: BigDecimal = BigDecimal.ZERO,
+    val slippageRate: BigDecimal = BigDecimal.ZERO
 )

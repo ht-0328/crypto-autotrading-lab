@@ -119,6 +119,12 @@ DevContainer環境では、以下のスクリプトを実行することで、�
 **自動設定される主な環境変数:**
 - **CSV取得用:** `KLINE_EXPORT_OUTPUT_PATH`, `KLINE_EXPORT_SYMBOL`, `KLINE_EXPORT_INTERVAL`, `KLINE_EXPORT_START_DATE`, `KLINE_EXPORT_END_DATE`
 - **バックテスト用:** `BACKTEST_KLINE_CSV_PATH`, `BACKTEST_STRATEGY_NAME`, `BACKTEST_INITIAL_CAPITAL`, `BACKTEST_SUMMARY_OUTPUT_PATH`, `BACKTEST_STEPS_OUTPUT_PATH`
+  - 任意で `BACKTEST_FEE_RATE`（手数料率）と `BACKTEST_SLIPPAGE_RATE`（スリッページ率）を指定できます。未指定時はどちらも 0 です。
+
+**バックテストの約定モデルについて:**
+- 判定に使ったK線の終値ではなく、**次のK線の始値**で約定します。終値を見てから同じ終値で売買できることにすると、成績が実態より良く出るためです（詳細は [バックテスト機能の仕様](docs/specifications/features/backtest.md)）。
+  - 連続取引の市場では「次の足の始値」と「前の足の終値」が一致することが多く、その場合は結果が変わりません。差が出るのは、K線に欠損やギャップがある場合です。
+- **手数料率・スリッページ率を設定した結果は、設定なしの過去結果とは比較できません。** 過去の成績をもとに戦略を選んでいた場合は、同じ条件で取り直してください。
 
 **設定ファイルの扱い:**
 - 元の設定ファイル（`config/application-gmo.yaml`）は直接書き換えられません。
