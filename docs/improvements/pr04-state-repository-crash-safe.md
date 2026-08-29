@@ -8,7 +8,7 @@
 
 ## なぜ直すか
 
-[StateRepository.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) に2つの問題があります。
+[StateRepository.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) に2つの問題があります。
 
 - **I**: `save()` が例外を握り潰してログを出すだけで、呼び出し元に伝えません。保存に失敗してもアプリは正常終了（exit 0）します。[phase1-simulation.md](../specifications/phase1-simulation.md) のエラー仕様「CSVまたはJSONファイルの保存に失敗した → エラーをログに記録し終了する」に反します。実注文と組み合わさると「注文したのに state が残らない＝二重注文」につながります。
 - **J**: `file.writeText(content)` で既存ファイルに直接書いています。書き込み途中でプロセスが落ちると空ファイルや途中までの JSON が残り、次回の `load()` がデコード例外を投げて以降の実行がすべて止まります。GCS FUSE マウント上ではさらにリスクが高くなります。
@@ -17,8 +17,8 @@
 
 | ファイル | 変更内容 |
 | --- | --- |
-| [StateRepository.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) | `save()` の例外を再 throw。一時ファイル＋原子的 rename で保存 |
-| [StateRepositoryTest.kt](../../projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/infrastructure/output/StateRepositoryTest.kt) | 追加ケース |
+| [StateRepository.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) | `save()` の例外を再 throw。一時ファイル＋原子的 rename で保存 |
+| [StateRepositoryTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/infrastructure/output/StateRepositoryTest.kt) | 追加ケース |
 
 ## 実施手順
 
@@ -70,7 +70,7 @@ cd projects/crypto-autotrading-app
 
 ## 補足: 呼び出し元への影響
 
-`save()` が例外を投げるようになると、[TradingApplication.run()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `catch` を経由して [Main.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) まで伝播し、プロセスが異常終了します。これは仕様どおりの動作です。Cloud Run Job は `max_retries = 0` なので再実行はされません。
+`save()` が例外を投げるようになると、[TradingApplication.run()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) の `catch` を経由して [Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) まで伝播し、プロセスが異常終了します。これは仕様どおりの動作です。Cloud Run Job は `max_retries = 0` なので再実行はされません。
 
 ## スコープ外
 

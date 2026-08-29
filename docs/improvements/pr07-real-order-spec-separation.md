@@ -12,7 +12,7 @@
 
 - [phase1-simulation.md](../specifications/phase1-simulation.md) の「対象外」に「実資金を使った実際の注文（リアル注文）」「GMOコイン Private API の利用」と書かれている。
 - [roadmap.md](../overview/roadmap.md) の Phase1 禁止事項に「**実際の注文を送ること**」と書かれている。
-- しかし [RealTradingService.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は `placeOrder` まで実装済みで、[secrets.tf](../../infra/terraform/gcp/secrets.tf) は GMO APIキーの Secret も作っている。
+- しかし [RealTradingService.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は `placeOrder` まで実装済みで、[secrets.tf](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/infra/terraform/gcp/secrets.tf) は GMO APIキーの Secret も作っている。
 
 どちらが正なのか読み手が判断できません。**実装を消すのではなく、仕様側で「Phase3 の先行実装であり Phase1 では実行できない」と位置づけ直します**（[pr05-phase1-real-order-guard.md](pr05-phase1-real-order-guard.md) で実際に実行できなくします）。
 
@@ -28,7 +28,7 @@
 | [docs/overview/roadmap.md](../overview/roadmap.md) | Phase3 に「先行実装済みの範囲」を追記 |
 | [docs/specifications/features/real-trading-gmo-order.md](../specifications/features/real-trading-gmo-order.md) | 冒頭に Phase3 スコープである旨を明記 |
 | [docs/README.md](../README.md) | 案内に反映 |
-| [README.md](../../README.md) | 「Phase1の制約」節に反映 |
+| [README.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/README.md) | 「Phase1の制約」節に反映 |
 
 ## 実施手順
 
@@ -55,7 +55,7 @@
 
 4. **[docs/README.md](../README.md)**: 「🧠 売買ロジックの仕組みを知りたい方」または新しい項目に、実注文仕様が Phase3 のものである旨を添えてリンクする。
 
-5. **[README.md](../../README.md)**: 「本プロジェクトの前提事項と注意事項」の「注意 (Phase1の制約)」に、実注文機能が先行実装されているが Phase1 では実行できないことを1行追加する。
+5. **[README.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/README.md)**: 「本プロジェクトの前提事項と注意事項」の「注意 (Phase1の制約)」に、実注文機能が先行実装されているが Phase1 では実行できないことを1行追加する。
 
 ## 受け入れ条件
 

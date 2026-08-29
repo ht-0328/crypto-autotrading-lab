@@ -20,7 +20,7 @@ Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の�
 
 ### A. 通知の送信
 
-- 送信先を決める（LINE Messaging API、Discord Webhook など）。**Webhook URL やトークンは秘密情報**です。[AGENTS.md](../../AGENTS.md) のとおり、コードにも設定ファイルにも書かず、環境変数と Secret Manager 経由で渡してください。
+- 送信先を決める（LINE Messaging API、Discord Webhook など）。**Webhook URL やトークンは秘密情報**です。[AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) のとおり、コードにも設定ファイルにも書かず、環境変数と Secret Manager 経由で渡してください。
 - 通知する内容に、APIキー・シークレット・署名・個人情報を含めない。
 - 通知の送信に失敗しても、**売買処理そのものは落とさない**（通知はあくまで観測手段）。ただし失敗はログに残す。
 
@@ -67,11 +67,11 @@ Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の�
 | --- | --- |
 | `domain/notification/`（新規） | 通知イベントと送信のインターフェース |
 | `infrastructure/notification/`（新規） | 送信先ごとの実装 |
-| [TradingApplication.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) / [RealTradingService.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) | 通知イベントの発火 |
-| [config/](../../config/) | 通知の有効/無効と送信先の種類、自動停止の閾値（**トークンは書かない**） |
+| [TradingApplication.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) / [RealTradingService.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) | 通知イベントの発火 |
+| [config/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/config/) | 通知の有効/無効と送信先の種類、自動停止の閾値（**トークンは書かない**） |
 | [roadmap.md](../overview/roadmap.md) | Phase2a の完了を記録 |
 
-**レイヤの置き場所に注意してください。** 外部への送信は infrastructure です。domain から直接 HTTP を叩かないこと。着手前に [kotlin-layer-boundaries](../../.agents/skills/kotlin-layer-boundaries/SKILL.md) を読んでください。
+**レイヤの置き場所に注意してください。** 外部への送信は infrastructure です。domain から直接 HTTP を叩かないこと。着手前に [kotlin-layer-boundaries](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/kotlin-layer-boundaries/SKILL.md) を読んでください。
 
 ## 受け入れ条件
 

@@ -63,7 +63,7 @@ GitHub の画面から設定値を登録します。
 
 ### アプリの動作設定（任意）
 
-以下は [deploy-gcp.yml](../../../.github/workflows/deploy-gcp.yml) が Cloud Run Job の環境変数として渡すものです。**未登録でも構いません。** その場合は空文字が渡り、コンテナに同梱された `config/application-gmo.yaml` の値が使われます。
+以下は [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) が Cloud Run Job の環境変数として渡すものです。**未登録でも構いません。** その場合は空文字が渡り、コンテナに同梱された `config/application-gmo.yaml` の値が使われます。
 
 | Name                             | 設定する値の例                                                            |
 | -------------------------------- | ------------------------------------------------------------------------- |

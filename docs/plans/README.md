@@ -25,7 +25,7 @@ Claude Code / Codex / Antigravity の3ツールで現状を評価し、結果を
 
 ## 最重要: いま実注文を有効にすると何が起きるか
 
-[RealTradingService](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は買い注文だけを送り、**売り注文は送りません**（`SELL_CANDIDATE` はログを出すだけです）。
+[RealTradingService](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は買い注文だけを送り、**売り注文は送りません**（`SELL_CANDIDATE` はログを出すだけです）。
 
 1. 買い注文が約定して BTC を保有する。
 2. 利確・損切りの判定が出ても、取引所には何も送られない。
@@ -109,6 +109,6 @@ PLAN01 と PLAN02 は互いに独立なので、並行して進められます�
 docs/plans/plan01-real-sell-order.md の内容を実施して
 ```
 
-各計画は1つのPRには大きいので、着手時に分割してください（[pr-and-commit](../../.agents/skills/pr-and-commit/SKILL.md)）。分割の目安は各ファイルに書いてあります。
+各計画は1つのPRには大きいので、着手時に分割してください（[pr-and-commit](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md)）。分割の目安は各ファイルに書いてあります。
 
 着手したら、上の一覧の「状態」を各ファイルで更新してください。

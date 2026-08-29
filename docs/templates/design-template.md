@@ -12,7 +12,7 @@
 
 ## 2. 対応する仕様書
 
-- [対応する仕様書](../specifications/features/example.md)
+- 対応する仕様書: `../specifications/features/example.md`（実際のファイル名に置き換え、Markdown リンクにすること）
 
 ## 3. 設計方針
 
@@ -105,4 +105,4 @@ flowchart TD
 
 ## 13. 関連ドキュメント
 
-- [対応する仕様書](../specifications/features/example.md)
+- 対応する仕様書: `../specifications/features/example.md`（実際のファイル名に置き換え、Markdown リンクにすること）

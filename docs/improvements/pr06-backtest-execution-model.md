@@ -8,7 +8,7 @@
 
 ## なぜ直すか
 
-[BacktestEngine.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) は、対象の K線を履歴に追加してから判定し、**同じ K線の終値でそのまま約定**させています。
+[BacktestEngine.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) は、対象の K線を履歴に追加してから判定し、**同じ K線の終値でそのまま約定**させています。
 
 ```kotlin
 processedKlines.add(kline)
@@ -27,10 +27,10 @@ currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 | --- | --- |
 | [docs/specifications/features/backtest.md](../specifications/features/backtest.md) | 約定モデルを「N+1 の始値で約定」に変更。手数料・スリッページを仕様に追加 |
 | [docs/architecture/backtest-design.md](../architecture/backtest-design.md) | 設計側の記述を新仕様に合わせる |
-| [BacktestEngine.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) | 約定価格を次足の始値にする。手数料・スリッページを反映 |
-| [BacktestSummary.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestSummary.kt) / [BacktestCsvFileRepository.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/BacktestCsvFileRepository.kt) | 前提値（手数料率・スリッページ）を結果に残す |
-| [BacktestEngineTest.kt](../../projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/domain/backtest/BacktestEngineTest.kt) | 期待値を新モデルに更新 |
-| [README.md](../../README.md) | モデル変更前後の結果を比較しない旨を明記 |
+| [BacktestEngine.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestEngine.kt) | 約定価格を次足の始値にする。手数料・スリッページを反映 |
+| [BacktestSummary.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/backtest/BacktestSummary.kt) / [BacktestCsvFileRepository.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/BacktestCsvFileRepository.kt) | 前提値（手数料率・スリッページ）を結果に残す |
+| [BacktestEngineTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/domain/backtest/BacktestEngineTest.kt) | 期待値を新モデルに更新 |
+| [README.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/README.md) | モデル変更前後の結果を比較しない旨を明記 |
 
 ## 実施手順
 
@@ -65,7 +65,7 @@ currentState = simulationService.updateState(currentPrice = currentPrice, ...)
 
 ### 3. テストを直す
 
-[BacktestEngineTest.kt](../../projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/domain/backtest/BacktestEngineTest.kt) の期待値は現行モデル前提なので、新モデルの期待値に更新する。手数料率・スリッページが 0 のケースと、0 でないケースの両方を用意する。
+[BacktestEngineTest.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/test/kotlin/cryptoautotrading/domain/backtest/BacktestEngineTest.kt) の期待値は現行モデル前提なので、新モデルの期待値に更新する。手数料率・スリッページが 0 のケースと、0 でないケースの両方を用意する。
 
 ## 受け入れ条件
 
@@ -109,7 +109,7 @@ export BACKTEST_INITIAL_CAPITAL=10000
 ## 注意
 
 - **手数料・スリッページを設定した結果は、設定なしの過去結果と比較できません。** 過去の成績をもとに戦略を選んでいた場合は取り直してください。
-- ライブ実行（[TradingApplication](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt)）は今回変更しません。ライブでは「観測した価格で発注する」動作が現実に近く、look-ahead にはあたらないためです。
+- ライブ実行（[TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt)）は今回変更しません。ライブでは「観測した価格で発注する」動作が現実に近く、look-ahead にはあたらないためです。
 
 ## スコープ外
 

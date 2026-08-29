@@ -22,7 +22,7 @@
 
 **実施済み。** 以下は着手前の記録です。
 
-[RealTradingService.calculateOrderSize()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は次の計算をするだけです。
+[RealTradingService.calculateOrderSize()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) は次の計算をするだけです。
 
 ```kotlin
 return BigDecimal(tradeAmount).divide(currentPrice, 8, RoundingMode.DOWN)
@@ -44,8 +44,8 @@ GMOコインの `GET /public/v1/symbols` で確認した BTC の制約は次で�
 刻みに丸める            → 0.00008      ← 正しい（約996円）
 ```
 
-拒否されると [RealTradingService](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) の例外処理で `isStopped=true` になり、実注文が止まります。**金額を上げても解決しません。刻みへの丸めが必要です。**
-- 売却時に手数料や丸めで**端数（ダスト）**が残ると、[RealTradingSafetyChecker](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) の `currentHoldingAssets.isNotEmpty()` に永久に引っかかり、以後1回も買えなくなります。
+拒否されると [RealTradingService](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) の例外処理で `isStopped=true` になり、実注文が止まります。**金額を上げても解決しません。刻みへの丸めが必要です。**
+- 売却時に手数料や丸めで**端数（ダスト）**が残ると、[RealTradingSafetyChecker](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) の `currentHoldingAssets.isNotEmpty()` に永久に引っかかり、以後1回も買えなくなります。
 
 やること:
 
@@ -57,7 +57,7 @@ GMOコインの `GET /public/v1/symbols` で確認した BTC の制約は次で�
 
 ### B. 注文価格の基準と、成行注文のスリッページ上限（新規。backlog には未記載）— 実施済み
 
-**注文数量の計算に使う「現在価格」が K線の終値です。** [TradingApplication](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は Ticker を取得してログに出すだけで、`currentPrice` には最新K線の `close` を使っています。5分足の終値は最大で5分前の価格なので、急騰していると `tradeAmount / currentPrice` が実際より多い数量になり、**約定金額が `max_order_jpy` を超えます**。上限が上限として機能していません。
+**注文数量の計算に使う「現在価格」が K線の終値です。** [TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は Ticker を取得してログに出すだけで、`currentPrice` には最新K線の `close` を使っています。5分足の終値は最大で5分前の価格なので、急騰していると `tradeAmount / currentPrice` が実際より多い数量になり、**約定金額が `max_order_jpy` を超えます**。上限が上限として機能していません。
 
 発注は `executionType = "MARKET"` の成行なので、板が薄いときや急変時にも想定と違う価格で約定します。
 
@@ -114,7 +114,7 @@ cd projects/crypto-autotrading-app
 
 ## 分割の目安
 
-このファイルは1つのPRには大きすぎます。着手時に少なくとも次に割ってください（[pr-and-commit](../../.agents/skills/pr-and-commit/SKILL.md)）。
+このファイルは1つのPRには大きすぎます。着手時に少なくとも次に割ってください（[pr-and-commit](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.agents/skills/pr-and-commit/SKILL.md)）。
 
 1. ~~A（注文数量の刻みとダスト）~~ 実施済み
 2. ~~B（注文価格の基準とスリッページ）+ A の手数料考慮~~ 実施済み

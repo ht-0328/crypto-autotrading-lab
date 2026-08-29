@@ -95,8 +95,8 @@ docker compose -f docker/compose/local.yml up --build
 `docs/` 配下の Markdown は [Zensical](https://zensical.org/) で静的サイト化し、GitHub Pages で公開しています。
 
 - 公開先: [crypto-autotrading-lab ドキュメント](https://ht-0328.github.io/crypto-autotrading-lab/)
-- サイトの設定: [zensical.toml](../../zensical.toml)（章立て・テーマ・Markdown 拡張）
-- 公開の仕組み: [.github/workflows/docs.yml](../../.github/workflows/docs.yml)
+- サイトの設定: [zensical.toml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/zensical.toml)（章立て・テーマ・Markdown 拡張）
+- 公開の仕組み: [.github/workflows/docs.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/docs.yml)
 
 `main` への push で自動的にビルドとデプロイが走ります。PR では公開せず、ビルドが通るかだけを確認します。
 
@@ -125,19 +125,29 @@ python3 -m venv .venv
 
     Zensical をインストールしなくても、PR を出せば `Documentation` チェックがビルドを検証します。手元で確認したいときだけ入れてください。
 
-静的ファイルだけを出力したい場合は `zensical build` を使います。出力先の `site/` はコミットしません（[.gitignore](../../.gitignore) で除外済み）。
+静的ファイルだけを出力したい場合は `zensical build` を使います。出力先の `site/` はコミットしません（[.gitignore](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.gitignore) で除外済み）。
 
 ### 章立てを変えるとき
 
-ドキュメントを追加・移動・削除したら、[zensical.toml](../../zensical.toml) の `nav` も更新してください。`nav` に書かれていないファイルはサイトの目次に出ません。
+ドキュメントを追加・移動・削除したら、[zensical.toml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/zensical.toml) の `nav` も更新してください。`nav` に書かれていないファイルはサイトの目次に出ません。
 
-### 現時点の既知の問題
+### リンクの書き方
 
-ビルドは成功しますが、`docs/` の外を指す相対リンク（リポジトリ直下の Markdown、Kotlin のソースコード、ワークフロー定義など）はサイト上でリンク切れになります。GitHub 上で Markdown を直接読む分には正しく動くリンクです。
+Zensical がビルドするのは `docs/` 配下だけです。**`docs/` の外を相対パスで参照すると、公開サイトではリンク切れになります。**
 
-解消の計画は [公開サイトのリンク切れを解消する (improvements/pr11-zensical-broken-links.md)](../improvements/pr11-zensical-broken-links.md) にまとめています。あわせて、公開サイトでの読みやすさの改善を [公開サイトでの読みやすさを Zensical に合わせる (improvements/pr12-zensical-readability.md)](../improvements/pr12-zensical-readability.md) に整理しています。
+| 参照先 | 書き方 |
+| --- | --- |
+| `docs/` の中 | 相対パス（例: `[setup.md](../development/setup.md)`） |
+| `docs/` の外のファイル | `https://github.com/ht-0328/crypto-autotrading-lab/blob/main/<パス>` |
+| `docs/` の外のディレクトリ | `https://github.com/ht-0328/crypto-autotrading-lab/tree/main/<パス>` |
 
-ドキュメントを新しく書くときは、`docs/` の外を参照する場合に GitHub の絶対URLを使ってください。
+コミット前に次を実行してください。`docs/` の外を指す相対リンクが残っていると検出され、終了コード 1 を返します。
+
+```bash
+python3 scripts/check-doc-links.py
+```
+
+CI のビルドは `--strict` で実行しており、リンク切れの警告が1件でもあるとPRのチェックが落ちます。詳細は [公開サイトのリンク切れを解消する (improvements/pr11-zensical-broken-links.md)](../improvements/pr11-zensical-broken-links.md) を参照してください。
 
 ## 用語補足
 

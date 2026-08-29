@@ -108,4 +108,4 @@ flowchart TD
 
 ## 12. 関連ドキュメント
 
-- [対応する設計書](../architecture/example-design.md)
+- 対応する設計書: `../architecture/example-design.md`（実際のファイル名に置き換え、Markdown リンクにすること）

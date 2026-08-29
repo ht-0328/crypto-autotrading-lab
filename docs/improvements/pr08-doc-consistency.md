@@ -34,7 +34,7 @@
 
 ### 1. phase1-simulation.md の修正
 
-- **53行付近（出力仕様）**: `data/history_20260501.csv` → `data/trades_20260501.csv`。実装は [CsvRepository.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/CsvRepository.kt) で `trades.csv` → `trades_YYYYMMDD.csv` に変換している。
+- **53行付近（出力仕様）**: `data/history_20260501.csv` → `data/trades_20260501.csv`。実装は [CsvRepository.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/CsvRepository.kt) で `trades.csv` → `trades_YYYYMMDD.csv` に変換している。
 - **54行付近（出力仕様）**: ログ出力を「標準出力とファイル（`APP_DATA_DIR/app.log`）の両方」に修正する。[pr02-cloud-run-config.md](pr02-cloud-run-config.md) の実施後の状態に合わせること。
 - **74行付近（判定条件・業務ルール）**: `order_sizing_mode` の節を追加する。
 
@@ -45,17 +45,17 @@
 
 - **処理仕様（7章）**: 朝6時境界の既知の挙動を追加する。
 
-  > K線の取得対象日は、取引所の営業日区切り（朝6時）に合わせて切り替わります（[TradingApplication.resolveKlineTargetDate()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt)）。そのため毎日 6:00 以降しばらくは判定に必要な本数（戦略により最大15本＝約75分）が揃わず、判定は「データ不足」としてスキップされます。保有中でも利確・損切りの判定は行われません。
+  > K線の取得対象日は、取引所の営業日区切り（朝6時）に合わせて切り替わります（[TradingApplication.resolveKlineTargetDate()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt)）。そのため毎日 6:00 以降しばらくは判定に必要な本数（戦略により最大15本＝約75分）が揃わず、判定は「データ不足」としてスキップされます。保有中でも利確・損切りの判定は行われません。
 
 ### 2. 設計書の修正
 
-- [infrastructure/gcp/README.md](../infrastructure/gcp/README.md) 9行付近の「現時点（Phase 1）では Terraform 実装ファイルはまだ追加されていません」を削除し、[infra/terraform/gcp/](../../infra/terraform/gcp/) に実装があることを書く。
+- [infrastructure/gcp/README.md](../infrastructure/gcp/README.md) 9行付近の「現時点（Phase 1）では Terraform 実装ファイルはまだ追加されていません」を削除し、[infra/terraform/gcp/](https://github.com/ht-0328/crypto-autotrading-lab/tree/main/infra/terraform/gcp/) に実装があることを書く。
 - [development-policy.md](../infrastructure/gcp/development-policy.md) 11行付近「手作業やGitHub Actions内の `gcloud` コマンドに依存しすぎない構成にする」に注記を足す。
 
   > **現状**: 構築とデプロイは GitHub Actions の `gcloud` コマンドが正です。Terraform コードは追加済みですが `terraform apply` は運用していません。一本化は今後の課題です。
 
-- [trading-strategy-design.md](../architecture/trading-strategy-design.md) 23行付近の「enum `TradeDecision`」を修正する。実体は [TradeDecision.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeDecision.kt) の data class で、判定の種類は [TradeAction.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeAction.kt) の enum。配置も `domain.model` であり `domain.strategy` ではない。
-- [backtest-design.md](../architecture/backtest-design.md) の Writer クラス名を [BacktestResultOutputPort.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/repository/BacktestResultOutputPort.kt) など実装名に合わせる。
+- [trading-strategy-design.md](../architecture/trading-strategy-design.md) 23行付近の「enum `TradeDecision`」を修正する。実体は [TradeDecision.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeDecision.kt) の data class で、判定の種類は [TradeAction.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/model/TradeAction.kt) の enum。配置も `domain.model` であり `domain.strategy` ではない。
+- [backtest-design.md](../architecture/backtest-design.md) の Writer クラス名を [BacktestResultOutputPort.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/repository/BacktestResultOutputPort.kt) など実装名に合わせる。
 
 ### 3. 復旧手順の新規作成
 
@@ -63,7 +63,7 @@
 
 含める内容:
 
-- どういうときに `realTrading.isStopped` が `true` になるか（[RealTradingService.stopRealTrading()](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) が呼ばれる条件）
+- どういうときに `realTrading.isStopped` が `true` になるか（[RealTradingService.stopRealTrading()](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) が呼ばれる条件）
 - 停止理由の確認方法（`stopReason` / `stoppedAt` / `latestOrder`）
 - GCS 上の `state.json` の取得方法（`gcloud storage cp`）
 - 再開前に確認すること（取引所側の未約定注文の有無、実際の保有数量と `state.json` の一致）

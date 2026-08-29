@@ -20,11 +20,11 @@
 
 ### B. Phase ガードの扱い
 
-[Main.kt](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) のガードは `app.phase < 3` かつ実注文有効のときに落ちます。**この計画では `dry_run: true` のままなので、ガードには当たりません。** `app.phase` を 3 に変えるかどうかは [PLAN05](plan05-canary-with-real-money.md) の判断です。ここでは変えないでください。
+[Main.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/presentation/Main.kt) のガードは `app.phase < 3` かつ実注文有効のときに落ちます。**この計画では `dry_run: true` のままなので、ガードには当たりません。** `app.phase` を 3 に変えるかどうかは [PLAN05](plan05-canary-with-real-money.md) の判断です。ここでは変えないでください。
 
 ### C. 状態の永続化と排他
 
-- [deploy-gcp.yml](../../.github/workflows/deploy-gcp.yml) は GCS を `/mnt/gcs` にマウントしています。GCS の FUSE マウントは**原子的な置き換えに対応していません**（[StateRepository](../../projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) がフォールバックしています）。書き込み中にジョブが落ちたとき、`state.json` が壊れないことを実際に確認してください。
+- [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は GCS を `/mnt/gcs` にマウントしています。GCS の FUSE マウントは**原子的な置き換えに対応していません**（[StateRepository](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) がフォールバックしています）。書き込み中にジョブが落ちたとき、`state.json` が壊れないことを実際に確認してください。
 - [PLAN02](plan02-order-safety-guards.md) で入れた重複実行の抑止が、本番の Cloud Run Job で実際に効くことを確認する。
 
 ### D. 障害を起こしてみる（リハーサル）
