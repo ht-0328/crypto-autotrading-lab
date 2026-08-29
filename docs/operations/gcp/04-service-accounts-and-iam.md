@@ -13,7 +13,7 @@
 
 ## 文書の目的
 
-- GitHub Actions が GCP を操作するための「専用アカウント（サービスアカウント）」の作り方
+- GitHub Actions が GCP を操作するための専用アカウントの作り方
 - そのアカウントに、デプロイに必要な権限（IAMロール）を付ける方法
 - Workload Identity とサービスアカウントを繋ぐ方法
 
@@ -27,8 +27,8 @@
 
 ## 概要
 
-GitHub Actions が GCP にプログラムをデプロイするには、「デプロイ専用のロボット（サービスアカウント）」を作る必要があります。
-そして、そのロボットに「必要な操作だけができる権限」を持たせ、先ほど作った Workload Identity（入り口）と繋げます。
+GitHub Actions が GCP へデプロイするには、専用のロボットが要ります。これをサービスアカウントと呼びます。
+そのロボットに「必要な操作だけができる権限」を持たせます。作成済みの Workload Identity と繋げます。
 
 ## 1. 準備（環境変数の設定）
 
@@ -48,10 +48,10 @@ export DEPLOY_SERVICE_ACCOUNT_EMAIL="${DEPLOY_SERVICE_ACCOUNT_NAME}@${PROJECT_ID
 ## 2. サービスアカウントを作る
 
 デプロイ専用のアカウントを作ります。
-自動化スクリプト（GitHub Actionsなど）でサービスアカウントの存在確認を行う場合は、`describe` ではなく `list` を使う方針としています。
+自動化スクリプトで存在確認をする場合は、`describe` ではなく `list` を使います。
 
 **理由:**
-`describe` コマンドは、対象が存在しない場合や削除された直後などに `PERMISSION_DENIED ... or it may not exist` という曖昧なエラーを返すことがあり、自動化ワークフローが誤って停止してしまう原因になります。そのため、`list` コマンドでフィルタリングして結果が空になるかを確認する方針（`gcloud iam service-accounts list --filter="email:${SA_EMAIL}" --format="value(email)"`）を採っています。
+`describe` は曖昧なエラーを返すことがあります。対象が無い場合や削除直後に `PERMISSION_DENIED ... or it may not exist` を返し、自動化ワークフローが誤って停止します。そのため、`list` コマンドでフィルタリングして結果が空になるかを確認する方針（`gcloud iam service-accounts list --filter="email:${SA_EMAIL}" --format="value(email)"`）を採っています。
 
 ```bash
 gcloud iam service-accounts create "$DEPLOY_SERVICE_ACCOUNT_NAME" \
@@ -62,11 +62,12 @@ gcloud iam service-accounts create "$DEPLOY_SERVICE_ACCOUNT_NAME" \
 ## 3. 必要な権限（IAMロール）を付ける
 
 このアカウントに、GCPのリソースを作ったり設定したりする権限を与えます。
-初期構築（Bootstrap）時にはリソース作成のための強い権限が必要ですが、通常デプロイ（Deploy）の運用段階では、セキュリティのため権限を最小限に絞る構成を推奨します。
+初期構築（Bootstrap）時には、リソース作成のための強い権限が必要です。
+通常デプロイ（Deploy）の段階では、権限を最小限に絞ることを推奨します。
 
 ### 通常デプロイ用の最小権限構成
 
-通常デプロイでは、リソースの作成は行わず、既存リソースの利用と更新のみを行うため、以下の権限だけで十分です。
+通常デプロイではリソースを作成しません。既存リソースの利用と更新だけなので、以下の権限で足ります。
 
 ```bash
 ROLES=(
@@ -86,7 +87,7 @@ done
 
 ### 対象サービスアカウントへの `iam.serviceAccountUser` 付与
 
-さらに、セキュリティを強化するため、プロジェクト全体ではなく、デプロイ時に使用する特定のサービスアカウントに対してのみ `roles/iam.serviceAccountUser` を付与します。
+さらに権限を絞ります。`roles/iam.serviceAccountUser` は、デプロイで使う特定のサービスアカウントにだけ付与します。
 
 対象となるサービスアカウントの例：
 
@@ -107,13 +108,17 @@ gcloud iam service-accounts add-iam-policy-binding "crypto-autotrading-lab-runne
 
 !!! note "初期構築時に必要な一時的な権限"
 
-    初期構築（`bootstrap-create-gcp.yml` および `bootstrap-grant-iam.yml`）を初めて実行する際にのみ、一時的に強い権限（`roles/iam.serviceAccountAdmin`, `roles/resourcemanager.projectIamAdmin`, `roles/storage.admin`, `roles/artifactregistry.admin`）が必要になる場合があります。
+    初期構築のワークフローを初めて実行するときだけ、一時的に強い権限が必要になる場合があります。
+    対象は `bootstrap-create-gcp.yml` と `bootstrap-grant-iam.yml` です。
+    必要になりうる権限は `roles/iam.serviceAccountAdmin`、`roles/resourcemanager.projectIamAdmin`、`roles/storage.admin`、`roles/artifactregistry.admin` です。
 
-    動作確認のため、`github-actions-deployer` に一時的に強めの権限を残しています。Bootstrap Create → Grant IAM → Deploy の一連の流れが main ブランチで安定して通ることを確認した後、別作業としてこの権限を段階的に削減・最小化する方針です。
+    動作確認のため、`github-actions-deployer` に一時的に強めの権限を残しています。
+    Bootstrap Create → Grant IAM → Deploy が main で安定して通ることを確認します。
+    そのあと、別作業でこの権限を段階的に削減します。
 
 ## 4. Workload Identity とサービスアカウントを繋ぐ
 
-「指定したGitHubリポジトリから来た通信」なら「このデプロイ用アカウントとして動いて良い」という設定をします。
+「指定したリポジトリから来た通信」に、「このアカウントとして動いてよい」と許可します。
 
 ```bash
 gcloud iam service-accounts add-iam-policy-binding "$DEPLOY_SERVICE_ACCOUNT_EMAIL" \
