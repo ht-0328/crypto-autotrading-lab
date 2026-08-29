@@ -60,7 +60,7 @@
 
 ### 2. 設計書の修正
 
-- [インフラ設計の README](../infrastructure/gcp/README.md) の「Terraform 実装ファイルはまだ追加されていません」を削除する。
+- [インフラ設計の README](../infrastructure/gcp/README.md) の「Terraform は未追加」の記述を削除する。
 - [development-policy.md](../infrastructure/gcp/development-policy.md) の「`gcloud` に依存しすぎない」に注記を足す。
 
   > **現状**: 構築とデプロイは GitHub Actions の `gcloud` コマンドが正です。Terraform コードは追加済みですが `terraform apply` は運用していません。一本化は今後の課題です。

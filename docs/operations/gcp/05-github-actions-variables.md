@@ -47,7 +47,7 @@ GitHub の画面から設定値を登録します。
 
 1. GitHub で対象のリポジトリを開きます。
 2. **Settings** タブを開きます。
-3. **Secrets and variables** を展開し、**Actions** をクリックします。
+3. **Secrets and variables** から **Actions** を開きます。
 4. **Variables** タブを選択します。
 5. **New repository variable** を押し、以下の変数を追加します。
 

@@ -195,7 +195,8 @@ sys.exit(1 if found else 0)
 実在しないファイルを指す 3 件は、絶対 URL にしても壊れたままです。リンクをやめてコード表記にします。
 
 次の3か所を直します。
-[design-template.md](../templates/design-template.md) の 15・108 行目と、[specification-template.md](../templates/specification-template.md) の 111 行目です。
+[design-template.md](../templates/design-template.md) の 15・108 行目です。
+あわせて [specification-template.md](../templates/specification-template.md) の 111 行目も直します。
 
 ```markdown
 直す前: - [対応する仕様書](../specifications/features/example.md)

@@ -32,13 +32,13 @@
 
 !!! warning "Phase1 では実注文を行いません"
 
-    この手順は Phase3 以降で実注文を有効にした場合、または `real_trade_enabled: true` の環境で問題が起きた場合に使います。Phase1 では起動時ガードにより実注文経路に入らないため、この状態にはなりません。
+    この手順は、実注文を有効にした環境で問題が起きたときに使います。Phase1 では起動時ガードにより実注文経路に入らないため、この状態にはなりません。
 
 ## いつ停止するか
 
 `RealTradingService` が実注文処理中に例外を捕捉したときに停止します。具体的には次のような場合です。
 
-- GMO Private API の呼び出しが失敗した（通信エラー、認証エラー、APIエラーレスポンス）
+- GMO Private API の呼び出しが失敗した（通信・認証・API エラー）
 - レスポンスの解析に失敗した
 - 注文送信後の約定確認処理で例外が発生した
 
@@ -64,7 +64,7 @@
 
 ### Step 1: 停止していることを確認する
 
-Cloud Run の実行ログで「安全チェックNG: realTrading.isStopped=true」が出ていれば停止中です。
+実行ログに「安全チェックNG: realTrading.isStopped=true」が出ていれば停止中です。
 
 ```bash
 gcloud run jobs executions list --job ${CLOUD_RUN_JOB_NAME} --region ${GCP_REGION}
@@ -118,7 +118,7 @@ gcloud run jobs execute ${CLOUD_RUN_JOB_NAME} --region ${GCP_REGION} --wait
 
 ### Step 6: 再開できたことを確認する
 
-実行ログに「安全チェックNG: realTrading.isStopped=true」が出ていないことを確認します。
+実行ログに「安全チェックNG」が出ていないことを確認します。
 
 ## 完了条件チェックリスト
 

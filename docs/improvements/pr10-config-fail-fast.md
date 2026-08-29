@@ -13,7 +13,9 @@
 
 ## 対象の指摘
 
-[findings.md](findings.md) の **T** / **B** / **D** / **Z** / **C** / **AD** / **AE** です。
+[findings.md](findings.md) の次の指摘です。
+
+**T** / **B** / **D** / **Z** / **C** / **AD** / **AE**
 
 ## なぜ直すか
 

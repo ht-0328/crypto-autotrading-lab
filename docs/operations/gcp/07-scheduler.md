@@ -44,9 +44,9 @@ Cloud Run Job は「1回だけ動いて終わる」仕組みです。
 
 ## 取引戦略を変えるときの注意
 
-Cloud Scheduler の役割は、デプロイ済みの Cloud Run Job を呼び出すことだけです。
+Cloud Scheduler の役割は、Cloud Run Job を呼び出すことだけです。
 取引戦略を変えたい場合は、Scheduler を触りません。
-**Deploy to GCP** をもう一度実行し、Cloud Run Job 自体を更新してください。
+**Deploy to GCP** をもう一度実行してください。Job 自体が更新されます。
 
 ## 完了条件チェックリスト
 
