@@ -76,7 +76,8 @@ object ConfigLoader {
     private fun createDefaultConfig(): AppConfig {
         return AppConfig(
             app = AppSettings(
-                interval = "5min"
+                interval = "5min",
+                phase = 1
             ),
             trading = TradingConfig(
                 symbol = "BTC",
@@ -104,6 +105,25 @@ object ConfigLoader {
     }
 
     /**
+     * 開発フェーズを解決する。
+     *
+     * フェーズは実注文を許可するかどうかを決める安全上の設定のため、
+     * 環境変数が指定されているのに数値として解釈できない場合は、
+     * 黙って既定値に戻さず起動時に失敗させる。
+     *
+     * @param envPhase 環境変数(APP_PHASE)の値
+     * @param basePhase 設定ファイル側のフェーズ
+     * @return 採用するフェーズ
+     */
+    internal fun resolvePhase(envPhase: String?, basePhase: Int): Int {
+        if (envPhase.isNullOrBlank()) {
+            return basePhase
+        }
+        return envPhase.toIntOrNull()
+            ?: error("環境変数 APP_PHASE の値を数値として解釈できません")
+    }
+
+    /**
      * ベースとなる設定を環境変数の値で上書きする。
      * 環境変数が設定されていない場合は、ベースの設定値をそのまま使用する。
      *
@@ -112,6 +132,7 @@ object ConfigLoader {
      */
     private fun overrideWithEnvVars(base: AppConfig): AppConfig {
         val envInterval = System.getenv("APP_INTERVAL")
+        val envPhase = System.getenv("APP_PHASE")
         val envStrategyName = System.getenv("APP_TRADING_STRATEGY_NAME")
         val envSymbol = System.getenv("TRADING_SYMBOL")
         val envInitialCapital = System.getenv("TRADING_INITIAL_CAPITAL")
@@ -142,7 +163,8 @@ object ConfigLoader {
 
         return AppConfig(
             app = AppSettings(
-                interval = envInterval ?: base.app.interval
+                interval = envInterval ?: base.app.interval,
+                phase = resolvePhase(envPhase, base.app.phase)
             ),
             trading = TradingConfig(
                 strategyName = envStrategyName ?: base.trading.strategyName,

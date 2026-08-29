@@ -179,4 +179,109 @@ class TradingApplicationTest {
         // A deeper test would require verifying the arguments passed to save(),
         // which requires mock setup for Klines and OutputPorts.
     }
+
+    /**
+     * 利確ライン（買値の +5%）を超えた終値のK線を12本作る。
+     * SafeReboundStrategy が SELL_CANDIDATE を返す状態にするためのヘルパー。
+     */
+    private fun createSellSignalKlines(): List<cryptoautotrading.domain.model.Kline> {
+        return (1..12).map { index ->
+            cryptoautotrading.domain.model.Kline(
+                openTime = "2026-01-01T00:%02d:00Z".format(index),
+                open = "1100",
+                high = "1100",
+                low = "1100",
+                close = "1100",
+                volume = "1"
+            )
+        }
+    }
+
+    /**
+     * 保有中の状態で SELL_CANDIDATE になる構成の TradingApplication を組み立てて実行し、
+     * 保存された状態を返す。
+     */
+    private suspend fun runSellScenario(
+        realTradeEnabled: Boolean,
+        dryRun: Boolean
+    ): List<cryptoautotrading.domain.model.SimulationState> {
+        val baseConfig = createAppConfig("SafeReboundStrategy")
+        val config = baseConfig.copy(
+            realTrading = cryptoautotrading.domain.model.realtrading.RealTradingConfig(
+                dryRun = dryRun,
+                realTradeEnabled = realTradeEnabled,
+                maxOrderJpy = 1000,
+                maxDailyOrderJpy = 1000,
+                maxPositionJpy = 1000
+            )
+        )
+
+        val holdingState = cryptoautotrading.domain.model.SimulationState(
+            cashBalance = java.math.BigDecimal("5000"),
+            isHolding = true,
+            buyPrice = java.math.BigDecimal("1000"),
+            holdingAmount = java.math.BigDecimal("0.5"),
+            lastUpdatedAt = "2026-01-01T00:00:00"
+        )
+
+        val stateRepository = mockk<cryptoautotrading.domain.repository.SimulationStateRepository>()
+        io.mockk.coEvery { stateRepository.load() } returns holdingState
+        val savedStates = mutableListOf<cryptoautotrading.domain.model.SimulationState>()
+        io.mockk.coEvery { stateRepository.save(capture(savedStates)) } returns Unit
+
+        val marketDataClient = mockk<cryptoautotrading.domain.repository.MarketDataClient>()
+        io.mockk.coEvery { marketDataClient.getTicker(any()) } returns
+            cryptoautotrading.domain.model.TickerResponse(status = 0, data = emptyList(), responsetime = "2026-01-01")
+        io.mockk.coEvery { marketDataClient.getKlines(any(), any(), any()) } returns
+            cryptoautotrading.domain.model.KlineResponse(status = 0, data = createSellSignalKlines(), responsetime = "2026-01-01")
+
+        val app = TradingApplication(
+            config = config,
+            marketDataClient = marketDataClient,
+            stateRepository = stateRepository,
+            tradeHistoryRepository = mockk(relaxed = true),
+            resultOutputPort = mockk(relaxed = true)
+        )
+
+        app.run()
+        return savedStates
+    }
+
+    @Test
+    fun `実取引モードで売り判定が出ても保有状態を維持すること`() = kotlinx.coroutines.test.runTest {
+        // Act
+        val savedStates = runSellScenario(realTradeEnabled = true, dryRun = false)
+
+        // Assert
+        // 取引所には資産が残っているため、シミュレーション側で勝手に売却してはいけない
+        assertTrue(savedStates.isNotEmpty())
+        savedStates.forEach { state ->
+            assertTrue(state.isHolding, "実取引モードでは保有状態を維持すること")
+            assertTrue(
+                state.holdingAmount.compareTo(java.math.BigDecimal("0.5")) == 0,
+                "実取引モードでは保有数量を変更しないこと"
+            )
+        }
+    }
+
+    @Test
+    fun `実取引が無効なら売り判定でシミュレーション上の売却が行われること`() = kotlinx.coroutines.test.runTest {
+        // Act
+        val savedStates = runSellScenario(realTradeEnabled = false, dryRun = true)
+
+        // Assert
+        val finalState = savedStates.last()
+        assertTrue(!finalState.isHolding, "シミュレーションでは売却されて保有なしになること")
+        assertTrue(finalState.holdingAmount.compareTo(java.math.BigDecimal.ZERO) == 0)
+    }
+
+    @Test
+    fun `実取引モードでは注文処理の直後にも状態が保存されること`() = kotlinx.coroutines.test.runTest {
+        // Act
+        val savedStates = runSellScenario(realTradeEnabled = true, dryRun = false)
+
+        // Assert
+        // 注文処理直後の保存とメイン処理末尾の保存で2回呼ばれる
+        assertTrue(savedStates.size == 2, "保存回数が想定と異なる: ${savedStates.size}")
+    }
 }

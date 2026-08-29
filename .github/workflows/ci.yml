@@ -7,11 +7,8 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: "dry-runモードで実行するか"
-        required: false
-        type: boolean
-        default: true
+      # Phase1 では実注文を禁止しているため、dry-run の切り替えは提供しない。
+      # CI は常に dry_run: true / real_trade_enabled: false で実行する。
       public_api_source:
         description: "Public APIの接続先"
         required: false
@@ -98,7 +95,6 @@ jobs:
         run: |
           ci/prepare-ci-config.sh
         env:
-          INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLIC_API_SOURCE: ${{ inputs.public_api_source }}
           INPUT_STRATEGY_NAME: ${{ inputs.strategy_name }}
 

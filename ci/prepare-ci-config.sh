@@ -7,11 +7,10 @@ mkdir -p build/ci-config
 # デフォルト値の決定
 STRATEGY_NAME="${INPUT_STRATEGY_NAME:-SafeReboundStrategy}"
 PUBLIC_API_SOURCE="${INPUT_PUBLIC_API_SOURCE:-wiremock}"
-DRY_RUN="${INPUT_DRY_RUN:-true}"
 
 echo "使用する売買戦略: ${STRATEGY_NAME}"
 echo "Public API の接続先: ${PUBLIC_API_SOURCE}"
-echo "dry-run: ${DRY_RUN}"
+echo "dry-run: true（Phase1 では固定。切り替えできません）"
 echo "Private API は常に WireMock を使用します"
 
 # application-ci.yaml を元に CI 実行用設定を作る
@@ -31,18 +30,13 @@ fi
 # Private API は常に WireMock にする
 sed -i "s|private_base_url:.*|private_base_url: \"http://wiremock:8080/private\"|g" "${CONFIG_PATH}"
 
-# real_trading 設定を dry_run に合わせて追加する
-if [ "${DRY_RUN}" = "true" ]; then
-  REAL_TRADE_ENABLED="false"
-else
-  REAL_TRADE_ENABLED="true"
-fi
-
+# real_trading 設定を追加する。
+# Phase1 では実注文を禁止しているため、CI では常に無効で固定する（切り替え不可）。
 {
   printf "\n"
   printf "real_trading:\n"
-  printf "  dry_run: %s\n" "${DRY_RUN}"
-  printf "  real_trade_enabled: %s\n" "${REAL_TRADE_ENABLED}"
+  printf "  dry_run: true\n"
+  printf "  real_trade_enabled: false\n"
   printf "  stop_on_unconfirmed_order: true\n"
   printf "  max_order_jpy: 1000\n"
   printf "  max_daily_order_jpy: 1000\n"

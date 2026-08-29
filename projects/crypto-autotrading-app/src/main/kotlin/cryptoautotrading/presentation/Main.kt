@@ -20,6 +20,12 @@ import java.nio.file.Paths
 private val logger = KotlinLogging.logger {}
 
 /**
+ * 実注文が許可される最小のフェーズ。
+ * ロードマップ上、実注文は Phase3（通知 → 手動承認 → 実注文）のスコープ。
+ */
+private const val REAL_TRADING_ALLOWED_PHASE = 3
+
+/**
  * アプリケーションのエントリーポイント
  */
 fun main() = runBlocking {
@@ -61,6 +67,16 @@ fun main() = runBlocking {
 
         // 実注文が有効な場合のみ、Private API 用のクライアントと認証情報を初期化する
         val isRealTradeActive = config.realTrading.realTradeEnabled && !config.realTrading.dryRun
+
+        // Phase3 未満では、設定値にかかわらず実注文経路に入らせない
+        if (config.app.phase < REAL_TRADING_ALLOWED_PHASE && isRealTradeActive) {
+            logger.error {
+                "Phase${config.app.phase} では実注文を実行できません。" +
+                    "real_trade_enabled=false または dry_run=true に戻してください。" +
+                    "実注文は Phase$REAL_TRADING_ALLOWED_PHASE 以降でのみ許可されます。"
+            }
+            error("Phase${config.app.phase} で実注文が有効化されています")
+        }
 
         if (isRealTradeActive) {
             val isWireMockPrivateApi = privateBaseUrl.contains("wiremock") ||

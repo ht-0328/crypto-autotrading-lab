@@ -1,6 +1,6 @@
 # PR05: Phase1 で実注文を構造的に不可能にする
 
-**状態**: 未着手
+**状態**: 実施済み（ブランチ `fix/phase1-real-order-guard`）
 
 ## 対象の指摘
 
@@ -32,19 +32,21 @@
 
 ### 1. 起動時ガードを入れる
 
-1. `AppSettings` に `phase: Int = 1` を追加する（`@JsonProperty("phase")`）。
-2. `ConfigLoader` で `APP_PHASE` による上書きを追加する。値が不正なら起動時例外。
+1. `AppSettings` に `phase: Int = 1` を追加する（YAML のキー名と一致するので `@JsonProperty` は不要）。
+2. `ConfigLoader` で `APP_PHASE` による上書きを追加する。安全上の設定なので、値が数値として解釈できない場合は既定値に戻さず起動時例外にする（`ConfigLoader.resolvePhase()`）。
 3. `Main.kt` で、Private API クライアントを構築する前に判定する。
 
    ```kotlin
+   private const val REAL_TRADING_ALLOWED_PHASE = 3
+
    val isRealTradeActive = config.realTrading.realTradeEnabled && !config.realTrading.dryRun
-   if (config.app.phase <= 2 && isRealTradeActive) {
-       logger.error { "Phase${config.app.phase} では実注文を実行できません。real_trade_enabled=false にしてください。" }
+   if (config.app.phase < REAL_TRADING_ALLOWED_PHASE && isRealTradeActive) {
+       logger.error { "Phase${config.app.phase} では実注文を実行できません。..." }
        error("Phase${config.app.phase} で実注文が有効化されています")
    }
    ```
 
-   `<= 2` としているのは、[roadmap.md](../overview/roadmap.md) で実注文が許されるのが Phase3 からのため。Phase2 の禁止事項にも「自動で実際の注文を出すこと」があります。
+   実注文が許されるのが Phase3 からなのは、[roadmap.md](../overview/roadmap.md) で実注文が Phase3「実注文 + 手動承認 + 安全制御」のスコープだからです。Phase2 の禁止事項にも「自動で実際の注文を出すこと」があります。
 
 4. `config/application-gmo.yaml` の `app` に `phase: 1` を明示する。
 
