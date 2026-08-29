@@ -46,6 +46,14 @@ GCPへのデプロイ準備は、以下の順番で進めてください。
 7. [Cloud Scheduler による定期実行設定 (operations/gcp/07-scheduler.md)](operations/gcp/07-scheduler.md)
 8. （不要になった場合）[リソースのクリーンアップ (operations/gcp/08-cleanup.md)](operations/gcp/08-cleanup.md)
 
+### 🛠 既知の課題を直したい方
+
+洗い出し済みの改善項目です。1ファイル = 1PR の単位に分かれており、ファイルのパスを指定すればその作業だけを実施できます。
+
+1. [改善計画の一覧 (improvements/README.md)](improvements/README.md)
+2. [指摘一覧と根拠 (improvements/findings.md)](improvements/findings.md)
+3. [第3波バックログ (improvements/backlog.md)](improvements/backlog.md)
+
 ### 🤖 AI（Claude Code / Codex / Antigravity）に作業させたい方
 
 AIエージェントに開発を依頼する前に、人間が内容を把握しておくべきルールです。
@@ -62,6 +70,7 @@ AIエージェントに開発を依頼する前に、人間が内容を把握し
 - `overview/`: プロダクトの目的やロードマップ
 - `development/`: 開発環境の構築手順や日々の開発フロー
 - `operations/`: GCP環境の構築やデプロイ手順
+- **`improvements/`**: 仕様・ドキュメント・インフラ・実装の食い違いを洗い出した結果と、その解消計画です。1ファイル = 1PR の単位で分けてあり、ファイルを指定すればその作業だけを実施できます。
 
 ## ドキュメントリンク方針
 
