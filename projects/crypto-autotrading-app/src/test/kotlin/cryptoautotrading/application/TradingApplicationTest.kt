@@ -264,6 +264,36 @@ class TradingApplicationTest {
         }
     }
 
+
+    @Test
+    fun `日次サマリーの送信に失敗したら通知日を記録しないこと`() = kotlinx.coroutines.test.runTest {
+        val notifier = RecordingNotifier()
+        notifier.sendResult = false
+
+        val savedStates = runSummaryScenario(notifier, lastSummaryNotifiedDate = null)
+
+        // 記録すると、その日の分が永久に失われる。次の実行で再び試みる必要がある
+        assertEquals(null, savedStates.last().lastSummaryNotifiedDate)
+    }
+
+    @Test
+    fun `送信に失敗した次の実行では日次サマリーが再び試みられること`() = kotlinx.coroutines.test.runTest {
+        val notifier = RecordingNotifier()
+        notifier.sendResult = false
+        runSummaryScenario(notifier, lastSummaryNotifiedDate = null)
+        val firstAttempts = notifier.messages.count { it.title.contains("日次サマリー") }
+
+        // 1回目が失敗した状態（通知日は未記録）から、もう一度実行する
+        notifier.sendResult = true
+        val savedStates = runSummaryScenario(notifier, lastSummaryNotifiedDate = null)
+
+        assertTrue(
+            notifier.messages.count { it.title.contains("日次サマリー") } > firstAttempts,
+            "再度送信が試みられること"
+        )
+        assertEquals("2026-08-29", savedStates.last().lastSummaryNotifiedDate)
+    }
+
     /**
      * 日次サマリーの検証用に、保有中の状態で1回実行して保存された状態を返す。
      */
@@ -590,7 +620,11 @@ class TradingApplicationTest {
 private class RecordingNotifier : cryptoautotrading.domain.notification.Notifier {
     val messages = mutableListOf<cryptoautotrading.domain.notification.NotificationMessage>()
 
-    override suspend fun notify(message: cryptoautotrading.domain.notification.NotificationMessage) {
+    /** 送信できたことにするかどうか。既定は成功 */
+    var sendResult = true
+
+    override suspend fun notify(message: cryptoautotrading.domain.notification.NotificationMessage): Boolean {
         messages.add(message)
+        return sendResult
     }
 }

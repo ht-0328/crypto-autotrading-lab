@@ -15,9 +15,14 @@ object NoOpNotifier : Notifier {
     /**
      * 通知を送らず、内容をログに残す。
      *
+     * 送っていないので常に false を返す。これにより、通知が無効な日に
+     * 有効化した場合でも、その日のうちに送られる。
+     *
      * @param message 送るはずだった通知
+     * @return 常に false
      */
-    override suspend fun notify(message: NotificationMessage) {
+    override suspend fun notify(message: NotificationMessage): Boolean {
         logger.debug { "通知は無効です。送信内容: [${message.severity}] ${message.title} / ${message.body}" }
+        return false
     }
 }

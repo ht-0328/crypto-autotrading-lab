@@ -16,7 +16,11 @@ interface Notifier {
      * **送信に失敗しても例外を投げてはいけない。** 通知は観測の手段であって、
      * それ自体が売買処理を止める理由にはならない。
      *
+     * ただし、送れたかどうかは呼び出し側に返す。1日1回だけ送る通知は、
+     * 送れていないのに「送った」と記録すると、その日の分が永久に失われる。
+     *
      * @param message 送る通知
+     * @return 実際に送信できた場合は true
      */
-    suspend fun notify(message: NotificationMessage)
+    suspend fun notify(message: NotificationMessage): Boolean
 }
