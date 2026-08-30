@@ -25,7 +25,7 @@
 
 !!! warning "リアル注文について"
 
-    [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。コードは先行実装されていますが、Phase1 では起動時ガードにより実行できません。
+    [リアル購入処理の仕様 (specifications/features/real-trading-gmo-order.md)](specifications/features/real-trading-gmo-order.md) は **Phase3** のスコープです。2026-08-30 から本番で有効になっており、条件がそろうと実資金で発注されます。
 
 ### 🧠 売買ロジックの仕組みを知りたい方
 
