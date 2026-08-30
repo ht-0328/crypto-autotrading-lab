@@ -1437,6 +1437,133 @@ class RealTradingServiceTest {
         // 日常的な見送りまで通知すると、本当に伝えたいことが埋もれる
         assertTrue(notifier.messages.isEmpty(), notifier.messages.toString())
     }
+
+    @Test
+    fun `買い注文の送信前に発注意図が保存されること`() = runBlocking {
+        val repository = RecordingStateRepository()
+        val serviceWithRepository = RealTradingService(exchangeClient = mockClient, stateRepository = repository)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+
+        serviceWithRepository.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal"),
+            config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = SimulationState(),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        val intent = repository.savedStates.first().realTrading.latestOrder
+        assertEquals(RealOrderStatus.WAITING, intent?.status)
+        assertEquals(RealOrderSide.BUY, intent?.side)
+        // 送信前なので注文IDはまだ分からない
+        assertEquals(null, intent?.orderId)
+    }
+
+    @Test
+    fun `売り注文の送信前にも発注意図が保存されること`() = runBlocking {
+        val repository = RecordingStateRepository()
+        val serviceWithRepository = RealTradingService(exchangeClient = mockClient, stateRepository = repository)
+        mockClient.assets = listOf(ExchangeAsset("BTC", BigDecimal("0.01"), BigDecimal("0.01"), BigDecimal.ONE))
+
+        serviceWithRepository.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.SELL_CANDIDATE, "sell signal"),
+            config = tradingConfig(),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = SimulationState(
+                isHolding = true,
+                buyPrice = BigDecimal("1000000"),
+                holdingAmount = BigDecimal("0.01")
+            ),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        val intent = repository.savedStates.first().realTrading.latestOrder
+        assertEquals(RealOrderStatus.WAITING, intent?.status)
+        assertEquals(RealOrderSide.SELL, intent?.side)
+        assertEquals(null, intent?.orderId)
+    }
+
+    @Test
+    fun `発注意図の保存に失敗したら注文を送らないこと`() = runBlocking {
+        val repository = FailingStateRepository()
+        val serviceWithRepository = RealTradingService(exchangeClient = mockClient, stateRepository = repository)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+
+        val newState = serviceWithRepository.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal"),
+            config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = SimulationState(),
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        // 記録が残らないまま注文するくらいなら、注文しないほうが安全
+        assertFalse(mockClient.placeOrderCalled)
+        assertTrue(newState.realTrading.isStopped)
+    }
+
+    @Test
+    fun `注文IDが記録されていない未確認注文があったら停止すること`() = runBlocking {
+        val notifier = RecordingNotifier()
+        val serviceWithNotifier = RealTradingService(exchangeClient = mockClient, notifier = notifier)
+        mockClient.assets = listOf(ExchangeAsset("JPY", BigDecimal("50000"), BigDecimal("50000"), BigDecimal.ONE))
+        // 送信前に保存した意図が残ったまま、結果を記録できずに終わった状態
+        val state = SimulationState(
+            realTrading = RealTradingState(
+                latestOrder = RealOrderState(
+                    orderId = null,
+                    symbol = "BTC",
+                    side = RealOrderSide.BUY,
+                    status = RealOrderStatus.WAITING,
+                    requestedAmountJpy = BigDecimal("10005"),
+                    requestedSize = BigDecimal("0.01"),
+                    requestedPrice = BigDecimal("1000000"),
+                    orderedAt = "2026-08-30T10:00:00"
+                )
+            )
+        )
+
+        val newState = serviceWithNotifier.executeOrderIfNeeded(
+            decision = TradeDecision(TradeAction.BUY_CANDIDATE, "buy signal"),
+            config = tradingConfig(maxOrderJpy = 20000, maxDailyOrderJpy = 50000, maxPositionJpy = 50000),
+            tradeAmount = 10000,
+            symbol = "BTC",
+            currentState = state,
+            klineClosePrice = BigDecimal("1000000"),
+            tickerPrice = BigDecimal("1000000")
+        )
+
+        // 取引所に届いたか分からないので、新しい注文を出さず人の確認を待つ
+        assertFalse(mockClient.placeOrderCalled)
+        assertTrue(newState.realTrading.isStopped)
+        assertTrue(notifier.messages.any { it.severity == NotificationSeverity.CRITICAL }, notifier.messages.toString())
+    }
+}
+
+/** 保存された状態を記録するテスト用のリポジトリ */
+private class RecordingStateRepository : cryptoautotrading.domain.repository.SimulationStateRepository {
+    val savedStates = mutableListOf<SimulationState>()
+
+    override fun load(): SimulationState = SimulationState()
+
+    override fun save(state: SimulationState) {
+        savedStates.add(state)
+    }
+}
+
+/** 保存に必ず失敗するテスト用のリポジトリ */
+private class FailingStateRepository : cryptoautotrading.domain.repository.SimulationStateRepository {
+    override fun load(): SimulationState = SimulationState()
+
+    override fun save(state: SimulationState) {
+        throw IllegalStateException("保存に失敗しました")
+    }
 }
 
 /** 送られた通知を記録するテスト用の実装 */
