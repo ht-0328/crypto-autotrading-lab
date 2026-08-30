@@ -81,14 +81,32 @@ cd projects/crypto-autotrading-app
 docker compose -f docker/compose/local.yml up --build
 ```
 
+**売買パラメータを変えて比較する:**
+
+閾値などを変えると成績がどう変わるかを、設定を変更する前に確かめられます。値ごとにバックテストを実行し、確定損益・買い回数・勝率・最大ドローダウンを1つの表にまとめます。
+
+```bash
+SWEEP_VALUES="0.003 0.005 0.007" \
+BACKTEST_KLINE_CSV_PATH=data/backtest/input/btc_5min.csv \
+scripts/backtest/compare-parameters.sh
+```
+
+比較する項目は `SWEEP_PARAMETER` で変えられます（既定は `TRADING_BUY_THRESHOLD`）。過去K線CSVは `./gradlew exportKlinesCsv` で作れます。GitHub Actions の **Backtest Parameter Comparison** からも実行でき、結果は実行結果画面の Summary に出ます。
+
+!!! warning "バックテストに実注文の安全ルールは入っていません"
+
+    1日の注文上限、日次損失による停止、連敗による停止は本番だけで効きます。**本番の売買回数は、この比較結果より少なくなります。**
+
 ## プログラムを動かす4つの方法
 
-このアプリは、目的に合わせて4つの方法で動かすことができます。Phase1ではどの方法でも実際の注文はしません。
+このアプリは、目的に合わせて4つの方法で動かすことができます。
 
-1. **ローカルGradle実行**: パソコン上で手軽に動かして確認したいとき。
-2. **Docker Compose実行**: 本番に近い環境で動かしたいとき。
-3. **GitHub Actions CI**: コードを変更したときに、自動でテストしたいとき。
-4. **GCP Cloud Run Job**: クラウド上で定期的にシミュレーションを動かしたいとき。
+1. **ローカルGradle実行**: パソコン上で手軽に動かして確認したいとき。実注文はしません。
+2. **Docker Compose実行**: 本番に近い環境で動かしたいとき。実注文はしません。
+3. **GitHub Actions CI**: コードを変更したときに、自動でテストしたいとき。実注文はしません。
+4. **GCP Cloud Run Job**: クラウド上で定期的に動かすとき。**2026-08-30 から実資金で発注します。**
+
+1〜3 で実注文が行われないのは、`app.phase` が 3 未満で、実注文が有効な設定を検出すると起動時に異常終了するためです。条件は [GCP 運用・デプロイガイド (../operations/gcp/README.md)](../operations/gcp/README.md) を参照してください。
 
 ## ドキュメントサイト（Zensical）
 

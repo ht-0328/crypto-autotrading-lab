@@ -1,0 +1,109 @@
+name: Backtest Parameter Comparison
+
+# 売買パラメータの値を変えてバックテストを繰り返し、結果を1つの表にまとめる。
+# 設定を変える前に、利益率・勝率・最大ドローダウンのトレードオフを数字で比べるために使う。
+# 比較のロジックは scripts/backtest/compare-parameters.sh を正とする。
+
+on:
+  workflow_dispatch:
+    inputs:
+      parameter:
+        description: "比較するパラメータ"
+        required: true
+        type: choice
+        options:
+          - TRADING_BUY_THRESHOLD
+          - TRADING_SELL_THRESHOLD
+          - TRADING_VOLATILITY_THRESHOLD
+          - TRADING_SHARP_CHANGE_THRESHOLD
+          - TRADING_COOLDOWN_LENGTH
+          - TRADING_ATR_PROFIT_MULTIPLIER
+          - TRADING_ATR_LOSS_MULTIPLIER
+        default: TRADING_BUY_THRESHOLD
+      values:
+        description: "試す値（空白区切り）"
+        required: true
+        type: string
+        default: "0.003 0.005 0.007"
+      strategy_name:
+        description: "使用する売買戦略"
+        required: false
+        type: choice
+        options:
+          - SafeReboundStrategy
+          - CooldownReboundStrategy
+          - TrendConfirmReboundStrategy
+          - AtrTrendConfirmReboundStrategy
+          - SimpleContrarianStrategy
+        default: SafeReboundStrategy
+      start_date:
+        description: "過去K線の取得開始日（YYYYMMDD）"
+        required: true
+        type: string
+      end_date:
+        description: "過去K線の取得終了日（YYYYMMDD）"
+        required: true
+        type: string
+      initial_capital:
+        description: "初期資金（円）"
+        required: true
+        type: string
+        default: "10000"
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
+
+      # 過去K線は Git で管理していないため、GMO の Public API から取得する。
+      # 実注文には関わらない読み取りのみの API を使う。
+      - name: Export K-lines CSV
+        run: |
+          mkdir -p data/backtest/input
+          cd projects/crypto-autotrading-app
+          export APP_CONFIG_PATH=../../config/application-gmo.yaml
+          export APP_DATA_DIR=../../data
+          export KLINE_EXPORT_SYMBOL=BTC
+          export KLINE_EXPORT_INTERVAL=5min
+          export KLINE_EXPORT_START_DATE=${{ inputs.start_date }}
+          export KLINE_EXPORT_END_DATE=${{ inputs.end_date }}
+          export KLINE_EXPORT_OUTPUT_PATH=backtest/input/compare_btc_5min.csv
+          ./gradlew exportKlinesCsv --console=plain
+
+      - name: Compare Parameters
+        env:
+          SWEEP_PARAMETER: ${{ inputs.parameter }}
+          SWEEP_VALUES: ${{ inputs.values }}
+          BACKTEST_KLINE_CSV_PATH: data/backtest/input/compare_btc_5min.csv
+          BACKTEST_STRATEGY_NAME: ${{ inputs.strategy_name }}
+          BACKTEST_INITIAL_CAPITAL: ${{ inputs.initial_capital }}
+          OUTPUT_DIR: ${{ github.workspace }}/data/backtest/compare
+        run: scripts/backtest/compare-parameters.sh
+
+      - name: Publish Comparison
+        if: always()
+        run: |
+          if [ -f data/backtest/compare/comparison.md ]; then
+            cat data/backtest/compare/comparison.md >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "比較表が作られませんでした。ログを確認してください。" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Upload Backtest Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-comparison
+          path: |
+            data/backtest/input/*.csv
+            data/backtest/compare/*
