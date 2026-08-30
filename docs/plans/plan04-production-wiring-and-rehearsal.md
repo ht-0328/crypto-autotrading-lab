@@ -17,7 +17,8 @@
 
 ## ゴール
 
-本番の GCP 環境で、本物の GMO Private API に対して認証・残高照会が通り、`dry_run: true` のまま数日間安定して回っている。障害を起こしても安全側に倒れることを確認済み。
+本番の GCP 環境で、本物の GMO Private API に認証・残高照会が通る。
+`dry_run: true` のまま数日間安定して回っている。障害を起こしても安全側に倒れることを確認済み。
 
 ## 含む作業
 
@@ -25,7 +26,7 @@
 
 ### A. 認証情報の配線
 
-- GMO API キー / シークレットを GCP Secret Manager に登録し、Cloud Run Job に渡す。
+- GMO の APIキーとシークレットを Secret Manager に登録し、Cloud Run Job へ渡す。
 - 取引所側の **API キーの権限を最小限にする**（現物の注文と参照のみ。出金権限は付けない）。出金権限のあるキーが漏れた場合の被害は取引額と桁が違います。
 - ログに出ないことを、実際のログで確認する（[PR03](../improvements/pr03-private-api-log-leak.md) の対応が効いていること）。
 
@@ -36,7 +37,7 @@
 ### C. 状態の永続化と排他
 
 - [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は GCS を `/mnt/gcs` にマウントしています。GCS の FUSE マウントは**原子的な置き換えに対応していません**（[StateRepository](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) がフォールバックしています）。書き込み中にジョブが落ちたとき、`state.json` が壊れないことを実際に確認してください。
-- [PLAN02](plan02-order-safety-guards.md) で入れた重複実行の抑止が、本番の Cloud Run Job で実際に効くことを確認してください。
+- [PLAN02](plan02-order-safety-guards.md) の重複実行の抑止が、本番で効くことを確認してください。
 
 ### D. 障害を起こしてみる（リハーサル）
 
@@ -56,7 +57,8 @@ WireMock またはステージング設定で、次を意図的に起こして�
 ### E. 長期 dry-run
 
 - `app.phase: 1`（または 2）、`dry_run: true` のまま、本番スケジュールで最低数日〜1週間動かす。
-- 確認すること: 毎回正常終了しているか、通知と heartbeat が来ているか、`state.json` が壊れていないか、メモリやログが膨らんでいないか（[ロードマップ](../overview/roadmap.md) の Phase1 未解決リスク）。
+- 確認すること: 毎回正常終了しているか。通知と heartbeat が来ているか。
+  `state.json` が壊れていないか。メモリやログが膨らんでいないか（[ロードマップ](../overview/roadmap.md) の Phase1 未解決リスク）。
 
 ## 受け入れ条件
 

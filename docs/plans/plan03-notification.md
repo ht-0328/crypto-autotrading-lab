@@ -56,7 +56,7 @@ Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の�
 
 ### C. 自動停止の条件（手動承認の代替）
 
-[PLAN00](plan00-phase-and-safety-contract.md) で手動承認を置かないと決めました。
+[PLAN00](plan00-phase-and-safety-contract.md) で手動承認を置かないと決めています。
 **人間の代わりにシステムが自分で止まる**必要があります。次を実装し、発動したら必ず通知してください。
 
 | 条件 | 閾値 | 挙動 | 状態 |
