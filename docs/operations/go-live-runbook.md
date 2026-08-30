@@ -33,7 +33,7 @@
 | **オーナーのみ** | GMOコインの口座と APIキー、Discord の Webhook 作成、GCP コンソール操作、入金、初回実注文の監視 |
 | AI に依頼できる | デプロイワークフローの変更、発注意図の先行保存、日次サマリーの通知、コードとドキュメントの修正 |
 
-**AI に依頼できる残作業が2件あります。** ステップ4に入る前に依頼してください。
+**AI に依頼できる残作業が2件あります。** ステップ5に入る前に依頼してください。
 
 - **発注意図の先行保存**: 注文を送った直後・状態を保存する前にプロセスが落ちると、取引所に注文があるのにアプリ側に記録が残りません
 - **日次サマリーの通知**: 1日1回、その日の損益・注文回数・保有状況を通知します
@@ -97,7 +97,61 @@
 
 ---
 
-## ステップ3: GCP に認証情報を登録する
+## ステップ3: GCP 環境を作る
+
+サービスアカウント・GCSバケット・Artifact Registry を作ります。次のステップで権限を与える相手が必要になります。
+
+### なぜ必要か
+
+シークレットを読む権限は、Cloud Run Job の実行サービスアカウントに与えます。**そのアカウントが存在しないと権限を与えられません。** GCP プロジェクトを作っただけでは、これらのリソースはまだありません。
+
+### やること
+
+1. 現在の状態を確認する。
+
+   ```bash
+   gcloud config set project "${GCP_PROJECT_ID}"
+   gcloud iam service-accounts list
+   ```
+
+   `RUNTIME_SERVICE_ACCOUNT_NAME` に設定した名前のアカウントが無ければ、次に進みます。
+
+2. GitHub Actions Variables が設定されていることを確認する。
+
+   ```bash
+   gh variable list
+   ```
+
+   最低限、`GCP_PROJECT_ID` / `GCP_REGION` / `GCP_WORKLOAD_IDENTITY_PROVIDER` / `GCP_DEPLOY_SERVICE_ACCOUNT` / `RUNTIME_SERVICE_ACCOUNT_NAME` / `BUILD_SERVICE_ACCOUNT_NAME` / `SCHEDULER_SERVICE_ACCOUNT_NAME` / `GCS_BUCKET_NAME` / `ARTIFACT_REPOSITORY` が必要です。詳細は [GitHub Actions Variables の設定](gcp/05-github-actions-variables.md) を参照してください。
+
+   > 取引パラメータ系の Variables（`TRADING_*` など）は未設定でも構いません。未設定のときは、イメージに含まれる `config/application-gmo.yaml` の値が使われます。
+
+3. 構築のワークフローを実行する。
+
+   ```bash
+   gh workflow run bootstrap-create-gcp.yml
+   gh run watch
+   ```
+
+### 終わったと判断する基準
+
+```bash
+gcloud iam service-accounts list
+gcloud storage buckets list
+gcloud artifacts repositories list
+```
+
+- 実行用・ビルド用・スケジューラ用のサービスアカウントが存在する
+- GCSバケットと Artifact Registry が存在する
+
+### 注意
+
+- 作ったリソースは [リソースのクリーンアップ手順](gcp/08-cleanup.md) で削除できます。
+- バケットとレジストリは、置いておくだけならほぼ課金されません。
+
+---
+
+## ステップ4: GCP に認証情報を登録する
 
 ### なぜ必要か
 
@@ -143,7 +197,7 @@ Cloud Run で動くアプリに、APIキーと Webhook URL を安全に渡す必
 
 ---
 
-## ステップ4: デプロイを Phase3 に対応させる（AI に依頼可）
+## ステップ5: デプロイを Phase3 に対応させる（AI に依頼可）
 
 ### なぜ必要か
 
@@ -172,7 +226,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 
 ---
 
-## ステップ5: 本番で dry-run 検証をする
+## ステップ6: 本番で dry-run 検証をする
 
 ### なぜ必要か
 
@@ -204,7 +258,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 
 ---
 
-## ステップ6: 緊急停止を実際に試す
+## ステップ7: 緊急停止を実際に試す
 
 ### なぜ必要か
 
@@ -236,7 +290,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 
 ---
 
-## ステップ7: 口座に入金する
+## ステップ8: 口座に入金する
 
 ### なぜ必要か
 
@@ -254,7 +308,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 
 ---
 
-## ステップ8: 最小額で初回の実注文を通す
+## ステップ9: 最小額で初回の実注文を通す
 
 ### なぜ必要か
 
@@ -262,7 +316,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 
 ### 着手条件（1つでも欠けたら進まない）
 
-- [ ] ステップ1〜7 がすべて終わっている
+- [ ] ステップ1〜8 がすべて終わっている
 - [ ] AI に依頼した2件（発注意図の先行保存、日次サマリーの通知）がマージ済み
 - [ ] 通知が実際に届くことを確認済み
 - [ ] 緊急停止を実際に試して止まることを確認済み
@@ -313,7 +367,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 
 ---
 
-## ステップ9: 定期実行に戻す
+## ステップ10: 定期実行に戻す
 
 ### なぜ必要か
 
@@ -343,6 +397,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 | 区切り | 状態 |
 | --- | --- |
 | ステップ2まで | 通知が届くことを確認済み。お金は動かない |
-| ステップ5まで | 本番で dry-run が安定稼働。お金は動かない |
-| ステップ7まで | 準備完了。まだ実注文はしていない |
-| ステップ8まで | 実注文を1サイクル確認済み。定期実行はしていない |
+| ステップ4まで | GCP環境と認証情報が揃った。お金は動かない |
+| ステップ6まで | 本番で dry-run が安定稼働。お金は動かない |
+| ステップ8まで | 準備完了。まだ実注文はしていない |
+| ステップ9まで | 実注文を1サイクル確認済み。定期実行はしていない |
