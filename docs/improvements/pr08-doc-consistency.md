@@ -22,7 +22,8 @@
 - **V**: 出力 CSV 名が仕様書 `history_YYYYMMDD.csv` / 実装 `trades_YYYYMMDD.csv`
 - **W**: `order_sizing_mode`（`ALL_IN`）が仕様書に無く、「1回の売買金額 1,000円固定」という記述と矛盾する
 - **X**: 毎日 6:00〜約7:15 は判定がスキップされるが、どこにも書かれていない
-- **Y**: 設計書の記述が実装と違う（Terraform の有無、`TradeDecision` の型、gcloud 依存の方針）
+- **Y**: 設計書の記述が実装と違う
+  - 食い違うのは Terraform の有無、`TradeDecision` の型、gcloud 依存の方針
   - あわせて `isStopped=true` からの復旧手順が運用ドキュメントに無い
 
 ## 変更対象

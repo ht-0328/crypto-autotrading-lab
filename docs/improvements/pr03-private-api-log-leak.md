@@ -17,7 +17,7 @@
 
 ## なぜ直すか
 
-[GmoPrivateApiClientImpl.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt) が、レスポンス本文を INFO で記録しています。
+[GmoPrivateApiClientImpl.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt) が、レスポンス本文を INFO で残しています。
 
 ```kotlin
 logger.info { "GMO Private API raw response: $responseText" }
@@ -43,7 +43,8 @@ logger.info { "GMO Private API raw response: $responseText" }
    ```
 
    2026-08-29 時点では、次の行付近にレスポンス本文を入れている箇所があります。
-   対象は 54, 58, 64, 76, 80, 89 行と、121, 129, 144, 150, 165, 171 行です。
+   対象は 54, 58, 64, 76, 80, 89 行です。
+   さらに 121, 129, 144, 150, 165, 171 行にもあります。
 
 2. 各箇所を、本文を含まない形に置き換える。残してよいのは次の情報だけ。
    - HTTP ステータスコード

@@ -36,7 +36,7 @@
 
 ### 1. Phase2 を分割するか
 
-推奨: **Phase2a と Phase2b に分割する。Phase3 の着手条件は Phase2a の完了に変える。**
+推奨: **Phase2a と Phase2b に分割します。Phase3 の着手条件は Phase2a の完了に変えます。**
 
 - 通知は安全運用に必須です。注文、約定、異常停止を人間が知れないまま実資金を動かすことはできません。
 - Web画面と「画面からの設定変更」は実注文の必須条件ではありません。稼働確認はログ・通知・取引所の公式アプリで代替できます。設定変更画面は誤操作と認可の新しいリスクを増やします。
@@ -59,7 +59,8 @@
 
 ### 3. 安全ルールの数字を確定する
 
-[config/application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) の値は、実運用を想定した数字ではありません（`max_order_jpy: 1000` は BTC の最小注文数量を満たせない可能性があります。[PLAN02](plan02-order-safety-guards.md) の A 参照）。
+[config/application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) の値は、実運用を想定した数字ではありません。
+`max_order_jpy: 1000` は BTC の最小注文数量を満たせない可能性があります。[PLAN02](plan02-order-safety-guards.md) の A 参照）。
 
 決めるもの:
 

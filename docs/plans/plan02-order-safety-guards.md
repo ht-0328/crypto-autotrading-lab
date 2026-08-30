@@ -70,7 +70,7 @@ BTC が 1,244万円のとき最小注文数量は約124円相当で、`trade_amo
 
 ### B. 注文価格の基準と、成行注文のスリッページ上限（新規。backlog には未記載）— 実施済み
 
-**注文数量の計算に使う現在価格が、K線の終値になっています。** [TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は Ticker を取得してログに出すだけで、`currentPrice` には最新K線の `close` を使っています。5分足の終値は最大で5分前の価格なので、急騰していると `tradeAmount / currentPrice` が実際より多い数量になり、**約定金額が `max_order_jpy` を超えます**。上限が上限として機能していません。
+**注文数量の計算に使う現在価格が K線の終値です。** [TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は Ticker を取得してログに出すだけで、`currentPrice` には最新K線の `close` を使っています。5分足の終値は最大で5分前の価格なので、急騰していると `tradeAmount / currentPrice` が実際より多い数量になり、**約定金額が `max_order_jpy` を超えます**。上限が上限として機能していません。
 
 発注は `executionType = "MARKET"` の成行なので、板が薄いときや急変時にも想定と違う価格で約定します。
 
@@ -94,9 +94,9 @@ BTC が 1,244万円のとき最小注文数量は約124円相当で、`trade_amo
 
 !!! warning "Clock 注入だけを先に切り出すこと"
 
-    backlog 6 は「依存方向の厳格化」と「Clock 注入」の2つが1項目になっています。**Clock 注入だけを実注文前に切り出してください。** 日次上限は実際のお金の上限なので、日付が変わったときの挙動をテストで固定できない状態は残せません。依存方向の厳格化は後回しで構いません。
+    backlog 6 は2つの内容が1項目になっています。「依存方向の厳格化」と「Clock 注入」です。**Clock 注入だけを実注文前に切り出してください。** 日次上限は実際のお金の上限なので、日付が変わったときの挙動をテストで固定できない状態は残せません。依存方向の厳格化は後回しで構いません。
 
-**2 について特に重要**: 発注 POST がタイムアウトしても、取引所側では成立している可能性があります。**POST は自動リトライしてはいけません。** 次回実行時に注文照会で照合してから判断する経路を用意してください。着手前の実装は、例外を捕まえて `isStopped=true` にするだけです。注文IDが記録されないため、取引所にポジションがあるのにアプリ側に記録が無い状態になり得ます。
+**2 について特に重要**: 発注 POST がタイムアウトしても、取引所側では成立していることがあります。**POST は自動リトライしてはいけません。** 次回実行時に注文照会で照合してから判断する経路を用意してください。着手前の実装は、例外を捕まえて `isStopped=true` にするだけです。注文IDが記録されないため、取引所にポジションがあるのにアプリ側に記録が無い状態になり得ます。
 
 ### D. 実注文後に回してよい項目
 
