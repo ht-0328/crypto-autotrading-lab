@@ -289,7 +289,9 @@ if scheduler_info=$(gcloud scheduler jobs describe "${CLOUD_SCHEDULER_JOB_NAME}"
     ok "直近の起動要求は成功しています。"
   fi
 
-  # 起動に使うサービスアカウントが消えていると、権限エラーではなく 404 として返る。
+  # 起動に使うサービスアカウントが消えている場合、Cloud Run は呼び出し元に
+  # リソースの存在を隠すため 404 (status.code=5) を返す。
+  # サービスアカウントはあるが run.invoker が無い場合は 403 (status.code=7) になる。
   if [ "${scheduler_sa}" != "${SCHEDULER_SA_EMAIL}" ]; then
     warn "起動に使うサービスアカウントが想定と異なります: ${scheduler_sa}"
   fi
@@ -306,7 +308,7 @@ if scheduler_info=$(gcloud scheduler jobs describe "${CLOUD_SCHEDULER_JOB_NAME}"
       if [ -n "${invoker_roles}" ]; then
         ok "起動用サービスアカウントに roles/run.invoker が付与されています。"
       else
-        ng "起動用サービスアカウントに roles/run.invoker がありません。起動要求は 404 で失敗します。"
+        ng "起動用サービスアカウントに roles/run.invoker がありません。起動要求は 403 (status.code=7) で失敗します。"
       fi
     else
       warn "IAM ポリシーを参照できませんでした。run.invoker の有無は未確認です。"
