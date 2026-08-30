@@ -67,6 +67,7 @@ nav = [
       "operations/gcp/05-github-actions-variables.md",
       "operations/gcp/06-deploy-cloud-run-job.md",
       "operations/gcp/07-scheduler.md",
+      "operations/gcp/09-status-check.md",
       "operations/gcp/08-cleanup.md",
     ] },
   ] },

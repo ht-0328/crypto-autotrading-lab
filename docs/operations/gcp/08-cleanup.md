@@ -20,6 +20,7 @@ GCP に作った Cloud Run Job や Dockerイメージ（Artifact Registry）は�
 - Cloud Run Job
 - Artifact Registry のリポジトリ（Dockerイメージ）
 - 実行用・ビルド用のサービスアカウント
+- （オプションを選んだ場合のみ）スケジューラ用のサービスアカウント
 - （オプションを選んだ場合のみ）GCS バケットと保存されたファイル
 
 **自動で削除されないもの（消えないもの）:**
@@ -28,6 +29,15 @@ GCP に作った Cloud Run Job や Dockerイメージ（Artifact Registry）は�
 - 課金設定
 - Workload Identity とデプロイ用サービスアカウント（※1）
 - GitHub に登録した Variables や Secrets
+- **Cloud Scheduler のジョブ（タイマー）**（※2）
+
+!!! danger "（※2）タイマーだけが残ると、静かに失敗し続けます"
+
+    このワークフローは Cloud Scheduler のジョブを削除しません。一方で、スケジューラ用サービスアカウントは削除できます。
+
+    **この2つを組み合わせると、「起動する相手がいないタイマーだけが動き続ける」状態になります。** タイマーの状態は `ENABLED` のままで、決まった間隔で起動を試み、毎回失敗します。GCP のコンソールでジョブ一覧を見ても、失敗していることは分かりません。
+
+    削除したあと環境を作り直す場合は、[07-scheduler.md](07-scheduler.md) を `create` で実行して、サービスアカウントと権限を作り直してください。タイマーを完全に消したい場合は、[07-scheduler.md](07-scheduler.md) の `delete` を使ってください。
 
 !!! note "（※1）自動では消さないもの"
 
@@ -49,9 +59,19 @@ GCP に作った Cloud Run Job や Dockerイメージ（Artifact Registry）は�
 
 クリーンアップ実行後、再度デプロイを行いたい場合は、以下の手順を**順番通り**に再実行する必要があります。
 
-1. **Bootstrap Create GCP Resources**
-2. **Bootstrap Grant IAM Permissions**
-3. **Deploy to GCP**
+| 順番 | ワークフロー | 省略するとどうなるか |
+| --- | --- | --- |
+| 1 | **Bootstrap Create GCP Resources** | デプロイ先のリソースが無く、Deploy が最初の確認ステップで止まる |
+| 2 | **Bootstrap Grant IAM Permissions** | ビルドやデプロイの途中で `Permission Denied` になる |
+| 3 | **Deploy to GCP** | Cloud Run Job が無いまま、スケジューラが起動する相手を失う |
+| 4 | **Cloud Scheduler Management**（`create`） | **定期実行が動かない。** タイマーは残っているため、失敗に気付けない |
+| 5 | **Deployment Status Check** | 上のどれかが抜けていても気付けない |
+
+!!! warning "4番目を飛ばすと、静かに止まります"
+
+    2026-08-30 に、1〜3 だけを実行して再構築したことで、5分ごとの自動売買が止まったまま気付けない状態になりました。デプロイは成功し、タイマーも `ENABLED` のままだったためです。
+
+    詳しくは [07-scheduler.md](07-scheduler.md) の「このワークフローが作るもの」を参照してください。確認の方法は [09-status-check.md](09-status-check.md) にあります。
 
 ### サービスアカウント削除に関する注意事項
 

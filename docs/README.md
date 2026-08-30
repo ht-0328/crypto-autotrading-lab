@@ -50,7 +50,10 @@ GCPへのデプロイ準備は、以下の順番で進めてください。
 5. [GitHub Actions Variables の設定 (operations/gcp/05-github-actions-variables.md)](operations/gcp/05-github-actions-variables.md)
 6. [Cloud Run Job へのデプロイ (operations/gcp/06-deploy-cloud-run-job.md)](operations/gcp/06-deploy-cloud-run-job.md)
 7. [Cloud Scheduler による定期実行設定 (operations/gcp/07-scheduler.md)](operations/gcp/07-scheduler.md)
-8. （不要になった場合）[リソースのクリーンアップ (operations/gcp/08-cleanup.md)](operations/gcp/08-cleanup.md)
+8. [デプロイ状態の確認 (operations/gcp/09-status-check.md)](operations/gcp/09-status-check.md)
+9. （不要になった場合）[リソースのクリーンアップ (operations/gcp/08-cleanup.md)](operations/gcp/08-cleanup.md)
+
+各ワークフローが何を作り、飛ばすと何が起きるかは [GCP 運用・デプロイガイド (operations/gcp/README.md)](operations/gcp/README.md) の「ワークフローの地図」にまとめてあります。
 
 ### 🚀 実注文（自動売買）に向けて進めたい方
 
