@@ -19,7 +19,6 @@ import cryptoautotrading.domain.strategy.TradingStrategy
 import cryptoautotrading.domain.realtrading.RealTradingService
 import cryptoautotrading.domain.realtrading.RealTradingClient
 import cryptoautotrading.domain.marketdata.MarketDataValidator
-import cryptoautotrading.domain.notification.NoOpNotifier
 import cryptoautotrading.domain.notification.NotificationMessage
 import cryptoautotrading.domain.notification.NotificationSeverity
 import cryptoautotrading.domain.notification.Notifier
@@ -41,7 +40,9 @@ import java.time.format.DateTimeFormatter
  * @property resultOutputPort 結果出力ポート
  * @property realTradingExchangeClient リアル取引の取引所操作を行うクライアント
  * @property clock 時刻の取得に使う時計。テストでは固定した時刻に差し替える
- * @property notifier 注文や停止を人に伝える通知の口
+ * @property notifier 注文や停止を人に伝える通知の口。
+ *   **既定値を持たせていない。** 渡し忘れると通知が黙って無効になり、
+ *   停止しても誰にも伝わらないため、コンパイル時に気付けるようにしている
  */
 class TradingApplication(
     private val config: AppConfig,
@@ -51,7 +52,7 @@ class TradingApplication(
     private val resultOutputPort: ResultOutputPort,
     private val realTradingExchangeClient: RealTradingClient? = null,
     private val clock: Clock = TradingTime.systemClock(),
-    private val notifier: Notifier = NoOpNotifier
+    private val notifier: Notifier
 ) {
 
     private val logger = KotlinLogging.logger {}

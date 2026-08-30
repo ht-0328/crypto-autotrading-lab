@@ -60,7 +60,8 @@ class TradingApplicationTest {
             tradeHistoryRepository = mockk(),
             resultOutputPort = mockk(),
             realTradingExchangeClient = null,
-            clock = clock
+            clock = clock,
+            notifier = RecordingNotifier()
         )
     }
 
@@ -141,7 +142,8 @@ class TradingApplicationTest {
             tradeHistoryRepository = mockk(relaxed = true),
             resultOutputPort = mockk(relaxed = true),
             realTradingExchangeClient = null,
-            clock = fixedJstClock("2026-08-29T06:05:00")
+            clock = fixedJstClock("2026-08-29T06:05:00"),
+            notifier = RecordingNotifier()
         )
 
         app.run()
@@ -188,7 +190,8 @@ class TradingApplicationTest {
             tradeHistoryRepository = mockk(relaxed = true),
             resultOutputPort = mockk(relaxed = true),
             realTradingExchangeClient = null,
-            clock = fixedJstClock("2026-08-29T10:05:00")
+            clock = fixedJstClock("2026-08-29T10:05:00"),
+            notifier = RecordingNotifier()
         )
 
         app.run()
@@ -323,7 +326,8 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(),
+            notifier = RecordingNotifier()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -338,7 +342,8 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(),
+            notifier = RecordingNotifier()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -353,7 +358,8 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(),
+            notifier = RecordingNotifier()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -368,7 +374,8 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(),
+            notifier = RecordingNotifier()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -383,7 +390,8 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(),
+            notifier = RecordingNotifier()
         )
 
         val strategy = invokeCreateStrategy(app, config.trading)
@@ -398,7 +406,8 @@ class TradingApplicationTest {
             marketDataClient = mockk(),
             stateRepository = mockk(),
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(),
+            notifier = RecordingNotifier()
         )
 
         val exception = assertThrows<Exception> {
@@ -435,7 +444,8 @@ class TradingApplicationTest {
             marketDataClient = marketDataClient,
             stateRepository = mockStateRepository,
             tradeHistoryRepository = mockk(),
-            resultOutputPort = mockk()
+            resultOutputPort = mockk(),
+            notifier = RecordingNotifier()
         )
 
         // Act
@@ -529,7 +539,8 @@ class TradingApplicationTest {
             tradeHistoryRepository = mockk(relaxed = true),
             resultOutputPort = mockk(relaxed = true),
             realTradingExchangeClient = null,
-            clock = clock
+            clock = clock,
+            notifier = RecordingNotifier()
         )
 
         app.run()
