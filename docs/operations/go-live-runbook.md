@@ -72,22 +72,30 @@
 
 1. Discord で通知を受けるチャンネルを作る。
 2. チャンネル設定 → 連携サービス → ウェブフック から Webhook を作り、URL をコピーする。
-3. ローカルで動かして、通知が届くことを確認する。
+3. テスト送信のコマンドで、通知が届くことを確認する。
 
    ```bash
    cd projects/crypto-autotrading-app
    export NOTIFICATION_WEBHOOK_URL="（コピーしたURL）"
-   export APP_DATA_DIR=../../data
-   ./gradlew run
+   ./gradlew sendTestNotification
    ```
 
-   `config/application-gmo.yaml` の `notification.enabled` を `true` にしてから実行してください。
+   すでに Secret Manager に登録済みなら、そこから取り出しても構いません。
+
+   ```bash
+   export NOTIFICATION_WEBHOOK_URL="$(gcloud secrets versions access latest \
+     --secret=notification-webhook-url --project="${GCP_PROJECT_ID}")"
+   ./gradlew sendTestNotification
+   ```
 
 4. Slack を使う場合は `notification.payload_key` を `text` に変えます（Discord は `content`）。
 
+> **通常の実行（`./gradlew run`）では通知は飛びません。** 通知が出るのは注文・約定・停止のときだけで、実注文が無効な間はそれらが起きないためです。**実注文を始めた最初の1回が通知の初テストになる**という状況を避けるために、このコマンドを用意しています。
+
 ### 終わったと判断する基準
 
-- Discord のチャンネルに通知が届いた
+- **Discord のチャンネルに実際にメッセージが届いた**
+- ログに `通知を送信しました。severity=INFO, httpStatus=204` と出た
 - 通知の本文に Webhook の URL が含まれていない
 
 ### 注意
