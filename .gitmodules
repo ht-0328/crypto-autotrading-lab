@@ -1,0 +1,3 @@
+[submodule "references/engineering-docs-standard"]
+	path = references/engineering-docs-standard
+	url = https://github.com/ht-0328/engineering-docs-standard.git
