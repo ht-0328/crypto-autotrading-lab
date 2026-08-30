@@ -13,7 +13,7 @@
 
 ## 対象の指摘
 
-[findings.md](findings.md) の **A** / **B** / **F** / **H**
+[findings.md](findings.md) の **A** / **B** / **F** / **H**（重要度は高〜中）
 
 ## なぜ直すか
 

@@ -351,6 +351,7 @@ ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
 ### 着手条件
 
 - ステップ8 のサイクルが、不整合ゼロで規定回数だけ連続で成立している
+  - 規定回数は [ロードマップ](../overview/roadmap.md) の Phase4 着手条件
 
 ### やること
 

@@ -18,7 +18,7 @@
 ## なぜ直すか
 
 [scripts/docker-clean.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/scripts/docker-clean.sh) が、ホスト上のリソースを確認なしで削除していました。
-対象は全コンテナ・全イメージ・全ボリューム・全ネットワークです。
+対象は全コンテナ・全イメージ・全ボリューム・全カスタムネットワーク・全ビルドキャッシュです。
 `docker system prune -a --volumes -f` まで実行していました。
 他プロジェクトのデータも消えます。DevContainer 内から実行すれば開発環境自体も消えます。README にも説明がなく、実行1回で被害が出ます。
 

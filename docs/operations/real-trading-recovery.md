@@ -64,7 +64,7 @@
 
 ### Step 1: 停止していることを確認する
 
-実行ログに「安全チェックNG: realTrading.isStopped=true」が出ていれば停止中です。
+実行ログに「安全チェックNG」の行が出ていれば停止中です。
 
 ```bash
 gcloud run jobs executions list --job ${CLOUD_RUN_JOB_NAME} --region ${GCP_REGION}
