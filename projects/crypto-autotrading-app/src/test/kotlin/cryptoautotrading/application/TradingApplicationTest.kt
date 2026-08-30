@@ -214,6 +214,100 @@ class TradingApplicationTest {
         volume = "1"
     )
 
+
+    @Test
+    fun `その日はじめての実行で日次サマリーが通知されること`() = kotlinx.coroutines.test.runTest {
+        val notifier = RecordingNotifier()
+        val savedStates = runSummaryScenario(notifier, lastSummaryNotifiedDate = null)
+
+        assertTrue(
+            notifier.messages.any { it.title.contains("日次サマリー") },
+            "日次サマリーが通知されること: ${notifier.messages}"
+        )
+        assertEquals("2026-08-29", savedStates.last().lastSummaryNotifiedDate)
+    }
+
+    @Test
+    fun `同じ日の2回目以降の実行では日次サマリーが通知されないこと`() = kotlinx.coroutines.test.runTest {
+        val notifier = RecordingNotifier()
+        runSummaryScenario(notifier, lastSummaryNotifiedDate = "2026-08-29")
+
+        // 5分間隔で毎回送ると1日288件になり、本当に伝えたいことが埋もれる
+        assertTrue(
+            notifier.messages.none { it.title.contains("日次サマリー") },
+            "重複して通知されないこと: ${notifier.messages}"
+        )
+    }
+
+    @Test
+    fun `日付が変われば日次サマリーが再び通知されること`() = kotlinx.coroutines.test.runTest {
+        val notifier = RecordingNotifier()
+        runSummaryScenario(notifier, lastSummaryNotifiedDate = "2026-08-28")
+
+        assertTrue(
+            notifier.messages.any { it.title.contains("日次サマリー") },
+            "日付が変われば通知されること: ${notifier.messages}"
+        )
+    }
+
+    @Test
+    fun `日次サマリーに保有状況と損益が含まれること`() = kotlinx.coroutines.test.runTest {
+        val notifier = RecordingNotifier()
+        runSummaryScenario(notifier, lastSummaryNotifiedDate = null)
+
+        val summary = notifier.messages.first { it.title.contains("日次サマリー") }
+        listOf("モード", "現在価格", "保有", "残金", "総資産評価額", "確定損益（累計）", "連敗").forEach { key ->
+            assertTrue(summary.body.contains(key), "$key が含まれること: ${summary.body}")
+        }
+    }
+
+    /**
+     * 日次サマリーの検証用に、保有中の状態で1回実行して保存された状態を返す。
+     */
+    private suspend fun runSummaryScenario(
+        notifier: cryptoautotrading.domain.notification.Notifier,
+        lastSummaryNotifiedDate: String?
+    ): List<cryptoautotrading.domain.model.SimulationState> {
+        val latestOpenTime = java.time.LocalDateTime.parse("2026-08-29T10:00:00")
+            .atZone(cryptoautotrading.domain.time.TradingTime.ZONE)
+            .toInstant()
+            .toEpochMilli()
+        val fiveMinutes = 5 * 60 * 1000L
+        val klines = (0 until 12).map { index -> flatKline(latestOpenTime - (11 - index) * fiveMinutes) }
+
+        val marketDataClient = mockk<cryptoautotrading.domain.repository.MarketDataClient>()
+        io.mockk.coEvery { marketDataClient.getTicker(any()) } returns
+            cryptoautotrading.domain.model.TickerResponse(status = 0, data = emptyList(), responsetime = "2026-01-01")
+        io.mockk.coEvery { marketDataClient.getKlines(any(), any(), any()) } returns
+            cryptoautotrading.domain.model.KlineResponse(status = 0, data = klines, responsetime = "2026-01-01")
+
+        val stateRepository = mockk<cryptoautotrading.domain.repository.SimulationStateRepository>()
+        io.mockk.coEvery { stateRepository.load() } returns cryptoautotrading.domain.model.SimulationState(
+            cashBalance = java.math.BigDecimal("5000"),
+            isHolding = true,
+            buyPrice = java.math.BigDecimal("1000"),
+            holdingAmount = java.math.BigDecimal("0.5"),
+            lastUpdatedAt = "2026-08-29T09:55:00",
+            lastSummaryNotifiedDate = lastSummaryNotifiedDate
+        )
+        val savedStates = mutableListOf<cryptoautotrading.domain.model.SimulationState>()
+        io.mockk.coEvery { stateRepository.save(capture(savedStates)) } returns Unit
+
+        val app = TradingApplication(
+            config = createAppConfig("SafeReboundStrategy"),
+            marketDataClient = marketDataClient,
+            stateRepository = stateRepository,
+            tradeHistoryRepository = mockk(relaxed = true),
+            resultOutputPort = mockk(relaxed = true),
+            realTradingExchangeClient = null,
+            clock = fixedJstClock("2026-08-29T10:05:00"),
+            notifier = notifier
+        )
+
+        app.run()
+        return savedStates
+    }
+
     // Access private method via reflection for testing
     private fun invokeCreateStrategy(app: TradingApplication, config: TradingConfig): Any {
         val method = TradingApplication::class.java.getDeclaredMethod("createStrategy", TradingConfig::class.java)
@@ -478,5 +572,14 @@ class TradingApplicationTest {
         // Assert
         // 注文処理直後の保存とメイン処理末尾の保存で2回呼ばれる
         assertTrue(savedStates.size == 2, "保存回数が想定と異なる: ${savedStates.size}")
+    }
+}
+
+/** 送られた通知を記録するテスト用の実装 */
+private class RecordingNotifier : cryptoautotrading.domain.notification.Notifier {
+    val messages = mutableListOf<cryptoautotrading.domain.notification.NotificationMessage>()
+
+    override suspend fun notify(message: cryptoautotrading.domain.notification.NotificationMessage) {
+        messages.add(message)
     }
 }

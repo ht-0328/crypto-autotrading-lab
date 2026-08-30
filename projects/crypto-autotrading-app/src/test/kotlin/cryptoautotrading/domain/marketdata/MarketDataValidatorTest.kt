@@ -134,17 +134,49 @@ class MarketDataValidatorTest {
     }
 
     @Test
-    fun `K線が1本欠けている場合は使えないと判定されること`() {
-        // 間隔が2倍になる状態を作る
-        val klines = listOf(
-            kline(baseOpenTime),
-            kline(baseOpenTime + 2 * fiveMinutesMillis)
-        )
-        val validator = MarketDataValidator(clockAt(baseOpenTime + 3 * fiveMinutesMillis))
+    fun `欠損が小さければ使えると判定されること`() {
+        // 取引所は約定がなかった時間帯の足を返さない。実データでは10分程度の欠損が日常的に起きる
+        val klines = (0 until 15).map { index ->
+            val skew = if (index >= 10) fiveMinutesMillis else 0L
+            kline(baseOpenTime + index * fiveMinutesMillis + skew)
+        }
+        val latest = klines.last().openTime.toLong()
+        val validator = MarketDataValidator(clockAt(latest + fiveMinutesMillis))
+
+        val result = validator.validate(klines, "5min")
+
+        assertTrue(result.isValid, result.reason)
+    }
+
+    @Test
+    fun `欠損が大きく判定期間が広がりすぎる場合は使えないと判定されること`() {
+        // 12本で1時間を見ているつもりが数時間になっていると、判定の前提が崩れる
+        val klines = (0 until 15).map { index ->
+            val skew = if (index >= 14) 20 * fiveMinutesMillis else 0L
+            kline(baseOpenTime + index * fiveMinutesMillis + skew)
+        }
+        val latest = klines.last().openTime.toLong()
+        val validator = MarketDataValidator(clockAt(latest + fiveMinutesMillis))
 
         val result = validator.validate(klines, "5min")
 
         assertFalse(result.isValid)
+    }
+
+    @Test
+    fun `判定に使わない古い箇所の欠損は無視されること`() {
+        // 直近15本より前の欠損は、どの Strategy も見ないため判定に影響しない
+        val klines = mutableListOf(kline(baseOpenTime))
+        val gapStart = baseOpenTime + 50 * fiveMinutesMillis
+        (0 until 15).forEach { index ->
+            klines.add(kline(gapStart + index * fiveMinutesMillis))
+        }
+        val latest = klines.last().openTime.toLong()
+        val validator = MarketDataValidator(clockAt(latest + fiveMinutesMillis))
+
+        val result = validator.validate(klines, "5min")
+
+        assertTrue(result.isValid, result.reason)
     }
 
     @Test

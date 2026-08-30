@@ -67,7 +67,8 @@ class SimulationService(
                             lastUpdatedAt = nowStr,
                             lastStopLossTime = currentState.lastStopLossTime,
                             entryAtr = decision.atr,
-                            realTrading = currentState.realTrading
+                            realTrading = currentState.realTrading,
+                            lastSummaryNotifiedDate = currentState.lastSummaryNotifiedDate
                         )
                     } else {
                         // 購入数量が0以下の場合は状態を維持
@@ -97,7 +98,8 @@ class SimulationService(
                         lastUpdatedAt = nowStr,
                         lastStopLossTime = newStopLossTime,
                         entryAtr = null,
-                        realTrading = currentState.realTrading
+                        realTrading = currentState.realTrading,
+                        lastSummaryNotifiedDate = currentState.lastSummaryNotifiedDate
                     )
                 } else {
                     // 保有していない、または売却に必要なデータがない場合は状態を維持

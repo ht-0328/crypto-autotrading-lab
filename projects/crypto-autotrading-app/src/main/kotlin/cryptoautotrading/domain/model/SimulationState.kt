@@ -16,6 +16,8 @@ import java.math.BigDecimal
  * @property lastStopLossTime 最後に損切りしたK線の時間
  * @property entryAtr エントリー時に算出されたATR。AtrTrendConfirmReboundStrategy等で使用
  * @property realTrading リアル取引固有の状態。既存stateに存在しない場合はデフォルト状態を使用する。
+ * @property lastSummaryNotifiedDate 日次サマリーを通知した日付（例: "2026-08-30"）。
+ *   同じ日に何度も通知しないために使う。
  */
 @Serializable
 data class SimulationState(
@@ -40,5 +42,7 @@ data class SimulationState(
     @Serializable(with = BigDecimalSerializer::class)
     val entryAtr: BigDecimal? = null,
 
-    val realTrading: RealTradingState = RealTradingState()
+    val realTrading: RealTradingState = RealTradingState(),
+
+    val lastSummaryNotifiedDate: String? = null
 )

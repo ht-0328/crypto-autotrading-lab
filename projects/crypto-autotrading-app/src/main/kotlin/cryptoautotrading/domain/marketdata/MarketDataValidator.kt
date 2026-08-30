@@ -45,7 +45,7 @@ class MarketDataValidator(
         validateNoDuplicates(openTimes)?.let { return it }
 
         val sortedOpenTimes = openTimes.sorted()
-        validateContinuity(sortedOpenTimes, intervalMillis)?.let { return it }
+        validateRecentSpan(sortedOpenTimes, intervalMillis)?.let { return it }
         validateFreshness(sortedOpenTimes.last(), intervalMillis)?.let { return it }
 
         return MarketDataValidationResult(isValid = true)
@@ -98,27 +98,40 @@ class MarketDataValidator(
     }
 
     /**
-     * K線が等間隔に並んでいるかを検証する。
+     * 判定に使う直近のK線が、想定した期間をおおよそ表しているかを検証する。
      *
-     * 途中が抜けていると、実際より短い期間で判定していることになる。
+     * 取引所は約定がなかった時間帯の足を返さない。実データでは、静かな時間帯に
+     * 10分程度の欠損が日常的に起きる。そのため「すべての足が等間隔であること」を
+     * 求めると、正常な相場でも判定できなくなる。
+     *
+     * 一方で欠損が大きいと、12本で1時間を見ているつもりが数時間を見ていることになり、
+     * 判定の前提が崩れる。そこで**直近の一定本数が占める時間の幅**を見て、
+     * 想定より大きく広がっていたら判定を見送る。
      *
      * @param sortedOpenTimes 昇順に並べた開始時刻
      * @param intervalMillis K線の間隔（ミリ秒）
-     * @return 欠損があれば不可の結果、なければ null
+     * @return 期間が広がりすぎていれば不可の結果、問題なければ null
      */
-    private fun validateContinuity(
+    private fun validateRecentSpan(
         sortedOpenTimes: List<Long>,
         intervalMillis: Long
     ): MarketDataValidationResult? {
-        sortedOpenTimes.zipWithNext().forEach { (previous, next) ->
-            val actualInterval = next - previous
-            if (actualInterval != intervalMillis) {
-                return invalid(
-                    "K線の間隔が想定と異なります。想定=${intervalMillis}ms, 実際=${actualInterval}ms, " +
-                        "openTime=$previous から $next"
-                )
-            }
+        val recentOpenTimes = sortedOpenTimes.takeLast(SPAN_CHECK_KLINE_COUNT)
+        if (recentOpenTimes.size < 2) {
+            return null
         }
+
+        val actualSpanMillis = recentOpenTimes.last() - recentOpenTimes.first()
+        val expectedSpanMillis = intervalMillis * (recentOpenTimes.size - 1)
+        val allowedSpanMillis = expectedSpanMillis * SPAN_TOLERANCE_NUMERATOR / SPAN_TOLERANCE_DENOMINATOR
+
+        if (actualSpanMillis > allowedSpanMillis) {
+            return invalid(
+                "直近${recentOpenTimes.size}本が占める期間が想定より広がっています。" +
+                    "実際=${actualSpanMillis}ms, 想定=${expectedSpanMillis}ms, 許容=${allowedSpanMillis}ms"
+            )
+        }
+
         return null
     }
 
@@ -200,5 +213,18 @@ class MarketDataValidator(
          * 取引所の応答の遅れを見込んで、間隔の3本分までは許容する。
          */
         const val ALLOWED_STALENESS_INTERVALS = 3L
+
+        /**
+         * 期間の広がりを検査する対象の本数。
+         * 最も多く必要とする Strategy が15本なので、それを覆う本数にする。
+         * これより古い箇所の欠損は判定に使わないため見ない。
+         */
+        const val SPAN_CHECK_KLINE_COUNT = 15
+
+        /** 許容する期間の広がりの分子（1.5倍まで許容する） */
+        const val SPAN_TOLERANCE_NUMERATOR = 3L
+
+        /** 許容する期間の広がりの分母 */
+        const val SPAN_TOLERANCE_DENOMINATOR = 2L
     }
 }
