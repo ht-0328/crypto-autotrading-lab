@@ -1,0 +1,56 @@
+name: Deployment Status Check
+
+# デプロイ済みの本番環境が、いま実際にどのモードで動いているかを確認する。
+# 「デプロイは成功したのに自動実行が止まっている」状態に気付くことが目的。
+# 確認内容は scripts/ops/check-deployment-status.sh を正とする。
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Check Deployment Status
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          CLOUD_RUN_JOB_NAME: ${{ vars.CLOUD_RUN_JOB_NAME }}
+          CLOUD_SCHEDULER_JOB_NAME: ${{ vars.CLOUD_SCHEDULER_JOB_NAME }}
+          SCHEDULER_SERVICE_ACCOUNT_NAME: ${{ vars.SCHEDULER_SERVICE_ACCOUNT_NAME }}
+        run: |
+          # 異常があってもサマリーは残したいので、終了コードをいったん受け止める。
+          set +e
+          scripts/ops/check-deployment-status.sh > status.txt 2>&1
+          check_status=$?
+          set -e
+
+          cat status.txt
+
+          {
+            echo "## デプロイ状態の確認"
+            echo
+            echo '```'
+            cat status.txt
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          exit "${check_status}"
