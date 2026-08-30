@@ -93,4 +93,41 @@ class WebhookNotifierTest {
         // 通知は観測の手段であって、それ自体が売買処理を止める理由にはならない
         notifier.notify(NotificationMessage(NotificationSeverity.INFO, "見出し", "本文"))
     }
+
+    @Test
+    fun `送信に成功したらtrueを返すこと`() = runTest {
+        val notifier = WebhookNotifier(webhookUrl, "content", mockClient(HttpStatusCode.NoContent))
+
+        val sent = notifier.notify(NotificationMessage(NotificationSeverity.INFO, "見出し", "本文"))
+
+        assertTrue(sent)
+    }
+
+    @Test
+    fun `Webhookが削除されている場合はfalseを返すこと`() = runTest {
+        // ステータスを見ないと、404 でも「送れた」ことになる
+        val notifier = WebhookNotifier(webhookUrl, "content", mockClient(HttpStatusCode.NotFound))
+
+        val sent = notifier.notify(NotificationMessage(NotificationSeverity.INFO, "見出し", "本文"))
+
+        assertFalse(sent)
+    }
+
+    @Test
+    fun `レート制限された場合はfalseを返すこと`() = runTest {
+        val notifier = WebhookNotifier(webhookUrl, "content", mockClient(HttpStatusCode.TooManyRequests))
+
+        val sent = notifier.notify(NotificationMessage(NotificationSeverity.INFO, "見出し", "本文"))
+
+        assertFalse(sent)
+    }
+
+    @Test
+    fun `通信に失敗した場合はfalseを返すこと`() = runTest {
+        val notifier = WebhookNotifier(webhookUrl, "content", mockClient(HttpStatusCode.InternalServerError))
+
+        val sent = notifier.notify(NotificationMessage(NotificationSeverity.INFO, "見出し", "本文"))
+
+        assertFalse(sent)
+    }
 }

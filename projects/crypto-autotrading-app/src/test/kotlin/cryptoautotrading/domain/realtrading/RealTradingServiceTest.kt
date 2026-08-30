@@ -1570,8 +1570,12 @@ private class FailingStateRepository : cryptoautotrading.domain.repository.Simul
 private class RecordingNotifier : cryptoautotrading.domain.notification.Notifier {
     val messages = mutableListOf<cryptoautotrading.domain.notification.NotificationMessage>()
 
-    override suspend fun notify(message: cryptoautotrading.domain.notification.NotificationMessage) {
+    /** 送信できたことにするかどうか。既定は成功 */
+    var sendResult = true
+
+    override suspend fun notify(message: cryptoautotrading.domain.notification.NotificationMessage): Boolean {
         messages.add(message)
+        return sendResult
     }
 }
 

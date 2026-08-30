@@ -38,18 +38,31 @@ class WebhookNotifier(
      *
      * @param message 送る通知
      */
-    override suspend fun notify(message: NotificationMessage) {
+    override suspend fun notify(message: NotificationMessage): Boolean {
         val payload = JsonObject(mapOf(payloadKey to JsonPrimitive(formatMessage(message))))
 
-        try {
+        return try {
             val response = httpClient.post(webhookUrl) {
                 contentType(ContentType.Application.Json)
                 setBody(Json.encodeToString(JsonObject.serializer(), payload))
             }
-            // URL は秘密情報なのでログに出さない
-            logger.info { "通知を送信しました。severity=${message.severity}, httpStatus=${response.status.value}" }
+            val statusCode = response.status.value
+
+            // ステータスを見ないと、Webhook が削除されていても「送れた」ことになる
+            if (statusCode !in HTTP_SUCCESS_RANGE) {
+                // URL は秘密情報なのでログに出さない
+                logger.warn {
+                    "通知の送信に失敗しました。売買処理は継続します。" +
+                        "severity=${message.severity}, httpStatus=$statusCode"
+                }
+                return false
+            }
+
+            logger.info { "通知を送信しました。severity=${message.severity}, httpStatus=$statusCode" }
+            true
         } catch (e: Exception) {
             logger.warn(e) { "通知の送信に失敗しました。売買処理は継続します。severity=${message.severity}" }
+            false
         }
     }
 
@@ -61,5 +74,10 @@ class WebhookNotifier(
      */
     private fun formatMessage(message: NotificationMessage): String {
         return "[${message.severity}] ${message.title}\n${message.body}"
+    }
+
+    private companion object {
+        /** 送信できたとみなす HTTP ステータスの範囲 */
+        val HTTP_SUCCESS_RANGE = 200..299
     }
 }

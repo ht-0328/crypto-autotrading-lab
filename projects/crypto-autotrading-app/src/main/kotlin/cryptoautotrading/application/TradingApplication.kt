@@ -350,6 +350,9 @@ class TradingApplication(
      * 実行のたびに通知すると、5分間隔では1日288件になり、本当に伝えたいことが埋もれる。
      * 一方でまったく通知しないと、ジョブが止まったことに気付けない。1日1回だけ送る。
      *
+     * 送信できた場合だけ日付を記録する。失敗したまま記録すると、その日の分が
+     * 永久に失われ、動いているのに止まって見える。
+     *
      * @param state 保存しようとしているシミュレーション状態
      * @param decision 今回の売買判定
      * @param currentPrice 現在価格
@@ -369,7 +372,7 @@ class TradingApplication(
             return state
         }
 
-        notifier.notify(
+        val sent = notifier.notify(
             NotificationMessage(
                 severity = NotificationSeverity.INFO,
                 title = "日次サマリー（$today）",
@@ -382,6 +385,14 @@ class TradingApplication(
                 )
             )
         )
+
+        // 送れていないのに記録すると、その日の分が永久に失われる。
+        // サマリーが届かないことは「システムが止まった」ことの唯一の手がかりなので、
+        // 送信できた場合だけ記録し、失敗したら次の実行で再び試みる。
+        if (!sent) {
+            logger.warn { "日次サマリーを送信できませんでした。次回の実行で再度試みます。" }
+            return state
+        }
 
         return state.copy(lastSummaryNotifiedDate = today)
     }
