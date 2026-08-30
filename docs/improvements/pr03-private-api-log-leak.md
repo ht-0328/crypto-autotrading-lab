@@ -17,7 +17,7 @@
 
 ## なぜ直すか
 
-[GmoPrivateApiClientImpl.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt) が、レスポンス本文を INFO ログに残します。
+[GmoPrivateApiClientImpl.kt](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/exchange/gmo/GmoPrivateApiClientImpl.kt) が、レスポンス本文を INFO で残します。
 
 ```kotlin
 logger.info { "GMO Private API raw response: $responseText" }

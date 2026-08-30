@@ -26,7 +26,7 @@
 
 ### A. 認証情報の配線
 
-- GMO の APIキーを Secret Manager に登録し、Cloud Run Job へ渡す。
+- GMO の APIキーを Secret Manager へ登録し、Job へ渡す。
 - 取引所側の **API キーの権限を最小限にする**（現物の注文と参照のみ。出金権限は付けない）。出金権限のあるキーが漏れた場合の被害は取引額と桁が違います。
 - ログに出ないことを、実際のログで確認する（[PR03](../improvements/pr03-private-api-log-leak.md) の対応が効いていること）。
 

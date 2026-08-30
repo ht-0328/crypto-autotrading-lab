@@ -38,7 +38,8 @@
 
 ## 4. 機能概要
 
-`AtrTrendConfirmReboundStrategy` は、買い条件は `TrendConfirmReboundStrategy` と同じですが、売り（利確・損切り）の閾値を固定値ではなく、エントリー時点のATRに基づいて動的に決定します。相場が荒れている時は幅を広げ、穏やかな時は狭めることで、ノイズによる無駄な損切りを防ぎます。
+`AtrTrendConfirmReboundStrategy` の買い条件は `TrendConfirmReboundStrategy` と同じです。
+売りの閾値は固定値ではなく、エントリー時点の ATR で決めます。相場が荒れている時は幅を広げ、穏やかな時は狭めることで、ノイズによる無駄な損切りを防ぎます。
 
 ## 5. 入力仕様
 
