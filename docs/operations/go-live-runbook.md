@@ -201,28 +201,41 @@ Cloud Run で動くアプリに、APIキーと Webhook URL を安全に渡す必
 
 ### なぜ必要か
 
-現在のデプロイワークフローは、Phase1 の安全策として**実注文を無効に固定**しています。
-
-```yaml
-# .github/workflows/deploy-gcp.yml
-ENV_VARS="${ENV_VARS},REAL_TRADING_DRY_RUN=true"
-ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
-```
-
-また、`APP_PHASE`、GMOの認証情報、通知先の URL をアプリに渡していません。**この状態では実注文はできません。これは意図した作りです。**
+もともとデプロイワークフローは、Phase1 の安全策として実注文を無効に固定しており、`APP_PHASE` も認証情報もアプリに渡していませんでした。この状態では、設定をどう変えても実注文はできません。
 
 ### やること
 
-1. AI に、デプロイワークフローの変更を依頼する。必要なのは次です。
-   - `APP_PHASE` を GitHub Actions Variables から渡す
-   - `--set-secrets` で `GMO_API_KEY` / `GMO_API_SECRET` / `NOTIFICATION_WEBHOOK_URL` をシークレットから渡す
-   - `REAL_TRADING_DRY_RUN` / `REAL_TRADING_ENABLED` を Variables から渡す（既定は安全側）
-2. 変更内容をレビューし、マージする。
+**この対応は実施済みです。** デプロイワークフローは次の Variables を読みます。**いずれも未設定なら安全側の値**になるため、何もしなければ実注文は無効のままです。
+
+| Variable | 未設定時 | 意味 |
+| --- | --- | --- |
+| `APP_PHASE` | `1` | `3` にすると実注文の起動時ガードを通過する |
+| `REAL_TRADING_DRY_RUN` | `true` | `false` にすると実注文経路に入る |
+| `REAL_TRADING_ENABLED` | `false` | `true` にすると実注文を許可する |
+| `NOTIFICATION_ENABLED` | `false` | `true` にすると通知を送る |
+| `NOTIFICATION_PAYLOAD_KEY` | 設定ファイルの値 | Discord は `content`、Slack は `text` |
+| `REAL_TRADING_MIN_ORDER_SIZE` ほか | 設定ファイルの値 | 注文数量・手数料・自動停止の各設定 |
+
+シークレットは**必要なときだけ**結び付きます。
+
+- `REAL_TRADING_ENABLED=true` のとき → `GMO_API_KEY` / `GMO_API_SECRET`
+- `NOTIFICATION_ENABLED=true` のとき → `NOTIFICATION_WEBHOOK_URL`
+
+**存在しないシークレットを要求するとデプロイが失敗します。** これは意図した動きです。有効にしたのに認証情報が無い状態は、デプロイの時点で気付くべき設定漏れだからです。
+
+1. まず `NOTIFICATION_ENABLED` = `true` だけを設定してデプロイする（実注文は無効のまま）。
+2. デプロイが成功することを確認する。
 
 ### 終わったと判断する基準
 
 - デプロイが成功する
-- **この時点ではまだ `APP_PHASE=1` のまま**。実注文は無効
+- デプロイのログに `実注文に関わる設定: APP_PHASE=1, dry_run=true, enabled=false` と出ている
+- **この時点ではまだ実注文は無効**
+
+### 注意
+
+- 実注文を有効にするには `APP_PHASE=3` と `REAL_TRADING_DRY_RUN=false` と `REAL_TRADING_ENABLED=true` の**3つすべて**が必要です。1つでも欠けると起動時に失敗します。意図しない解禁を防ぐための作りです。
+- デプロイがシークレットの権限エラーで失敗する場合は、デプロイ用サービスアカウントに `roles/secretmanager.viewer` を与えてください。
 
 ---
 
