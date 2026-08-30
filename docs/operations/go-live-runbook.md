@@ -134,12 +134,28 @@
 
    > 取引パラメータ系の Variables（`TRADING_*` など）は未設定でも構いません。未設定のときは、イメージに含まれる `config/application-gmo.yaml` の値が使われます。
 
-3. 構築のワークフローを実行する。
+3. リソースを作るワークフローを実行する。
 
    ```bash
    gh workflow run bootstrap-create-gcp.yml
    gh run watch
    ```
+
+4. **権限を付与するワークフローも実行する。**
+
+   ```bash
+   gh workflow run bootstrap-grant-iam.yml
+   gh run watch
+   ```
+
+   これを飛ばすと、次のデプロイが Cloud Build のソース取得で失敗します。
+
+   ```text
+   ERROR: cloud-build-builder@... does not have storage.objects.get access to
+   gs://（プロジェクト）_cloudbuild/...
+   ```
+
+   ビルド用サービスアカウントに、イメージの push・ログ書き込み・Cloud Build のソース取得・GCSバケットへの書き込みの権限が付きます。
 
 ### 終わったと判断する基準
 
@@ -149,8 +165,9 @@ gcloud storage buckets list
 gcloud artifacts repositories list
 ```
 
-- 実行用・ビルド用・スケジューラ用のサービスアカウントが存在する
+- 実行用・ビルド用のサービスアカウントが存在する（スケジューラ用は Scheduler の設定時に作られる）
 - GCSバケットと Artifact Registry が存在する
+- `bootstrap-grant-iam` が成功している
 
 ### 注意
 
