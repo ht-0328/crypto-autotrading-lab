@@ -68,7 +68,7 @@ gcloud iam workload-identity-pools create "$WORKLOAD_IDENTITY_POOL" \
   --display-name="GitHub Actions"
 ```
 
-**Provider**
+Provider は次のとおり設定します。
 ここで「指定したGitHubリポジトリからだけ許可する」という条件（`attribute-condition`）を設定しています。
 
 ```bash

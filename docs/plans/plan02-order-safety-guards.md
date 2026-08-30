@@ -57,7 +57,8 @@ BTC が 1,244万円のとき最小注文数量は約124円相当で、`trade_amo
 ```
 
 拒否されると [RealTradingService](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingService.kt) の例外処理で `isStopped=true` になり、実注文が止まります。**金額を上げても解決しません。刻みへの丸めが必要です。**
-- 売却時に**端数（ダスト）**が残ると、[RealTradingSafetyChecker](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) の `currentHoldingAssets.isNotEmpty()` に永久に引っかかり、以後1回も買えなくなります。
+- 売却時に**端数（ダスト）**が残ると、以後1回も買えなくなります。
+  [安全チェック](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/domain/realtrading/RealTradingSafetyChecker.kt) の `currentHoldingAssets.isNotEmpty()` に永久に引っかかるためです。
 
 やること:
 
@@ -70,7 +71,10 @@ BTC が 1,244万円のとき最小注文数量は約124円相当で、`trade_amo
 
 ### B. 注文価格の基準と、成行注文のスリッページ上限（新規。backlog には未記載）— 実施済み
 
-**注文数量の計算に、K線の終値を使っています。** [TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は Ticker を取得してログに出すだけで、`currentPrice` には最新K線の `close` を使っています。5分足の終値は最大で5分前の価格なので、急騰していると `tradeAmount / currentPrice` が実際より多い数量になり、**約定金額が `max_order_jpy` を超えます**。上限が上限として機能していません。
+**注文数量の計算に、K線の終値を使っています。**
+[TradingApplication](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/application/TradingApplication.kt) は Ticker を取得してログに出すだけです。
+`currentPrice` には直近K線の `close` を使っています。5分足の終値は最大で5分前の価格です。
+急騰していると数量が過大になり、**約定金額が `max_order_jpy` を超えます**。上限が上限として機能していません。
 
 発注は `executionType = "MARKET"` の成行なので、板が薄いときや急変時にも想定と違う価格で約定します。
 
@@ -98,7 +102,7 @@ BTC が 1,244万円のとき最小注文数量は約124円相当で、`trade_amo
     「依存方向の厳格化」と「Clock 注入」です。**Clock 注入だけを実注文前に切り出してください。**
     日次上限は実際のお金の上限です。日付が変わったときの挙動は、テストで固定します。依存方向の厳格化は後回しで構いません。
 
-**2 について特に重要**: POST がタイムアウトしても、取引所側では成立していることがあります。**POST は自動リトライしてはいけません。**
+**2 について特に重要**: POST がタイムアウトしても、注文が成立していることがあります。**POST は自動リトライしてはいけません。**
 次回実行時に注文照会で照合してから判断する経路を用意してください。着手前の実装は、例外を捕まえて `isStopped=true` にするだけです。注文IDが記録されないため、取引所にポジションがあるのにアプリ側に記録が無い状態になり得ます。
 
 ### D. 実注文後に回してよい項目
