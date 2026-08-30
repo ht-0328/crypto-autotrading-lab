@@ -139,7 +139,8 @@ fun main() = runBlocking {
                             stateRepository = stateRepository,
                             tradeHistoryRepository = csvRepository,
                             resultOutputPort = resultOutputPort,
-                            realTradingExchangeClient = privateApiClient
+                            realTradingExchangeClient = privateApiClient,
+                            notifier = notifier
                         )
 
                         logger.info { "TradingApplication の実行を開始します(実注文有効)" }
@@ -155,7 +156,8 @@ fun main() = runBlocking {
                         stateRepository = stateRepository,
                         tradeHistoryRepository = csvRepository,
                         resultOutputPort = resultOutputPort,
-                        realTradingExchangeClient = null
+                        realTradingExchangeClient = null,
+                        notifier = notifier
                     )
 
                     logger.info { "TradingApplication の実行を開始します(シミュレーションのみ)" }
