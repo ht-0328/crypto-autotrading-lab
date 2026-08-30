@@ -26,7 +26,7 @@
 
 ### A. 認証情報の配線
 
-- GMO の APIキーとシークレットを Secret Manager に登録し、Cloud Run Job へ渡す。
+- GMO の APIキーを Secret Manager に登録し、Cloud Run Job へ渡す。
 - 取引所側の **API キーの権限を最小限にする**（現物の注文と参照のみ。出金権限は付けない）。出金権限のあるキーが漏れた場合の被害は取引額と桁が違います。
 - ログに出ないことを、実際のログで確認する（[PR03](../improvements/pr03-private-api-log-leak.md) の対応が効いていること）。
 
@@ -36,7 +36,9 @@
 
 ### C. 状態の永続化と排他
 
-- [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は GCS を `/mnt/gcs` にマウントしています。GCS の FUSE マウントは**原子的な置き換えに対応していません**（[StateRepository](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) がフォールバックしています）。書き込み中にジョブが落ちたとき、`state.json` が壊れないことを実際に確認してください。
+- [deploy-gcp.yml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/.github/workflows/deploy-gcp.yml) は GCS を `/mnt/gcs` にマウントしています。
+  GCS の FUSE マウントは**原子的な置き換えに対応していません**。
+  [StateRepository](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/projects/crypto-autotrading-app/src/main/kotlin/cryptoautotrading/infrastructure/output/StateRepository.kt) がフォールバックしています。書き込み中にジョブが落ちたとき、`state.json` が壊れないことを実際に確認してください。
 - [PLAN02](plan02-order-safety-guards.md) の重複実行の抑止が、本番で効くことを確認してください。
 
 ### D. 障害を起こしてみる（リハーサル）

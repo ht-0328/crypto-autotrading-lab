@@ -17,7 +17,7 @@
 
 - 注文が失敗して `isStopped=true` になっても、誰も気づかない。復旧は手動でしかできないのに、止まったことが伝わりません（[復旧手順](../operations/real-trading-recovery.md)）。
 - 未確認注文を抱えたまま止まっても、気づけません。
-- **手動承認を置かない方針のため、通知の重要度は上がります**（[PLAN00](plan00-phase-and-safety-contract.md)）。 発注の直前に人間が内容を見るタイミングが無いので、「起きたことを事後に必ず知る」ことだけが人間側の歯止めになります。
+- **手動承認を置かないため、通知の重要度は上がります**（[PLAN00](plan00-phase-and-safety-contract.md)）。 発注の直前に人間が内容を見るタイミングが無いので、「起きたことを事後に必ず知る」ことだけが人間側の歯止めになります。
 
 Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の決定どおり、Phase2 のうち通知だけを先に出します。
 
@@ -32,7 +32,9 @@ Web画面は作りません。[PLAN00](plan00-phase-and-safety-contract.md) の�
 ### A. 通知の送信
 
 - 送信先を決める。候補は LINE Messaging API や Discord Webhook です。
-  **Webhook URL やトークンは秘密情報**です。[AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) のとおり、コードにも設定ファイルにも書かず、環境変数と Secret Manager 経由で渡してください。
+  **Webhook URL やトークンは秘密情報**です。
+  [AGENTS.md](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/AGENTS.md) のとおり、コードにも設定ファイルにも書きません。
+  環境変数と Secret Manager 経由で渡してください。
 - 通知する内容に、APIキー・シークレット・署名・個人情報を含めません。
 - 通知の送信に失敗しても、**売買処理そのものは落とさない**（通知はあくまで観測手段）。ただし失敗はログに残す。
 

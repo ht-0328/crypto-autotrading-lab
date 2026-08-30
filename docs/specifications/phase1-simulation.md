@@ -39,11 +39,14 @@
 
 ### 実注文機能の位置づけ
 
-リアル注文機能（GMOコイン Private API の利用、`RealTradingService`）は **Phase3** のスコープですが、コード上には先行実装されています。Phase1 では次の3つで実行できないようにしています。
+リアル注文機能は **Phase3** のスコープですが、コード上には先行実装されています。
+対象は GMOコイン Private API の利用と `RealTradingService` です。Phase1 では次の3つで実行できないようにしています。
 
-1. **起動時ガード**: `app.phase` が 3 未満のときに `real_trade_enabled: true` かつ `dry_run: false` を検出すると、Private API クライアントを組み立てる前に異常終了します。
+1. **起動時ガード**: `app.phase` が 3 未満のとき、実注文が有効な設定を検出すると異常終了します。
+   Private API クライアントを組み立てる前に落ちます。
 2. **既定値**: [config/application-gmo.yaml](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/config/application-gmo.yaml) は `dry_run: true` / `real_trade_enabled: false` です。
-3. **CI**: [ci/prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) は常に実注文を無効にした設定を生成します。切り替えの入力は用意していません。
+3. **CI**: [prepare-ci-config.sh](https://github.com/ht-0328/crypto-autotrading-lab/blob/main/ci/prepare-ci-config.sh) は常に実注文を無効にした設定を生成します。
+   切り替えの入力は用意していません。
 
 リアル注文そのものの仕様は [リアル購入処理（GMOコイン） 仕様書](features/real-trading-gmo-order.md) を参照してください。フェーズの定義は [ロードマップ](../overview/roadmap.md) にあります。
 
@@ -58,8 +61,8 @@
 
 ## 4. 機能概要
 
-Phase1は、安全を最優先とし、実資金による実際の注文を行わない「シミュレーション環境」を作るフェーズです。
-定期的に市場データを取得し、設定された売買ルール（Strategy）に従って仮想の売買判定を行います。結果はファイルとして出力され、ユーザーが過去の売買成績を後から確認できるようにします。
+Phase1 は「シミュレーション環境」を作るフェーズです。安全を最優先し、実資金の注文は行いません。
+定期的に市場データを取得し、設定された売買ルールに従って仮想の売買判定を行います。結果はファイルとして出力され、ユーザーが過去の売買成績を後から確認できるようにします。
 
 ## 5. 入力仕様
 
