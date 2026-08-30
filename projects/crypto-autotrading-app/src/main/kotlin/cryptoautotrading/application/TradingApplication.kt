@@ -60,7 +60,8 @@ class TradingApplication(
     private val realTradingService = RealTradingService(
         exchangeClient = realTradingExchangeClient,
         clock = clock,
-        notifier = notifier
+        notifier = notifier,
+        stateRepository = stateRepository
     )
     private val pnlCalculator = ProfitAndLossCalculator()
 

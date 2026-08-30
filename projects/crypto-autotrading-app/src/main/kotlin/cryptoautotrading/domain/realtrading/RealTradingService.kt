@@ -17,6 +17,7 @@ import cryptoautotrading.domain.notification.NotificationMessage
 import cryptoautotrading.domain.notification.NotificationSeverity
 import cryptoautotrading.domain.notification.Notifier
 import cryptoautotrading.domain.realtrading.RealTradingClient
+import cryptoautotrading.domain.repository.SimulationStateRepository
 import cryptoautotrading.domain.time.TradingTime
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.math.BigDecimal
@@ -32,12 +33,15 @@ import java.time.format.DateTimeFormatter
  * @property safetyChecker 実注文前安全チェックを行うサービス
  * @property clock 注文時刻と日次上限の日付判定に使う時計。テストでは固定した時刻に差し替える
  * @property notifier 注文や停止を人に伝える通知の口
+ * @property stateRepository 発注の直前に状態を保存するためのリポジトリ。
+ *   渡さない場合は先行保存を行わない。テスト用の逃げ道であり、実行時は必ず渡すこと
  */
 class RealTradingService(
     private val exchangeClient: RealTradingClient? = null,
     private val safetyChecker: RealTradingSafetyChecker = RealTradingSafetyChecker(),
     private val clock: Clock = TradingTime.systemClock(),
-    private val notifier: Notifier = NoOpNotifier
+    private val notifier: Notifier = NoOpNotifier,
+    private val stateRepository: SimulationStateRepository? = null
 ) {
     private val logger = KotlinLogging.logger {}
 
@@ -264,24 +268,37 @@ class RealTradingService(
         config: RealTradingConfig
     ): SimulationState {
         val latestOrder = currentState.realTrading.latestOrder ?: return currentState
-        logger.info { "リアル取引: 未確認注文 (orderId: ${latestOrder.orderId}) が存在します。状態を確認します。" }
+
+        // 注文IDが無いということは、送信の直前に保存した意図が残ったまま、
+        // 結果を記録できずに終わったということ。取引所に届いたかどうかが分からない。
+        // ここで新しい注文を出すと二重注文になりうるので、人の確認を待つ。
+        val orderId = latestOrder.orderId
+        if (orderId == null) {
+            val reason = "注文の送信結果が記録されていません。取引所に届いたかどうかが不明です。" +
+                "取引所の注文履歴を確認してください。side=${latestOrder.side}, " +
+                "数量=${latestOrder.requestedSize.toPlainString()}, 発注時刻=${latestOrder.orderedAt}"
+            logger.error { "リアル取引: $reason" }
+            return stopRealTrading(currentState, reason)
+        }
+
+        logger.info { "リアル取引: 未確認注文 (orderId: $orderId) が存在します。状態を確認します。" }
 
         try {
             val client = exchangeClient ?: return currentState
-            val orders = client.getOrders(latestOrder.orderId)
-            val targetOrder = orders.find { it.orderId == latestOrder.orderId }
+            val orders = client.getOrders(orderId)
+            val targetOrder = orders.find { it.orderId == orderId }
 
             if (targetOrder == null) {
-                logger.warn { "リアル取引: 注文状態の取得結果に orderId: ${latestOrder.orderId} が含まれていませんでした。" }
+                logger.warn { "リアル取引: 注文状態の取得結果に orderId: $orderId が含まれていませんでした。" }
                 return markLatestOrderUnconfirmed(currentState, latestOrder)
             }
 
             val mappedStatus = mapExchangeStatus(targetOrder.status)
             if (mappedStatus == RealOrderStatus.EXECUTED) {
-                return handleExecutedOrder(currentState, latestOrder, client, config)
+                return handleExecutedOrder(currentState, latestOrder, orderId, client, config)
             }
 
-            logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) は未約定です。ステータス: ${targetOrder.status}" }
+            logger.info { "リアル取引: 注文 (orderId: $orderId) は未約定です。ステータス: ${targetOrder.status}" }
             return updateLatestOrderStatus(currentState, latestOrder, mappedStatus)
         } catch (e: Exception) {
             logger.error(e) { "リアル取引: 注文状態の確認中にエラーが発生しました。" }
@@ -314,6 +331,7 @@ class RealTradingService(
      *
      * @param currentState 現在のシミュレーション状態
      * @param latestOrder 最新の注文状態
+     * @param orderId 約定を確認する注文ID
      * @param client リアル取引クライアント
      * @param config リアル取引設定
      * @return 更新されたシミュレーション状態
@@ -321,11 +339,12 @@ class RealTradingService(
     private suspend fun handleExecutedOrder(
         currentState: SimulationState,
         latestOrder: RealOrderState,
+        orderId: String,
         client: RealTradingClient,
         config: RealTradingConfig
     ): SimulationState {
-        logger.info { "リアル取引: 注文 (orderId: ${latestOrder.orderId}) の約定を確認しました。約定情報を取得します。" }
-        val executions = client.getExecutions(latestOrder.orderId)
+        logger.info { "リアル取引: 注文 (orderId: $orderId) の約定を確認しました。約定情報を取得します。" }
+        val executions = client.getExecutions(orderId)
 
         if (executions.isEmpty()) {
             logger.warn { "リアル取引: 注文ステータスは EXECUTED ですが、約定情報が取得できませんでした。" }
@@ -565,6 +584,15 @@ class RealTradingService(
                 return currentState
             }
 
+            persistOrderIntent(
+                currentState = currentState,
+                side = RealOrderSide.BUY,
+                symbol = symbol,
+                size = size,
+                currentPrice = currentPrice,
+                requestedAmountJpy = BigDecimal(totalCostWithFee)
+            )
+
             val acceptedOrder = client.placeOrder(
                 symbol = symbol,
                 side = "BUY",
@@ -665,6 +693,15 @@ class RealTradingService(
             }
 
             logger.info { "リアル取引: 売りの安全チェックを通過しました。注文処理を開始します。" }
+
+            persistOrderIntent(
+                currentState = currentState,
+                side = RealOrderSide.SELL,
+                symbol = symbol,
+                size = sellSize,
+                currentPrice = currentPrice,
+                requestedAmountJpy = sellSize.multiply(currentPrice)
+            )
 
             val acceptedOrder = client.placeOrder(
                 symbol = symbol,
@@ -851,6 +888,57 @@ class RealTradingService(
         return currentState.copy(
             realTrading = newRealTradingState
         )
+    }
+
+    /**
+     * 注文を送信する直前に、これから何を注文するかを状態に保存する。
+     *
+     * 注文を送ったあと、結果を保存する前にプロセスが落ちると、取引所には注文があるのに
+     * アプリ側には何の記録も残らない。次の実行は「注文していない」と判断し、
+     * もう一度注文を出しうる。二重注文になる。
+     *
+     * 送信前に意図を残しておけば、次の実行が「送ったかもしれないが結果が分からない」
+     * 状態を検知できる。その場合は新しい注文を出さず、人の確認を待つ。
+     *
+     * 保存に失敗した場合は例外を投げ、注文を送らずに終わる。記録が残らないまま
+     * 注文するくらいなら、注文しないほうが安全である。
+     *
+     * @param currentState 現在のシミュレーション状態
+     * @param side 売買区分
+     * @param symbol 銘柄
+     * @param size 注文数量
+     * @param currentPrice 発注時の想定価格
+     * @param requestedAmountJpy 想定金額(JPY)
+     */
+    private fun persistOrderIntent(
+        currentState: SimulationState,
+        side: RealOrderSide,
+        symbol: String,
+        size: BigDecimal,
+        currentPrice: BigDecimal,
+        requestedAmountJpy: BigDecimal
+    ) {
+        val repository = stateRepository
+        if (repository == null) {
+            logger.warn { "リアル取引: 状態リポジトリが渡されていないため、発注意図の先行保存を行いません。" }
+            return
+        }
+
+        val intent = RealOrderState(
+            orderId = null,
+            symbol = symbol,
+            side = side,
+            status = RealOrderStatus.WAITING,
+            requestedAmountJpy = requestedAmountJpy,
+            requestedSize = size,
+            requestedPrice = currentPrice,
+            orderedAt = LocalDateTime.now(clock).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        )
+
+        repository.save(
+            currentState.copy(realTrading = currentState.realTrading.copy(latestOrder = intent))
+        )
+        logger.info { "リアル取引: 発注意図を保存しました。side=$side, 数量=${size.toPlainString()}" }
     }
 
     /**

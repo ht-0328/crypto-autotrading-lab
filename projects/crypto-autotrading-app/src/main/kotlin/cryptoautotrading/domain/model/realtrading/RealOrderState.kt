@@ -7,7 +7,7 @@ import java.math.BigDecimal
 /**
  * リアル注文個別の状態を表すデータクラス
  *
- * @property orderId 注文ID
+ * @property orderId 注文ID。送信前や、送信結果が分からない場合は null
  * @property symbol 取引銘柄
  * @property side 売買方向
  * @property status 注文ステータス
@@ -21,7 +21,7 @@ import java.math.BigDecimal
  */
 @Serializable
 data class RealOrderState(
-    val orderId: String,
+    val orderId: String? = null,
     val symbol: String,
     val side: RealOrderSide,
     val status: RealOrderStatus,
