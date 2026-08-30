@@ -20,6 +20,8 @@ import cryptoautotrading.domain.realtrading.RealTradingService
 import cryptoautotrading.domain.realtrading.RealTradingClient
 import cryptoautotrading.domain.marketdata.MarketDataValidator
 import cryptoautotrading.domain.notification.NoOpNotifier
+import cryptoautotrading.domain.notification.NotificationMessage
+import cryptoautotrading.domain.notification.NotificationSeverity
 import cryptoautotrading.domain.notification.Notifier
 import cryptoautotrading.domain.model.TradeDecision
 import cryptoautotrading.domain.time.TradingTime
@@ -233,8 +235,19 @@ class TradingApplication(
                 tradeAmount = config.trading.tradeAmount
             )
 
-            // 6. 状態の保存
-            stateRepository.save(nextState)
+            // 6. 日次サマリーの通知
+            // ジョブが動かなくなったとき、通知は「来ない」だけなので沈黙として現れる。
+            // 1日1回これが届くことで、通知の経路が生きていることを確かめられる。
+            val stateToSave = notifyDailySummaryIfNeeded(
+                state = nextState,
+                decision = decision,
+                currentPrice = currentPrice,
+                estimatedHoldingValue = estimatedHoldingValue,
+                totalAssetValue = totalAssetValue
+            )
+
+            // 7. 状態の保存
+            stateRepository.save(stateToSave)
 
             logger.info { "TradingApplication のメイン処理が正常に完了しました" }
 
@@ -327,6 +340,98 @@ class TradingApplication(
             logger.warn(e) { "ティッカーの取得に失敗しました。実注文は見送られます。" }
             null
         }
+    }
+
+    /**
+     * その日まだ通知していなければ、日次サマリーを通知する。
+     *
+     * 実行のたびに通知すると、5分間隔では1日288件になり、本当に伝えたいことが埋もれる。
+     * 一方でまったく通知しないと、ジョブが止まったことに気付けない。1日1回だけ送る。
+     *
+     * @param state 保存しようとしているシミュレーション状態
+     * @param decision 今回の売買判定
+     * @param currentPrice 現在価格
+     * @param estimatedHoldingValue 保有評価額
+     * @param totalAssetValue 総資産評価額
+     * @return 通知した日付を反映した状態。通知しなかった場合は入力のままの状態
+     */
+    private suspend fun notifyDailySummaryIfNeeded(
+        state: cryptoautotrading.domain.model.SimulationState,
+        decision: TradeDecision,
+        currentPrice: java.math.BigDecimal,
+        estimatedHoldingValue: java.math.BigDecimal,
+        totalAssetValue: java.math.BigDecimal
+    ): cryptoautotrading.domain.model.SimulationState {
+        val today = LocalDateTime.now(clock).toLocalDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+        if (state.lastSummaryNotifiedDate == today) {
+            return state
+        }
+
+        notifier.notify(
+            NotificationMessage(
+                severity = NotificationSeverity.INFO,
+                title = "日次サマリー（$today）",
+                body = buildDailySummaryBody(
+                    state = state,
+                    decision = decision,
+                    currentPrice = currentPrice,
+                    estimatedHoldingValue = estimatedHoldingValue,
+                    totalAssetValue = totalAssetValue
+                )
+            )
+        )
+
+        return state.copy(lastSummaryNotifiedDate = today)
+    }
+
+    /**
+     * 日次サマリーの本文を組み立てる。
+     *
+     * 秘密情報は含めない。金額と保有状況だけを書く。
+     *
+     * @param state シミュレーション状態
+     * @param decision 今回の売買判定
+     * @param currentPrice 現在価格
+     * @param estimatedHoldingValue 保有評価額
+     * @param totalAssetValue 総資産評価額
+     * @return 通知の本文
+     */
+    private fun buildDailySummaryBody(
+        state: cryptoautotrading.domain.model.SimulationState,
+        decision: TradeDecision,
+        currentPrice: java.math.BigDecimal,
+        estimatedHoldingValue: java.math.BigDecimal,
+        totalAssetValue: java.math.BigDecimal
+    ): String {
+        val mode = if (config.realTrading.realTradeEnabled && !config.realTrading.dryRun) {
+            "実注文"
+        } else {
+            "シミュレーション"
+        }
+        val holdingText = if (state.isHolding) {
+            "保有中（数量: ${state.holdingAmount.toPlainString()} / 買値: ${state.buyPrice}）"
+        } else {
+            "保有なし"
+        }
+        val realTrading = state.realTrading
+        val stoppedText = if (realTrading.isStopped) {
+            "\n**リアル取引は停止中です。** 理由: ${realTrading.stopReason}"
+        } else {
+            ""
+        }
+
+        return listOf(
+            "モード: $mode",
+            "現在価格: $currentPrice",
+            "保有: $holdingText",
+            "残金: ${state.cashBalance}",
+            "保有評価額: $estimatedHoldingValue",
+            "総資産評価額: $totalAssetValue",
+            "確定損益（累計）: ${state.realizedProfitAndLoss}",
+            "当日の確定損益: ${realTrading.dailyRealizedProfitAndLoss}",
+            "連敗: ${realTrading.consecutiveLossCount}",
+            "直近の判定: ${decision.action.description}（${decision.reason}）"
+        ).joinToString("\n") + stoppedText
     }
 
 /**

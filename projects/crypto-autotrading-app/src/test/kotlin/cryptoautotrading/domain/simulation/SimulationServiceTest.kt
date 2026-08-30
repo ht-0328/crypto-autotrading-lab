@@ -456,4 +456,68 @@ class SimulationServiceTest {
         assertFalse(nextState.isHolding)
         assertEquals(0, BigDecimal.ZERO.compareTo(nextState.cashBalance))
     }
+
+    @Test
+    fun `売却しても日次サマリーの通知日が引き継がれること`() {
+        // updateState は SimulationState を組み立て直すため、新しい項目を書き足し忘れると黙って落ちる
+        val state = SimulationState(
+            cashBalance = BigDecimal("5000"),
+            isHolding = true,
+            buyPrice = BigDecimal("1000"),
+            holdingAmount = BigDecimal("0.5"),
+            lastSummaryNotifiedDate = "2026-08-29"
+        )
+
+        val result = SimulationService().updateState(
+            currentState = state,
+            decision = TradeDecision(TradeAction.SELL_CANDIDATE, "利確"),
+            currentPrice = BigDecimal("1100"),
+            tradeAmount = 1000
+        )
+
+        assertEquals("2026-08-29", result.lastSummaryNotifiedDate)
+    }
+
+    @Test
+    fun `購入しても日次サマリーの通知日が引き継がれること`() {
+        val state = SimulationState(
+            cashBalance = BigDecimal("5000"),
+            isHolding = false,
+            lastSummaryNotifiedDate = "2026-08-29"
+        )
+
+        val result = SimulationService().updateState(
+            currentState = state,
+            decision = TradeDecision(TradeAction.BUY_CANDIDATE, "買い"),
+            currentPrice = BigDecimal("1000"),
+            tradeAmount = 1000
+        )
+
+        assertEquals("2026-08-29", result.lastSummaryNotifiedDate)
+    }
+
+    @Test
+    fun `リアル取引の状態が引き継がれること`() {
+        val realTrading = cryptoautotrading.domain.model.realtrading.RealTradingState(
+            dailyResultDate = "2026-08-29",
+            dailyRealizedProfitAndLoss = BigDecimal("-100"),
+            consecutiveLossCount = 2
+        )
+        val state = SimulationState(
+            cashBalance = BigDecimal("5000"),
+            isHolding = true,
+            buyPrice = BigDecimal("1000"),
+            holdingAmount = BigDecimal("0.5"),
+            realTrading = realTrading
+        )
+
+        val result = SimulationService().updateState(
+            currentState = state,
+            decision = TradeDecision(TradeAction.SELL_CANDIDATE, "利確"),
+            currentPrice = BigDecimal("1100"),
+            tradeAmount = 1000
+        )
+
+        assertEquals(realTrading, result.realTrading)
+    }
 }
