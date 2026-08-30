@@ -85,19 +85,11 @@ jobs:
           echo "Setting up Scheduler Service Account..."
           SA_EMAIL="${{ vars.SCHEDULER_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com"
 
-          if gcloud iam service-accounts describe "${SA_EMAIL}" > /dev/null 2>&1; then
-            echo "Service Account ${SA_EMAIL} already exists, skipping creation."
-          else
-            echo "Creating Service Account ${SA_EMAIL}..."
-            gcloud iam service-accounts create "${{ vars.SCHEDULER_SERVICE_ACCOUNT_NAME }}" \
-              --description="Service Account for Cloud Scheduler Job"
-          fi
-
-          echo "Granting Cloud Run Invoker role to Service Account..."
-          # 将来的には最小権限へ寄せるため、プロジェクト単位ではなくCloud Run Job単位などに絞るのが望ましい
-          gcloud projects add-iam-policy-binding "${{ vars.GCP_PROJECT_ID }}" \
-            --member="serviceAccount:${SA_EMAIL}" \
-            --role="roles/run.invoker"
+          # 作成と権限付与はスクリプトに任せる。作成直後は IAM から見えず
+          # 付与が失敗することがあるため、伝播を待って再試行する必要がある。
+          GCP_PROJECT_ID="${{ vars.GCP_PROJECT_ID }}" \
+          SCHEDULER_SERVICE_ACCOUNT_NAME="${{ vars.SCHEDULER_SERVICE_ACCOUNT_NAME }}" \
+            scripts/ops/setup-scheduler-service-account.sh
 
           echo "Building Scheduler URI..."
           SCHEDULER_URI="https://run.googleapis.com/v2/projects/${{ vars.GCP_PROJECT_ID }}/locations/${{ vars.GCP_REGION }}/jobs/${{ vars.CLOUD_RUN_JOB_NAME }}:run"
