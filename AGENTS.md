@@ -7,7 +7,8 @@ Codex と Antigravity はこのファイルを自動で読み込みます。Clau
 ## このリポジトリについて
 
 - 仮想通貨の自動売買アプリです。Kotlin / JVM 17 / Gradle で作られており、本体は [projects/crypto-autotrading-app/](projects/crypto-autotrading-app/) にあります。
-- 現在は Phase1 です。実資金での実注文は行いません。判断に幅があるときは常に安全側（損失を出さない側）に倒してください。
+- 2026-08-30 から Phase3 です。**実資金での自動売買が本番で動いています。** あなたの変更は実際のお金の動きに影響します。判断に幅があるときは常に安全側（損失を出さない側）に倒してください。
+- 実注文の可否・上限・停止条件に関わる変更は、影響を説明したうえでユーザーに確認してください。安全側に倒すための既定値（`APP_PHASE` / `REAL_TRADING_ENABLED` / `REAL_TRADING_DRY_RUN`）を緩める変更は、依頼されていない限り行いません。
 - 全体像は [README.md](README.md)、ドキュメントの地図は [docs/README.md](docs/README.md) を参照してください。
 
 ## ドキュメントを変更するとき
