@@ -94,3 +94,11 @@ tasks.register<JavaExec>("checkPrivateApi") {
     classpath = sourceSets["main"].runtimeClasspath
     systemProperty("file.encoding", "UTF-8")
 }
+
+tasks.register<JavaExec>("sendTestNotification") {
+    group = "application"
+    description = "通知の疎通確認としてテストメッセージを1件送信します"
+    mainClass.set("cryptoautotrading.presentation.NotificationTestMainKt")
+    classpath = sourceSets["main"].runtimeClasspath
+    systemProperty("file.encoding", "UTF-8")
+}
