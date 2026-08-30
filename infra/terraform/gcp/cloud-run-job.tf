@@ -112,14 +112,19 @@ resource "google_cloud_run_v2_job" "app_job" {
           value = var.state_path
         }
 
-        # リアル取引の設定値（シミュレーションフェーズのデフォルトは安全側に倒す）
+        env {
+          name  = "APP_PHASE"
+          value = var.app_phase
+        }
+
+        # リアル取引の設定値（変数の既定値は安全側に倒してある）
         env {
           name  = "REAL_TRADING_DRY_RUN"
-          value = "true"
+          value = var.real_trading_dry_run
         }
         env {
           name  = "REAL_TRADING_ENABLED"
-          value = "false"
+          value = var.real_trading_enabled
         }
         env {
           name  = "REAL_TRADING_STOP_ON_UNCONFIRMED_ORDER"
@@ -137,6 +142,40 @@ resource "google_cloud_run_v2_job" "app_job" {
           name  = "REAL_TRADING_MAX_POSITION_JPY"
           value = var.real_trading_max_position_jpy
         }
+        env {
+          name  = "REAL_TRADING_MIN_ORDER_SIZE"
+          value = var.real_trading_min_order_size
+        }
+        env {
+          name  = "REAL_TRADING_SIZE_STEP"
+          value = var.real_trading_size_step
+        }
+        env {
+          name  = "REAL_TRADING_TAKER_FEE_RATE"
+          value = var.real_trading_taker_fee_rate
+        }
+        env {
+          name  = "REAL_TRADING_MAX_SLIPPAGE_RATE"
+          value = var.real_trading_max_slippage_rate
+        }
+        env {
+          name  = "REAL_TRADING_MAX_DAILY_LOSS_JPY"
+          value = var.real_trading_max_daily_loss_jpy
+        }
+        env {
+          name  = "REAL_TRADING_MAX_CONSECUTIVE_LOSSES"
+          value = var.real_trading_max_consecutive_losses
+        }
+
+        # 通知の設定
+        env {
+          name  = "NOTIFICATION_ENABLED"
+          value = var.notification_enabled
+        }
+        env {
+          name  = "NOTIFICATION_PAYLOAD_KEY"
+          value = var.notification_payload_key
+        }
 
         # Secret Manager 参照経由での機密情報の取得
         env {
@@ -153,6 +192,15 @@ resource "google_cloud_run_v2_job" "app_job" {
           value_source {
             secret_key_ref {
               secret  = google_secret_manager_secret.secrets["gmo-api-secret"].secret_id
+              version = "latest"
+            }
+          }
+        }
+        env {
+          name = "NOTIFICATION_WEBHOOK_URL"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.secrets["notification-webhook-url"].secret_id
               version = "latest"
             }
           }

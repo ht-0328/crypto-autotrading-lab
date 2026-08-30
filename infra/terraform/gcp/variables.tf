@@ -42,7 +42,73 @@ variable "deploy_service_account_email" {
 variable "secret_names" {
   description = "Secret Manager に作成する Secret の名前リスト"
   type        = list(string)
-  default     = ["gmo-api-key", "gmo-api-secret"]
+  default     = ["gmo-api-key", "gmo-api-secret", "notification-webhook-url"]
+}
+
+variable "app_phase" {
+  description = "開発フェーズ。実注文が許可されるのは 3 以降"
+  type        = string
+  default     = "1"
+}
+
+variable "real_trading_dry_run" {
+  description = "dry-run モードにするか。既定は安全側の true"
+  type        = string
+  default     = "true"
+}
+
+variable "real_trading_enabled" {
+  description = "実注文を許可するか。既定は安全側の false"
+  type        = string
+  default     = "false"
+}
+
+variable "real_trading_min_order_size" {
+  description = "取引所が定める最小注文数量"
+  type        = string
+  default     = ""
+}
+
+variable "real_trading_size_step" {
+  description = "取引所が定める注文数量の刻み"
+  type        = string
+  default     = ""
+}
+
+variable "real_trading_taker_fee_rate" {
+  description = "成行注文の手数料率"
+  type        = string
+  default     = ""
+}
+
+variable "real_trading_max_slippage_rate" {
+  description = "許容するスリッページの割合"
+  type        = string
+  default     = ""
+}
+
+variable "real_trading_max_daily_loss_jpy" {
+  description = "1日の損失の上限（JPY）"
+  type        = string
+  default     = ""
+}
+
+variable "real_trading_max_consecutive_losses" {
+  description = "連敗の上限"
+  type        = string
+  default     = ""
+}
+
+variable "notification_enabled" {
+  description = "通知を送るか。既定は false"
+  type        = string
+  default     = "false"
+}
+
+variable "notification_payload_key" {
+  description = "通知の本文を入れるJSONのキー。Discord は content、Slack は text"
+  type        = string
+  default     = "content"
 }
 
 variable "cloud_run_job_name" {

@@ -113,18 +113,65 @@ jobs:
           ENV_VARS="${ENV_VARS},TRADING_ATR_PROFIT_MULTIPLIER=${{ vars.TRADING_ATR_PROFIT_MULTIPLIER }}"
           ENV_VARS="${ENV_VARS},TRADING_ATR_LOSS_MULTIPLIER=${{ vars.TRADING_ATR_LOSS_MULTIPLIER }}"
           ENV_VARS="${ENV_VARS},TRADING_ORDER_SIZING_MODE=${{ vars.TRADING_ORDER_SIZING_MODE }}"
-          # Phase1 では実注文を行わないため、実取引の設定は安全側で固定する
-          ENV_VARS="${ENV_VARS},REAL_TRADING_DRY_RUN=true"
-          ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=false"
+
+          # 安全に関わる設定は、未設定なら安全側の値にする。
+          # GitHub Actions の式で既定値を書くと、文字列 "false" の扱いが分かりにくいため
+          # bash 側で解決する。
+          APP_PHASE_VALUE="${{ vars.APP_PHASE }}"
+          APP_PHASE_VALUE="${APP_PHASE_VALUE:-1}"
+          REAL_TRADING_DRY_RUN_VALUE="${{ vars.REAL_TRADING_DRY_RUN }}"
+          REAL_TRADING_DRY_RUN_VALUE="${REAL_TRADING_DRY_RUN_VALUE:-true}"
+          REAL_TRADING_ENABLED_VALUE="${{ vars.REAL_TRADING_ENABLED }}"
+          REAL_TRADING_ENABLED_VALUE="${REAL_TRADING_ENABLED_VALUE:-false}"
+          NOTIFICATION_ENABLED_VALUE="${{ vars.NOTIFICATION_ENABLED }}"
+          NOTIFICATION_ENABLED_VALUE="${NOTIFICATION_ENABLED_VALUE:-false}"
+
+          echo "実注文に関わる設定: APP_PHASE=${APP_PHASE_VALUE}, dry_run=${REAL_TRADING_DRY_RUN_VALUE}, enabled=${REAL_TRADING_ENABLED_VALUE}"
+          echo "通知の設定: enabled=${NOTIFICATION_ENABLED_VALUE}"
+
+          ENV_VARS="${ENV_VARS},APP_PHASE=${APP_PHASE_VALUE}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_DRY_RUN=${REAL_TRADING_DRY_RUN_VALUE}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_ENABLED=${REAL_TRADING_ENABLED_VALUE}"
           ENV_VARS="${ENV_VARS},REAL_TRADING_MAX_ORDER_JPY=${{ vars.REAL_TRADING_MAX_ORDER_JPY }}"
           ENV_VARS="${ENV_VARS},REAL_TRADING_MAX_DAILY_ORDER_JPY=${{ vars.REAL_TRADING_MAX_DAILY_ORDER_JPY }}"
           ENV_VARS="${ENV_VARS},REAL_TRADING_MAX_POSITION_JPY=${{ vars.REAL_TRADING_MAX_POSITION_JPY }}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_MIN_ORDER_SIZE=${{ vars.REAL_TRADING_MIN_ORDER_SIZE }}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_SIZE_STEP=${{ vars.REAL_TRADING_SIZE_STEP }}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_TAKER_FEE_RATE=${{ vars.REAL_TRADING_TAKER_FEE_RATE }}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_MAX_SLIPPAGE_RATE=${{ vars.REAL_TRADING_MAX_SLIPPAGE_RATE }}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_MAX_DAILY_LOSS_JPY=${{ vars.REAL_TRADING_MAX_DAILY_LOSS_JPY }}"
+          ENV_VARS="${ENV_VARS},REAL_TRADING_MAX_CONSECUTIVE_LOSSES=${{ vars.REAL_TRADING_MAX_CONSECUTIVE_LOSSES }}"
+          ENV_VARS="${ENV_VARS},NOTIFICATION_ENABLED=${NOTIFICATION_ENABLED_VALUE}"
+          ENV_VARS="${ENV_VARS},NOTIFICATION_PAYLOAD_KEY=${{ vars.NOTIFICATION_PAYLOAD_KEY }}"
+
+          # 秘密情報は環境変数の値として渡さず、Secret Manager から参照させる。
+          # 必要なときだけ結び付ける。存在しないシークレットを指定するとデプロイが失敗するが、
+          # 実注文や通知を有効にしたのに認証情報が無い状態は、そこで気付くべき設定漏れである。
+          SECRET_MAPPINGS=""
+          if [ "${REAL_TRADING_ENABLED_VALUE}" = "true" ]; then
+            SECRET_MAPPINGS="GMO_API_KEY=gmo-api-key:latest,GMO_API_SECRET=gmo-api-secret:latest"
+          fi
+          if [ "${NOTIFICATION_ENABLED_VALUE}" = "true" ]; then
+            if [ -n "${SECRET_MAPPINGS}" ]; then
+              SECRET_MAPPINGS="${SECRET_MAPPINGS},"
+            fi
+            SECRET_MAPPINGS="${SECRET_MAPPINGS}NOTIFICATION_WEBHOOK_URL=notification-webhook-url:latest"
+          fi
+
+          SECRET_ARGS=()
+          if [ -n "${SECRET_MAPPINGS}" ]; then
+            echo "Secret Manager から渡す環境変数: $(echo "${SECRET_MAPPINGS}" | sed 's/=[^,]*:latest/=（シークレット）/g')"
+            SECRET_ARGS=(--set-secrets "${SECRET_MAPPINGS}")
+          else
+            echo "Secret Manager から渡す環境変数はありません。"
+          fi
 
           gcloud run jobs deploy ${{ vars.CLOUD_RUN_JOB_NAME }} \
             --image ${IMAGE_URI} \
             --region ${{ vars.GCP_REGION }} \
             --service-account ${{ vars.RUNTIME_SERVICE_ACCOUNT_NAME }}@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com \
             --set-env-vars "${ENV_VARS}" \
+            "${SECRET_ARGS[@]}" \
             --add-volume=name=gcs,type=cloud-storage,bucket=${{ vars.GCS_BUCKET_NAME }},readonly=false \
             --add-volume-mount=volume=gcs,mount-path=/mnt/gcs \
             --tasks 1 \
